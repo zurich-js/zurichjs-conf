@@ -20,9 +20,9 @@ const profile: PublicNetworkingProfile = {
 };
 
 describe('networking sharing helpers', () => {
-  it('adds UTM tags while preserving existing parameters and hashes', () => {
+  it('adds UTM tags to ZurichJS links while preserving existing parameters and hashes', () => {
     const result = new URL(
-      addNetworkingUtm('https://example.com/contact?team=dev#hello', profile.publicId)
+      addNetworkingUtm('https://conf.zurichjs.com/contact?team=dev#hello', profile.publicId)
     );
 
     expect(result.searchParams.get('team')).toBe('dev');
@@ -33,9 +33,9 @@ describe('networking sharing helpers', () => {
     expect(result.hash).toBe('#hello');
   });
 
-  it('preserves existing UTM values and leaves non-HTTP links unchanged', () => {
+  it('preserves existing UTM values on ZurichJS links and leaves non-HTTP links unchanged', () => {
     const existing = addNetworkingUtm(
-      'https://example.com/?utm_source=partner&utm_content=original',
+      'https://zurichjs.com/?utm_source=partner&utm_content=original',
       profile.publicId
     );
     const parsed = new URL(existing);
@@ -48,6 +48,14 @@ describe('networking sharing helpers', () => {
     expect(addNetworkingUtm('tel:+41441234567', profile.publicId)).toBe('tel:+41441234567');
   });
 
+  it.each([
+    'https://github.com/zurich-js/zurichjs-conf',
+    'https://example.com/contact?team=dev#hello',
+    'https://zurichjs.com.evil.example/contact',
+  ])('does not add UTM tags to external networking link %s', (href) => {
+    expect(addNetworkingUtm(href, profile.publicId)).toBe(href);
+  });
+
   it('formats labeled semantic contact details and the source page URL', () => {
     const text = formatNetworkingShareText(
       profile,
@@ -56,8 +64,8 @@ describe('networking sharing helpers', () => {
 
     expect(text).toContain('Example AG\nTalk to Partnerships');
     expect(text).toContain('Email: partners@example.com');
-    expect(text).toContain('Website: https://example.com/contact?');
-    expect(text).toContain('team=dev');
+    expect(text).toContain('Website: https://example.com/contact?team=dev#hello');
+    expect(text).not.toContain('utm_');
     expect(text).toContain(
       'ZurichJS networking page: https://conf.zurichjs.com/share/sponsor-example'
     );

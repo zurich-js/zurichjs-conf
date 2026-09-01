@@ -6,7 +6,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, ShieldCheck, ScanLine, ChevronDown, type LucideIcon } from 'lucide-react';
+import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, ShieldCheck, ScanLine, ChevronDown, QrCode, type LucideIcon } from 'lucide-react';
 import {Button} from '@/components/atoms';
 
 interface AdminHeaderProps {
@@ -35,6 +35,7 @@ function isGroup(item: NavItem): item is NavGroup {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: BarChart3 },
+  { href: '/admin/badges', label: 'Badges', icon: QrCode },
   {
     label: 'Speakers',
     icon: Users,

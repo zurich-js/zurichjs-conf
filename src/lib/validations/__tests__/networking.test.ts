@@ -8,6 +8,7 @@ import {
 describe('networking validation', () => {
   it('normalizes supported attendee links and handles', () => {
     const result = attendeeNetworkingProfileSchema.safeParse({
+      email: 'ADA@Example.COM',
       linkedinUrl: 'linkedin.com/in/ada',
       githubUrl: 'www.github.com/ada',
       xHandle: 'https://twitter.com/ada_dev/',
@@ -19,6 +20,7 @@ describe('networking validation', () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(result.data).toEqual({
+      email: 'ada@example.com',
       linkedinUrl: 'https://linkedin.com/in/ada',
       githubUrl: 'https://github.com/ada',
       xHandle: '@ada_dev',
@@ -73,6 +75,11 @@ describe('networking validation', () => {
   it('rejects non-HTTP website protocols', () => {
     expect(attendeeNetworkingProfileSchema.safeParse({ websiteUrl: 'javascript:alert(1)' }).success).toBe(false);
     expect(attendeeNetworkingProfileSchema.safeParse({ websiteUrl: 'ftp://example.com' }).success).toBe(false);
+  });
+
+  it('accepts an optional attendee email and rejects invalid addresses', () => {
+    expect(attendeeNetworkingProfileSchema.safeParse({ email: 'hello@example.com' }).success).toBe(true);
+    expect(attendeeNetworkingProfileSchema.safeParse({ email: 'not-an-email' }).success).toBe(false);
   });
 
   it('requires at least one link when an attendee enables sharing', () => {

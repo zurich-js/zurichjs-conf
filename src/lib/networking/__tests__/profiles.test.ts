@@ -44,12 +44,14 @@ describe('public networking profiles', () => {
     expect(isValidNetworkingPublicId(`attendee-${SHARE_ID}`)).toBe(true);
     expect(isValidNetworkingPublicId(`sponsor-${SHARE_ID}`)).toBe(true);
     expect(isValidNetworkingPublicId('speaker-alex-ng')).toBe(true);
+    expect(isValidNetworkingPublicId(`badge-${SHARE_ID}`)).toBe(true);
 
     expect(isValidNetworkingPublicId(SHARE_ID)).toBe(false);
     expect(isValidNetworkingPublicId('attendee-not-a-uuid')).toBe(false);
     expect(isValidNetworkingPublicId('attendee-AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE')).toBe(false);
     expect(isValidNetworkingPublicId('speaker-Alex-Ng')).toBe(false);
     expect(isValidNetworkingPublicId('speaker-alex/ng')).toBe(false);
+    expect(isValidNetworkingPublicId('badge-not-a-uuid')).toBe(false);
     expect(isValidNetworkingPublicId('sponsor-11111111-2222-4333-8444-555555555555?admin=true')).toBe(false);
   });
 
@@ -64,6 +66,7 @@ describe('public networking profiles', () => {
       data: {
         ticket_id: TICKET_ID,
         profile: {
+          email: 'networking@example.com',
           linkedinUrl: 'linkedin.com/in/ada',
           githubUrl: 'github.com/ada',
           xHandle: 'ada_dev',
@@ -95,6 +98,7 @@ describe('public networking profiles', () => {
       headline: 'Programmer @ Analytical Engines',
       imageUrl: null,
       links: [
+        { kind: 'email', label: 'Email', href: 'mailto:networking@example.com' },
         { kind: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/in/ada' },
         { kind: 'github', label: 'GitHub', href: 'https://github.com/ada' },
         { kind: 'x', label: 'X', href: 'https://x.com/ada_dev' },
@@ -134,7 +138,7 @@ describe('public networking profiles', () => {
     expect(await resolvePublicNetworkingProfile(`attendee-${SHARE_ID}`)).toBeNull();
 
     tableResults.set('networking_profiles', {
-      data: { ticket_id: TICKET_ID, profile: { email: 'not-public@example.com' } },
+      data: { ticket_id: TICKET_ID, profile: { email: 'not-an-email' } },
       error: null,
     });
     expect(await resolvePublicNetworkingProfile(`attendee-${SHARE_ID}`)).toBeNull();
@@ -173,7 +177,7 @@ describe('public networking profiles', () => {
       kind: 'sponsor',
       name: 'Example Sponsor',
       headline: 'Grace Hopper',
-      imageUrl: 'https://cdn.example.com/logo-color.svg',
+      imageUrl: 'https://cdn.example.com/logo.svg',
     });
     expect(JSON.stringify(profile)).not.toContain(SPONSOR_ID);
     expect(JSON.stringify(profile)).not.toContain('billing-private@example.com');
@@ -233,5 +237,49 @@ describe('public networking profiles', () => {
     });
     expect(JSON.stringify(profile)).not.toContain('speaker-private-id');
     expect(JSON.stringify(profile)).not.toContain('speaker-private@example.com');
+  });
+
+  it('resolves an enabled manual organizer without exposing its database ID', async () => {
+    tableResults.set('manual_badge_entries', {
+      data: {
+        category: 'organizer',
+        first_name: 'Ada',
+        last_name: 'Lovelace',
+        role: 'Organizer',
+        company: 'ZurichJS',
+        logo_url: null,
+        networking_profile: {
+          email: 'organizer@example.com',
+          linkedinUrl: 'https://linkedin.com/in/ada',
+          githubUrl: null,
+          xHandle: null,
+          blueskyHandle: null,
+          mastodonHandle: null,
+          websiteUrl: 'https://zurichjs.com',
+        },
+        id: 'private-manual-id',
+      },
+      error: null,
+    });
+
+    const profile = await resolvePublicNetworkingProfile(`badge-${SHARE_ID}`);
+
+    expect(profile).toEqual({
+      publicId: `badge-${SHARE_ID}`,
+      kind: 'organizer',
+      name: 'Ada Lovelace',
+      headline: 'Organizer @ ZurichJS',
+      imageUrl: null,
+      links: [
+        { kind: 'email', label: 'Email', href: 'mailto:organizer@example.com' },
+        { kind: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/in/ada' },
+        { kind: 'website', label: 'Website', href: 'https://zurichjs.com' },
+      ],
+      path: `/share/badge-${SHARE_ID}`,
+    });
+    expect(JSON.stringify(profile)).not.toContain('private-manual-id');
+    expect(selectCalls.find((call) => call.table === 'manual_badge_entries')?.columns).toBe(
+      'category, first_name, last_name, role, company, logo_url, networking_profile'
+    );
   });
 });

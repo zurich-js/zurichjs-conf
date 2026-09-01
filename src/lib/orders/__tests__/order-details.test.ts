@@ -235,6 +235,7 @@ describe('getOrderDetails', () => {
         share_id: '11111111-2222-4333-8444-555555555555',
         enabled: true,
         profile: {
+          email: 'ada@example.com',
           linkedinUrl: 'https://linkedin.com/in/ada',
           githubUrl: null,
           xHandle: '@ada',
@@ -252,6 +253,7 @@ describe('getOrderDetails', () => {
       shareId: '11111111-2222-4333-8444-555555555555',
       enabled: true,
       profile: {
+        email: 'ada@example.com',
         linkedinUrl: 'https://linkedin.com/in/ada',
         githubUrl: null,
         xHandle: '@ada',
@@ -267,7 +269,7 @@ describe('getOrderDetails', () => {
       data: {
         share_id: '11111111-2222-4333-8444-555555555555',
         enabled: true,
-        profile: { email: 'private@example.com' },
+        profile: { email: 'not-an-email' },
       },
       error: null,
     });

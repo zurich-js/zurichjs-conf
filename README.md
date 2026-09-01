@@ -201,3 +201,98 @@ This is a private conference platform. For questions or issues, contact the deve
 ## License
 
 Private - All rights reserved
+
+## Badge management and print export
+
+The dedicated `/admin/badges` panel reviews confirmed VIP attendees, other
+confirmed attendees, the exact public speaker lineup, manually entered sponsor
+representatives, and organizers. Hidden CFP applicants are never included, and
+the commercial sponsor list is not imported into badge exports. Each category
+can be reviewed independently, rows can be excluded from a particular export,
+and persistent manual rows can be added or edited for sponsor representatives
+and organizers.
+Imported attendee and public-speaker names, roles, and companies can be edited
+temporarily for print corrections. These overrides live only in browser
+session storage, are sent directly to the export renderer, and never update the
+source attendee or speaker records. Normal exports are read-only; missing share
+IDs or badge QR codes must be created explicitly with **Generate missing codes**.
+The export dropdown can download a ZIP containing one two-page PDF per person
+for the active tab, the active tab's complete data ZIP, PDFs for every tab, or
+the complete data ZIP for every tab. All four choices respect row exclusions; full-data exports include
+CSV, QR images, relevant sponsor logo assets, manifests, and warnings.
+
+The deployed export produces print-ready two-page PDFs from the approved vector
+templates under `assets/badges/templates/`. Text is rendered with the bundled
+Figtree fonts, each person receives their own 30 mm QR, and sponsor default/light
+logos are contained in the configured logo box. The ZIP also retains CSV, QR
+PNG, and logo assets for auditing or Illustrator use.
+
+Sponsor badges work like organizer badges: create one manual row for every
+physical badge, enter that representative's details and optional networking
+links, and upload the sponsor's default light/white logo for the black badge
+background. Multiple people can use the same company name and logo. Only add
+sponsors who will attend in person. The uploaded logo is persistent and is used
+by later exports and the public share page.
+Any stored logo that cannot be inspected or is under 500 px wide is
+also listed in `WARNINGS.txt` and `manifest.json` inside the export ZIP.
+
+The equivalent local command is:
+
+```bash
+pnpm badges:export -- --provision-share-ids --output badge-export
+```
+
+After share IDs have been provisioned, the deployed read-only endpoint can also
+be scripted with the admin read-only API key:
+
+```bash
+curl --fail \
+  --header "Authorization: Bearer $ADMIN_READONLY_API_KEY" \
+  https://conf.zurichjs.com/api/admin/badges/export \
+  --output zurichjs-badges.zip
+```
+
+The script reads `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY` (or the legacy
+`SUPABASE_SERVICE_ROLE_KEY`), and `NEXT_PUBLIC_BASE_URL` from the environment,
+`.env`, or `.env.local`. Pass `--base-url https://conf.zurichjs.com` to override
+the URL encoded in the QR images.
+
+The command is read-only by default. If an attendee has never set a networking
+preference, or a subject has no managed badge QR token, it exits and
+asks for `--provision-share-ids`. That flag inserts missing disabled networking
+rows and missing badge-code rows; it never changes existing visibility or
+contact settings and is safe to rerun.
+
+Printed badge tokens redirect to the existing stable networking share page.
+Replacing a QR in `/admin/badges` destructively rotates only the badge token:
+the old printed QR stops resolving immediately, while the attendee/manual-badge
+share ID and speaker slug remain unchanged. The UI requires confirmation that the old
+code has not been printed.
+
+The ignored `badge-export/` directory contains `vip.csv`, `attendee.csv`,
+`speaker.csv`, `sponsor.csv`, `organizer.csv`, a sparse `badges.csv`,
+`pdf/<category>/*.pdf`, `qr/*.png`, uploaded default sponsor logos, and
+`manifest.json`. CSV image fields contain absolute local paths
+for local exports. Every file under `pdf/<category>/` contains the front and
+back pages for exactly one person.
+
+QR and sponsor-logo CSV headers use Illustrator's required `@` linked-file
+prefix. Illustrator removes the prefix in the Variables panel, so `@speaker_qr`
+is displayed and bound as `speaker_qr`.
+
+Generate five non-production fixture PDFs for template review with:
+
+```bash
+pnpm badges:sample
+```
+
+With local Supabase running, exercise temporary manual organizer and sponsor
+rows, persistent sponsor-logo storage, stable QR rotation, public share-page
+resolution, and per-person PDF rendering with:
+
+```bash
+pnpm badges:verify-local
+```
+
+The verifier refuses non-local Supabase credentials and removes its temporary
+rows, QR codes, and logo asset when it finishes.

@@ -12,6 +12,7 @@ import type { AttendeeNetworkingProfile, NetworkingSettings } from '@/lib/types/
 import type { NetworkingPreferencesData } from './types';
 
 const EMPTY_PROFILE: AttendeeNetworkingProfile = {
+  email: null,
   linkedinUrl: null,
   githubUrl: null,
   xHandle: null,
@@ -24,10 +25,11 @@ interface NetworkingField {
   key: keyof AttendeeNetworkingProfile;
   label: string;
   placeholder: string;
-  type?: 'text' | 'url';
+  type?: 'text' | 'url' | 'email';
 }
 
 const NETWORKING_FIELDS: NetworkingField[] = [
+  { key: 'email', label: 'Email', placeholder: 'you@example.com', type: 'email' },
   { key: 'linkedinUrl', label: 'LinkedIn', placeholder: 'linkedin.com/in/your-name', type: 'url' },
   { key: 'githubUrl', label: 'GitHub', placeholder: 'github.com/your-handle', type: 'url' },
   { key: 'xHandle', label: 'X', placeholder: '@your-handle' },
@@ -86,7 +88,7 @@ export function NetworkingCard({ settings, mutation }: NetworkingCardProps) {
         </h2>
       </div>
       <p className="text-brand-gray-darkest mb-6">
-        Choose the links people can open after scanning your networking QR. Your ticket email is never shared.
+        Choose the contact details people can open after scanning your networking QR. Your ticket email is never shared automatically—only an email you enter here is public.
       </p>
 
       <div className="flex items-center justify-between gap-4 rounded-xl border border-brand-gray-medium p-4 mb-6">
@@ -121,8 +123,8 @@ export function NetworkingCard({ settings, mutation }: NetworkingCardProps) {
               id={`networking-${field.key}`}
               data-mask
               type={field.type ?? 'text'}
-              inputMode={field.type === 'url' ? 'url' : 'text'}
-              autoComplete={field.type === 'url' ? 'url' : 'off'}
+              inputMode={field.type === 'url' ? 'url' : field.type === 'email' ? 'email' : 'text'}
+              autoComplete={field.type === 'url' ? 'url' : field.type === 'email' ? 'email' : 'off'}
               value={profile[field.key] ?? ''}
               onChange={(event) => updateField(field.key, event.target.value)}
               placeholder={field.placeholder}
