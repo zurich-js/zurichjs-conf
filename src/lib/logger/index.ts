@@ -21,8 +21,13 @@
 
 import { analytics } from '@/lib/analytics/client'
 import { serverAnalytics } from '@/lib/analytics/server'
+import { AppError, type ErrorSeverity, type ErrorType } from '@/lib/errors'
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+
+// Re-exported so existing `import type { ErrorSeverity } from '@/lib/logger'`
+// call sites keep working; the canonical definitions live in @/lib/errors.
+export type { ErrorSeverity, ErrorType }
 
 export type LogContext = {
   /** Module or component name */
@@ -36,10 +41,6 @@ export type LogContext = {
   /** Additional metadata */
   [key: string]: unknown
 }
-
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical'
-
-export type ErrorType = 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
 
 interface LogEntry {
   level: LogLevel
@@ -61,6 +62,8 @@ interface LogEntry {
     details?: unknown
     hint?: unknown
     status?: unknown
+    /** The rethrow chain (`Error.cause`), innermost last. */
+    cause?: unknown
   }
 }
 
@@ -128,6 +131,40 @@ function serializeError(error: Error): NonNullable<LogEntry['error']> {
     }
   }
 
+  // A rethrown error's `cause` is usually the half that says what actually
+  // failed (the PostgrestError under a DoorRpcError, the fetch failure under a
+  // retry wrapper). Depth-limited: a pathological self-referencing chain must
+  // not take the log line down with it.
+  if (error.cause !== undefined && error.cause !== null) {
+    serialized.cause = serializeCauseChain(error.cause, 3)
+  }
+
+  return serialized
+}
+
+function serializeCauseChain(cause: unknown, depth: number): unknown {
+  if (depth <= 0) return '[cause chain truncated]'
+
+  const causeError = toLoggableError(cause)
+  if (!causeError) return undefined
+
+  const serialized: Record<string, unknown> = {
+    name: causeError.name,
+    message: causeError.message,
+    stack: causeError.stack,
+  }
+
+  const source = causeError as unknown as Record<string, unknown>
+  for (const key of ['code', 'details', 'hint', 'status'] as const) {
+    if (source[key] !== undefined && source[key] !== null) {
+      serialized[key] = source[key]
+    }
+  }
+
+  if (causeError.cause !== undefined && causeError.cause !== null) {
+    serialized.cause = serializeCauseChain(causeError.cause, depth - 1)
+  }
+
   return serialized
 }
 
@@ -192,6 +229,8 @@ class Logger {
       severity?: ErrorSeverity
       type?: ErrorType
       code?: string
+      /** Force PostHog error-tracking grouping (maps to $exception_fingerprint). */
+      fingerprint?: string
     }
   ): void {
     const errorObj = toLoggableError(error)
@@ -313,32 +352,56 @@ class Logger {
       severity?: ErrorSeverity
       type?: ErrorType
       code?: string
+      fingerprint?: string
     }
   ): void {
     if (this.isDevelopment) {
       return // Don't track development errors
     }
 
-    const errorType = context?.type || this.inferErrorType(message, error)
-    const severity = context?.severity || this.inferSeverity(errorType)
+    // An AppError carries its own tags; explicit context still wins.
+    const tagged = error instanceof AppError ? error : undefined
+    const errorType = context?.type || tagged?.type || this.inferErrorType(message, error)
+    const severity = context?.severity || tagged?.severity || this.inferSeverity(errorType)
+    const code = context?.code ?? tagged?.code
+    const fingerprint = context?.fingerprint ?? tagged?.fingerprint
+    const mergedContext = { ...tagged?.context, ...context }
+
+    // Error tracking needs an Error even for message-only logs — otherwise the
+    // failure never reaches the PostHog error-tracking view at all.
+    const exception = error ?? new Error(message)
 
     if (this.isServer) {
-      // Server-side error tracking
+      // Server-side error tracking: a real $exception via the native SDK, so
+      // PostHog groups by type + stack and titles the issue with the error name.
+      serverAnalytics.captureException(exception, {
+        distinctId: context?.userId,
+        type: errorType,
+        severity,
+        code,
+        fingerprint,
+        log_message: message,
+        ...mergedContext,
+      })
+
+      // The legacy custom event, kept so existing insights on `error_occurred`
+      // don't go dark. Error tracking itself only reads the $exception above.
       const distinctId = context?.userId || 'anonymous'
       serverAnalytics.error(distinctId, message, {
         type: errorType,
         severity,
-        code: context?.code,
-        stack: error?.stack,
-        ...context,
+        code,
+        stack: exception.stack,
+        ...mergedContext,
       })
     } else {
       // Client-side error tracking
-      analytics.error(message, error, {
+      analytics.error(message, exception, {
         type: errorType,
         severity,
-        code: context?.code,
-        ...context,
+        code,
+        fingerprint,
+        ...mergedContext,
       })
     }
   }

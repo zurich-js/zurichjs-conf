@@ -7,10 +7,8 @@
 
 import type { PostgrestError } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase';
-import { logger } from '@/lib/logger';
+import { DoorRpcError } from './errors';
 import type { DoorOccasion, DoorRole } from '@/lib/types/checkin';
-
-const log = logger.scope('Door Dashboard');
 
 export interface DoorStationStat {
   station: string;
@@ -55,20 +53,28 @@ export async function doorDashboard(occasion?: DoorOccasion): Promise<DoorDashbo
   const supabase = createServiceRoleClient();
 
   // Same cast boundary as src/lib/checkin/rpc.ts — door_* is not in the
-  // generated types yet.
-  const invoke = supabase.rpc as unknown as (
+  // generated types yet. Bound to the client: a detached `supabase.rpc`
+  // loses `this` and crashes inside supabase-js.
+  const invoke = supabase.rpc.bind(supabase) as unknown as (
     name: string,
     params: Record<string, unknown>
   ) => PromiseLike<{ data: DoorDashboard | null; error: PostgrestError | null }>;
 
   const { data, error } = await invoke('door_dashboard', { p_occasion: occasion ?? null });
 
+  // No logging here: the dashboard route catches and logs, and logging in both
+  // layers reports one failure to PostHog twice under two titles.
   if (error) {
-    log.error('door_dashboard failed', error, { occasion });
-    throw new Error(error.message);
+    throw new DoorRpcError('door_dashboard', error.message, {
+      cause: error,
+      code: error.code,
+      context: { occasion },
+    });
   }
   if (!data) {
-    throw new Error('door_dashboard returned no payload');
+    throw new DoorRpcError('door_dashboard', 'returned no payload', {
+      context: { occasion },
+    });
   }
 
   return data;

@@ -14,6 +14,7 @@
 		"scanner:wasm": "node scripts/copy-scanner-wasm.mjs",
 		"prebuild": "pnpm og:generate && pnpm scanner:wasm",
 		"build": "next build",
+		"postbuild": "node scripts/upload-posthog-sourcemaps.mjs",
 		"build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
 		"start": "next start",
 		"lint": "oxlint --fix",
@@ -94,6 +95,7 @@
 		}
 	},
 	"devDependencies": {
+		"@posthog/cli": "^0.16.0",
 		"@react-email/ui": "^6.9.2",
 		"@tailwindcss/postcss": "^4.2.4",
 		"@tanstack/react-query-devtools": "^5.100.6",

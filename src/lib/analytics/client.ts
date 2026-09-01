@@ -240,6 +240,8 @@ class AnalyticsClient {
       type?: 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
       severity?: 'low' | 'medium' | 'high' | 'critical'
       code?: string
+      /** Force PostHog error-tracking grouping ($exception_fingerprint). */
+      fingerprint?: string
       [key: string]: unknown
     }
   ): void {
@@ -258,15 +260,18 @@ class AnalyticsClient {
 
     this.track('error_occurred', errorProperties)
 
-    // Also use PostHog's exception tracking
-    if (error) {
-      posthog.captureException(error, {
-        tags: {
-          type: context?.type,
-          severity: context?.severity,
-        },
-      })
-    }
+    // Also feed PostHog Error Tracking. Properties are flat — PostHog has no
+    // Sentry-style `tags` namespace, so a nested object is just an opaque blob
+    // that can't be filtered on. Message-only failures still get a synthetic
+    // Error so they reach the error-tracking view at all.
+    const { fingerprint, ...rest } = context ?? {}
+    posthog.captureException(error ?? new Error(message), {
+      error_type: context?.type || 'unknown',
+      error_severity: context?.severity || 'medium',
+      log_message: message,
+      ...(fingerprint ? { $exception_fingerprint: fingerprint } : {}),
+      ...rest,
+    })
   }
 
   /**
