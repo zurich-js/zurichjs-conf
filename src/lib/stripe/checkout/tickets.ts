@@ -199,6 +199,11 @@ async function createTicketsInDatabase(
       isPrimary,
     });
 
+    // Extract verification_id from session metadata (set by the verification
+    // approval flow) so tickets can be matched to verifications without relying
+    // solely on email matching — the payment link may collect a different email.
+    const verificationId = session.metadata?.verification_id ?? null;
+
     const ticketResult = await createTicket({
       ticketType: toLegacyType(ticketInfo.category, ticketInfo.stage),
       ticketCategory: ticketInfo.category,
@@ -228,6 +233,8 @@ async function createTicketsInDatabase(
         billingEmail: customerEmail,
         purchaserName: primaryName,
         purchaserEmail: primaryAttendee.email,
+        // Top-level verification_id for easier querying/joining
+        verification_id: verificationId,
       },
     });
 

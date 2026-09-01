@@ -50,7 +50,22 @@ interface VerificationRequest {
   stripe_session_id: string | null;
   reviewed_at: string | null;
   created_at: string;
-  has_purchased_ticket: boolean;
+  has_purchased_ticket: boolean | null;
+}
+
+interface VerificationStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  purchased: number;
+  approvedNotPurchased: number;
+}
+
+interface VerificationsResponse {
+  verifications: VerificationRequest[];
+  stats: VerificationStats;
+  ticketLookupFailed: boolean;
 }
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -71,14 +86,13 @@ type PurchaseFilter = '' | 'purchased' | 'not_purchased';
 async function fetchVerifications(
   status: StatusFilter,
   signal?: AbortSignal,
-): Promise<VerificationRequest[]> {
+): Promise<VerificationsResponse> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
-  const data = await adminFetch<{ verifications: VerificationRequest[] }>(
+  return adminFetch<VerificationsResponse>(
     `/api/admin/verifications?${params}`,
     { signal },
   );
-  return data.verifications;
 }
 
 export default function VerificationsDashboard() {
@@ -91,7 +105,14 @@ export default function VerificationsDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVerification, setSelectedVerification] = useState<VerificationRequest | null>(null);
 
-  const { data: verifications = [], isPending: loading } = useQuery({
+  const {
+    data: response = {
+      verifications: [],
+      stats: { total: 0, pending: 0, approved: 0, rejected: 0, purchased: 0, approvedNotPurchased: 0 },
+      ticketLookupFailed: false,
+    },
+    isPending: loading,
+  } = useQuery({
     queryKey: adminKeys.verificationList({ status: statusFilter }),
     queryFn: ({ signal }) => fetchVerifications(statusFilter, signal),
     enabled: isAuthenticated,
@@ -99,14 +120,18 @@ export default function VerificationsDashboard() {
     placeholderData: keepPreviousData,
   });
 
+  const { verifications, stats, ticketLookupFailed } = response;
+
   const filtered = useMemo(() => {
     let result = verifications;
 
-    // Apply purchase filter
-    if (purchaseFilter === 'purchased') {
-      result = result.filter((v) => v.has_purchased_ticket);
-    } else if (purchaseFilter === 'not_purchased') {
-      result = result.filter((v) => !v.has_purchased_ticket);
+    // Apply purchase filter (skip if ticket lookup failed since we can't determine status)
+    if (!ticketLookupFailed) {
+      if (purchaseFilter === 'purchased') {
+        result = result.filter((v) => v.has_purchased_ticket === true);
+      } else if (purchaseFilter === 'not_purchased') {
+        result = result.filter((v) => v.has_purchased_ticket === false);
+      }
     }
 
     // Apply search filter
@@ -121,7 +146,7 @@ export default function VerificationsDashboard() {
     }
 
     return result;
-  }, [verifications, searchQuery, purchaseFilter]);
+  }, [verifications, searchQuery, purchaseFilter, ticketLookupFailed]);
 
   const approveMutation = useMutation({
     mutationFn: (id: string) =>
@@ -161,13 +186,6 @@ export default function VerificationsDashboard() {
   if (isAuthLoading) return <AdminLoadingScreen />;
   if (!isAuthenticated) return <AdminLoginForm />;
 
-  const pendingCount = verifications.filter((v) => v.status === 'pending').length;
-  const approvedCount = verifications.filter((v) => v.status === 'approved').length;
-  const purchasedCount = verifications.filter((v) => v.has_purchased_ticket).length;
-  const approvedNotPurchased = verifications.filter(
-    (v) => v.status === 'approved' && !v.has_purchased_ticket
-  ).length;
-
   return (
     <>
       <Head>
@@ -181,40 +199,50 @@ export default function VerificationsDashboard() {
         />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 pb-12">
-          {/* Stats bar */}
+          {/* Stats bar - uses global stats from API, not filtered subset */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
               <Clock className="w-4 h-4 text-amber-600" />
               <span className="text-sm font-medium text-black">
-                {pendingCount} pending
+                {stats.pending} pending
               </span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
               <CheckCircle className="w-4 h-4 text-green-600" />
               <span className="text-sm font-medium text-black">
-                {approvedCount} approved
+                {stats.approved} approved
               </span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-              <Ticket className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-black">
-                {purchasedCount} purchased
-              </span>
-            </div>
-            {approvedNotPurchased > 0 && (
+            {!ticketLookupFailed && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <Ticket className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-black">
+                  {stats.purchased} purchased
+                </span>
+              </div>
+            )}
+            {!ticketLookupFailed && stats.approvedNotPurchased > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-200 shadow-sm">
                 <AlertCircle className="w-4 h-4 text-amber-600" />
                 <span className="text-sm font-medium text-amber-800">
-                  {approvedNotPurchased} approved, awaiting purchase
+                  {stats.approvedNotPurchased} approved, awaiting purchase
                 </span>
               </div>
             )}
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-black">
-                {verifications.length} total
+                {stats.total} total
               </span>
             </div>
+            {ticketLookupFailed && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-lg border border-red-200 shadow-sm">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span className="text-sm font-medium text-red-700">
+                  Ticket lookup unavailable
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Filters */}
@@ -242,9 +270,10 @@ export default function VerificationsDashboard() {
             <select
               value={purchaseFilter}
               onChange={(e) => setPurchaseFilter(e.target.value as PurchaseFilter)}
-              className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-brand-primary focus:border-brand-primary bg-white"
+              disabled={ticketLookupFailed}
+              className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-brand-primary focus:border-brand-primary bg-white disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              <option value="">All purchase status</option>
+              <option value="">{ticketLookupFailed ? 'Unavailable' : 'All purchase status'}</option>
               <option value="purchased">Purchased ticket</option>
               <option value="not_purchased">No ticket yet</option>
             </select>
@@ -463,7 +492,14 @@ function TypeIcon({ type }: { type: string }) {
   );
 }
 
-function PurchaseStatusBadge({ purchased }: { purchased: boolean }) {
+function PurchaseStatusBadge({ purchased }: { purchased: boolean | null }) {
+  if (purchased === null) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-400">
+        Unknown
+      </span>
+    );
+  }
   if (purchased) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">
