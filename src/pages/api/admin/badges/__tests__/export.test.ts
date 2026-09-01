@@ -266,6 +266,32 @@ describe('POST /api/admin/badges/export', () => {
     expect(res.body).toEqual(Buffer.from('pdf-zip'));
   });
 
+  it('returns one bounded PDF response for client-side ZIP assembly', async () => {
+    const pdf = Buffer.from('%PDF-single');
+    mockBuildBadgeExportFiles.mockResolvedValue([{
+      name: 'pdf/attendee/ada-lovelace-attendee-ticket-1.pdf',
+      data: pdf,
+    }]);
+    const res = makeRes();
+
+    await handler(makeReq('POST', {
+      provisionShareIds: false,
+      mode: 'single-pdf',
+      includedIds: ['attendee:ticket-1'],
+    }), res);
+
+    expect(mockCreateZip).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['Content-Type']).toBe('application/pdf');
+    expect(res.headers['Content-Disposition']).toBe(
+      'attachment; filename="ada-lovelace-attendee-ticket-1.pdf"'
+    );
+    expect(res.headers['X-Badge-Archive-Path']).toBe(
+      'pdf/attendee/ada-lovelace-attendee-ticket-1.pdf'
+    );
+    expect(res.body).toEqual(pdf);
+  });
+
   it('requires a category for tab export modes', async () => {
     const res = makeRes();
 
@@ -273,6 +299,19 @@ describe('POST /api/admin/badges/export', () => {
       provisionShareIds: true,
       mode: 'tab-pdfs',
       includedIds: ['attendee:ticket-vip'],
+    }), res);
+
+    expect(res.statusCode).toBe(400);
+    expect(mockLoadBadgeSources).not.toHaveBeenCalled();
+  });
+
+  it('requires exactly one included ID for a single PDF response', async () => {
+    const res = makeRes();
+
+    await handler(makeReq('POST', {
+      provisionShareIds: false,
+      mode: 'single-pdf',
+      includedIds: ['attendee:ticket-1', 'attendee:ticket-2'],
     }), res);
 
     expect(res.statusCode).toBe(400);

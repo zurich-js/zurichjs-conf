@@ -74,6 +74,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     const date = new Date().toISOString().slice(0, 10);
 
+    if (result.data.mode === 'single-pdf') {
+      const pdfs = files.filter((file) => file.name.startsWith('pdf/'));
+      if (pdfs.length !== 1) {
+        res.status(404).json({ error: 'The selected badge PDF was not found' });
+        return;
+      }
+      const [pdf] = pdfs;
+      const fileName = pdf.name.split('/').at(-1) ?? 'zurichjs-badge.pdf';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', pdf.data.length);
+      res.setHeader('X-Badge-Archive-Path', pdf.name);
+      res.status(200).send(pdf.data);
+      return;
+    }
+
     if (result.data.mode === 'tab-pdfs') {
       const pdfs = files.filter((file) => file.name.startsWith(`pdf/${result.data.category}/`));
       if (pdfs.length === 0) {

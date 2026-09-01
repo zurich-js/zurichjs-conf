@@ -92,6 +92,7 @@ export const badgeExportModeSchema = z.enum([
   'tab-data',
   'all-pdfs',
   'all-data',
+  'single-pdf',
 ]);
 
 export const badgeExportRequestSchema = z
@@ -110,6 +111,13 @@ export const badgeExportRequestSchema = z
         code: 'custom',
         message: 'A category is required for a tab export',
         path: ['category'],
+      });
+    }
+    if (value.mode === 'single-pdf' && value.includedIds?.length !== 1) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A single PDF export requires exactly one badge ID',
+        path: ['includedIds'],
       });
     }
     const totalEncodedBytes = Object.values(value.logoOverrides)

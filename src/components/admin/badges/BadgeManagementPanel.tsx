@@ -16,6 +16,7 @@ import { BadgeTable } from '@/components/admin/badges/BadgeTable';
 import { ManualBadgeModal } from '@/components/admin/badges/ManualBadgeModal';
 import type { BadgeReviewResponse, BadgeReviewRow } from '@/components/admin/badges/types';
 import type { BadgeCategory } from '@/lib/badges/export';
+import { createBrowserZip, type BrowserZipFile } from '@/lib/badges/browser-zip';
 import type { BadgeEntryOverride } from '@/lib/badges/overrides';
 
 const ENTRY_OVERRIDES_STORAGE_KEY = 'zurichjs-badge-export-entry-overrides-v1';
@@ -109,6 +110,59 @@ async function fetchBadgeRows(): Promise<BadgeReviewResponse> {
 
 function responseFileName(value: string | null): string {
   return value?.match(/filename="([^"]+)"/i)?.[1] ?? 'zurichjs-badges.zip';
+}
+
+async function responseError(response: Response): Promise<Error> {
+  const body = await response.json().catch(() => ({ error: 'Badge export failed' })) as {
+    error?: string;
+  };
+  return new Error(body.error ?? 'Badge export failed');
+}
+
+async function mapConcurrent<T, R>(
+  values: T[],
+  concurrency: number,
+  mapper: (value: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = [];
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < values.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(values[index]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, values.length) }, () => worker())
+  );
+  return results;
+}
+
+function saveDownload(data: Blob, fileName: string): void {
+  const url = URL.createObjectURL(data);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function validatedZipResponse(response: Response): Promise<Blob> {
+  if (!response.headers.get('Content-Type')?.includes('application/zip')) {
+    throw new Error('Badge export returned an invalid ZIP response');
+  }
+  const archive = await response.blob();
+  if (archive.size < 22) throw new Error('Badge export returned an incomplete ZIP archive');
+  const signature = new DataView(await archive.slice(-22, -18).arrayBuffer()).getUint32(0, true);
+  if (signature !== 0x06054b50) {
+    throw new Error('Badge export was truncated before the download completed');
+  }
+  return archive;
 }
 
 function readStoredEntryOverrides(): Map<string, BadgeEntryOverride> {
@@ -293,6 +347,40 @@ export function BadgeManagementPanel() {
       const isTabExport = mode.startsWith('tab-');
       const includedIds = isTabExport ? tabIncludedIds : allIncludedIds;
       const includedIdSet = new Set(includedIds);
+      const includedEntryOverrides = Object.fromEntries(
+        Array.from(entryOverrides).filter(([selectionId]) => includedIdSet.has(selectionId))
+      );
+
+      if (mode.endsWith('-pdfs')) {
+        const files = await mapConcurrent(includedIds, 3, async (selectionId): Promise<BrowserZipFile> => {
+          const entryOverride = includedEntryOverrides[selectionId];
+          const response = await fetch('/api/admin/badges/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              provisionShareIds: false,
+              mode: 'single-pdf',
+              includedIds: [selectionId],
+              entryOverrides: entryOverride ? { [selectionId]: entryOverride } : {},
+            }),
+          });
+          if (!response.ok) throw await responseError(response);
+          if (!response.headers.get('Content-Type')?.includes('application/pdf')) {
+            throw new Error('Badge export returned an invalid PDF response');
+          }
+          const name = response.headers.get('X-Badge-Archive-Path');
+          if (!name) throw new Error('Badge export response is missing its file name');
+          return { name, data: new Uint8Array(await response.arrayBuffer()) };
+        });
+        const date = new Date().toISOString().slice(0, 10);
+        const archiveName = isTabExport
+          ? `zurichjs-${activeCategory}-badge-pdfs-${date}.zip`
+          : `zurichjs-all-badge-pdfs-${date}.zip`;
+        saveDownload(createBrowserZip(files), archiveName);
+        await refresh();
+        return;
+      }
+
       const response = await fetch('/api/admin/badges/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -301,23 +389,14 @@ export function BadgeManagementPanel() {
           mode,
           category: isTabExport ? activeCategory : undefined,
           includedIds,
-          entryOverrides: Object.fromEntries(
-            Array.from(entryOverrides).filter(([selectionId]) => includedIdSet.has(selectionId))
-          ),
+          entryOverrides: includedEntryOverrides,
         }),
       });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({ error: 'Badge export failed' })) as { error?: string };
-        throw new Error(body.error ?? 'Badge export failed');
-      }
-      const url = URL.createObjectURL(await response.blob());
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = responseFileName(response.headers.get('Content-Disposition'));
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
+      if (!response.ok) throw await responseError(response);
+      saveDownload(
+        await validatedZipResponse(response),
+        responseFileName(response.headers.get('Content-Disposition'))
+      );
       await refresh();
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Badge export failed' });
