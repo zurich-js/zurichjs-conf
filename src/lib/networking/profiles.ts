@@ -66,6 +66,32 @@ function headline(role: string | null, company: string | null): string | null {
   return cleanRole ?? cleanCompany;
 }
 
+function profileWithoutLinks(
+  publicId: string,
+  kind: PublicNetworkingProfile['kind'],
+  name: string,
+  profileHeadline: string | null,
+  imageUrl: string | null
+): PublicNetworkingProfile {
+  return {
+    publicId,
+    kind,
+    name,
+    headline: profileHeadline,
+    imageUrl,
+    links: [],
+    path: `/share/${publicId}`,
+  };
+}
+
+function sponsorContactName(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const contactName = (value as Record<string, unknown>).contactName;
+  if (typeof contactName !== 'string') return null;
+  const trimmed = contactName.trim();
+  return trimmed.length > 0 && trimmed.length <= 120 ? trimmed : null;
+}
+
 function handleUrl(baseUrl: string, handle: string | null): string | null {
   const value = handle?.replace(/^@/, '').trim();
   return value ? `${baseUrl}${encodeURIComponent(value)}` : null;
@@ -179,10 +205,9 @@ async function resolveAttendee(publicId: string, shareId: string): Promise<Publi
   const supabase = createServiceRoleClient();
   const { data: networking, error: networkingError } = await supabase
     .from('networking_profiles')
-    .select('ticket_id, profile')
+    .select('ticket_id, enabled, profile')
     .eq('share_id', shareId)
     .eq('subject_type', 'attendee')
-    .eq('enabled', true)
     .maybeSingle();
 
   if (networkingError) {
@@ -190,9 +215,6 @@ async function resolveAttendee(publicId: string, shareId: string): Promise<Publi
     return null;
   }
   if (!networking?.ticket_id) return null;
-
-  const profileResult = attendeeNetworkingProfileSchema.safeParse(networking.profile);
-  if (!profileResult.success) return null;
 
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')
@@ -207,13 +229,27 @@ async function resolveAttendee(publicId: string, shareId: string): Promise<Publi
   }
   if (!ticket || ticket.status !== 'confirmed') return null;
 
+  const name = `${ticket.first_name} ${ticket.last_name}`.trim();
+  if (!networking.enabled) {
+    return profileWithoutLinks(
+      publicId,
+      'attendee',
+      name,
+      headline(ticket.job_title, ticket.company),
+      null
+    );
+  }
+
+  const profileResult = attendeeNetworkingProfileSchema.safeParse(networking.profile);
+  if (!profileResult.success) return null;
+
   const links = attendeeLinks(profileResult.data);
   if (links.length === 0) return null;
 
   return {
     publicId,
     kind: 'attendee',
-    name: `${ticket.first_name} ${ticket.last_name}`.trim(),
+    name,
     headline: headline(ticket.job_title, ticket.company),
     imageUrl: null,
     links,
@@ -225,10 +261,9 @@ async function resolveSponsor(publicId: string, shareId: string): Promise<Public
   const supabase = createServiceRoleClient();
   const { data: networking, error: networkingError } = await supabase
     .from('networking_profiles')
-    .select('sponsor_id, profile')
+    .select('sponsor_id, enabled, profile')
     .eq('share_id', shareId)
     .eq('subject_type', 'sponsor')
-    .eq('enabled', true)
     .maybeSingle();
 
   if (networkingError) {
@@ -236,9 +271,6 @@ async function resolveSponsor(publicId: string, shareId: string): Promise<Public
     return null;
   }
   if (!networking?.sponsor_id) return null;
-
-  const profileResult = sponsorNetworkingProfileSchema.safeParse(networking.profile);
-  if (!profileResult.success) return null;
 
   const { data: sponsor, error: sponsorError } = await supabase
     .from('sponsors')
@@ -251,6 +283,19 @@ async function resolveSponsor(publicId: string, shareId: string): Promise<Public
     return null;
   }
   if (!sponsor) return null;
+
+  if (!networking.enabled) {
+    return profileWithoutLinks(
+      publicId,
+      'sponsor',
+      sponsor.company_name,
+      sponsorContactName(networking.profile),
+      sponsor.logo_url ?? sponsor.logo_url_color
+    );
+  }
+
+  const profileResult = sponsorNetworkingProfileSchema.safeParse(networking.profile);
+  if (!profileResult.success) return null;
 
   const links = sponsorLinks(profileResult.data);
   if (links.length === 0) return null;
@@ -288,9 +333,8 @@ async function resolveSpeaker(publicId: string, slug: string): Promise<PublicNet
 async function resolveManualBadge(publicId: string, shareId: string): Promise<PublicNetworkingProfile | null> {
   const { data, error } = await createServiceRoleClient()
     .from('manual_badge_entries')
-    .select('category, first_name, last_name, role, company, logo_url, networking_profile')
+    .select('category, first_name, last_name, role, company, logo_url, networking_enabled, networking_profile')
     .eq('share_id', shareId)
-    .eq('networking_enabled', true)
     .maybeSingle();
 
   if (error) {
@@ -299,20 +343,31 @@ async function resolveManualBadge(publicId: string, shareId: string): Promise<Pu
   }
   if (!data) return null;
 
+  const kind = data.category === 'vip' || data.category === 'attendee' ||
+    data.category === 'speaker' || data.category === 'sponsor' || data.category === 'organizer'
+    ? data.category
+    : 'attendee';
+  const name = `${data.first_name} ${data.last_name}`.trim();
+
+  if (!data.networking_enabled) {
+    return profileWithoutLinks(
+      publicId,
+      kind,
+      name,
+      headline(data.role, data.company),
+      data.logo_url
+    );
+  }
+
   const profileResult = attendeeNetworkingProfileSchema.safeParse(data.networking_profile);
   if (!profileResult.success) return null;
   const links = attendeeLinks(profileResult.data);
   if (links.length === 0) return null;
 
-  const kind = data.category === 'vip' || data.category === 'attendee' ||
-    data.category === 'speaker' || data.category === 'sponsor' || data.category === 'organizer'
-    ? data.category
-    : 'attendee';
-
   return {
     publicId,
     kind,
-    name: `${data.first_name} ${data.last_name}`.trim(),
+    name,
     headline: headline(data.role, data.company),
     imageUrl: data.logo_url,
     links,

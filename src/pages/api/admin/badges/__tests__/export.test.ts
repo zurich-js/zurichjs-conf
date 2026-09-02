@@ -28,7 +28,9 @@ vi.mock('@/lib/badges/speakers', () => ({
 vi.mock('@/lib/supabase', () => ({
   createServiceRoleClient: () => mockServiceClient,
 }));
-vi.mock('@/lib/url', () => ({ getBaseUrl: () => 'https://conf.example.test' }));
+vi.mock('@/lib/badges/url', () => ({
+  getBadgeBaseUrl: () => 'https://conf.example.test',
+}));
 vi.mock('@/lib/logger', () => ({
   logger: { scope: () => ({ warn: vi.fn(), error: vi.fn() }) },
 }));

@@ -157,7 +157,9 @@ export function NetworkingProfileCard({
             })}
           </ul>
         ) : (
-          <p className="text-sm text-brand-gray-darkest">No public contact links are available.</p>
+          <p className="text-sm text-brand-gray-darkest">
+            This profile is not public yet. No contact or social links are available.
+          </p>
         )}
 
         <div className="flex flex-wrap gap-3">

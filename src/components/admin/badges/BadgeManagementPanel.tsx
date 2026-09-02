@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   Plus,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
 } from 'lucide-react';
 import { BadgeExportEditModal } from '@/components/admin/badges/BadgeExportEditModal';
@@ -30,6 +31,7 @@ const CATEGORIES: Array<{ id: BadgeCategory; label: string }> = [
 ];
 
 type ExportMode = 'tab-pdfs' | 'tab-data' | 'all-pdfs' | 'all-data';
+const MENU_OPTION_CLASS = 'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white';
 
 interface BadgeExportMenuProps {
   activeCategoryLabel: string;
@@ -61,8 +63,6 @@ function BadgeExportMenu({
     setOpen(false);
     onExport(mode);
   };
-  const optionClass = 'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white';
-
   return (
     <div className="relative" ref={ref}>
       <button
@@ -79,22 +79,90 @@ function BadgeExportMenu({
       </button>
       {open ? (
         <div role="menu" className="absolute right-0 top-full z-50 mt-1 w-60 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-          <button type="button" role="menuitem" disabled={tabDisabled} onClick={() => choose('tab-pdfs')} className={optionClass}>
+          <button type="button" role="menuitem" disabled={tabDisabled} onClick={() => choose('tab-pdfs')} className={MENU_OPTION_CLASS}>
             <FileText className="size-4 text-gray-500" aria-hidden="true" />
             Export {activeCategoryLabel} PDFs
           </button>
-          <button type="button" role="menuitem" disabled={tabDisabled} onClick={() => choose('tab-data')} className={optionClass}>
+          <button type="button" role="menuitem" disabled={tabDisabled} onClick={() => choose('tab-data')} className={MENU_OPTION_CLASS}>
             <Database className="size-4 text-gray-500" aria-hidden="true" />
             Export {activeCategoryLabel} full data
           </button>
           <div className="my-1 border-t border-gray-100" />
-          <button type="button" role="menuitem" onClick={() => choose('all-pdfs')} className={optionClass}>
+          <button type="button" role="menuitem" onClick={() => choose('all-pdfs')} className={MENU_OPTION_CLASS}>
             <Files className="size-4 text-gray-500" aria-hidden="true" />
             Export all PDFs
           </button>
-          <button type="button" role="menuitem" onClick={() => choose('all-data')} className={optionClass}>
+          <button type="button" role="menuitem" onClick={() => choose('all-data')} className={MENU_OPTION_CLASS}>
             <Archive className="size-4 text-gray-500" aria-hidden="true" />
             Export all data
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface BadgeGenerationMenuProps {
+  provisioning: boolean;
+  regenerating: boolean;
+  regenerateDisabled: boolean;
+  onProvision: () => void;
+  onRegenerate: () => void;
+}
+
+function BadgeGenerationMenu({
+  provisioning,
+  regenerating,
+  regenerateDisabled,
+  onProvision,
+  onRegenerate,
+}: BadgeGenerationMenuProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const busy = provisioning || regenerating;
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const choose = (action: () => void) => {
+    setOpen(false);
+    action();
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        disabled={busy}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {busy ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : null}
+        {busy ? 'Generating...' : 'Generate...'}
+        <ChevronDown className={`size-3.5 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div role="menu" className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+          <button type="button" role="menuitem" onClick={() => choose(onProvision)} className={MENU_OPTION_CLASS}>
+            <RefreshCw className="size-4 text-gray-500" aria-hidden="true" />
+            Generate missing codes
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={regenerateDisabled}
+            onClick={() => choose(onRegenerate)}
+            className={MENU_OPTION_CLASS}
+          >
+            <RotateCcw className="size-4 text-red-600" aria-hidden="true" />
+            Re-generate ALL QR codes
           </button>
         </div>
       ) : null}
@@ -220,6 +288,7 @@ export function BadgeManagementPanel() {
   const [entryOverrides, setEntryOverrides] = useState<Map<string, BadgeEntryOverride>>(new Map());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [provisioning, setProvisioning] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'error' | 'success' | 'warning'; message: string } | null>(null);
   const queryClient = useQueryClient();
@@ -268,6 +337,35 @@ export function BadgeManagementPanel() {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Provisioning failed' });
     } finally {
       setProvisioning(false);
+    }
+  };
+
+  const regenerate = async () => {
+    if (!window.confirm(
+      'Regenerate every badge QR code? All existing downloaded or printed badge QRs will stop working immediately. Stable share-page IDs and profile data will not change.'
+    )) return;
+    setRegenerating(true);
+    setFeedback(null);
+    try {
+      const response = await fetch('/api/admin/badges/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmInvalidateExisting: true }),
+      });
+      if (!response.ok) throw await responseError(response);
+      const body = await response.json() as { regenerated: number };
+      await refresh();
+      setFeedback({
+        tone: 'success',
+        message: `Regenerated ${body.regenerated} badge QR codes. Re-export all badge PDFs before printing.`,
+      });
+    } catch (error) {
+      setFeedback({
+        tone: 'error',
+        message: error instanceof Error ? error.message : 'Badge QR regeneration failed',
+      });
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -442,9 +540,13 @@ export function BadgeManagementPanel() {
           <button type="button" onClick={() => setModalEntry(null)} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50">
             <Plus className="size-4" aria-hidden="true" /> Add {activeCategory} row
           </button>
-          <button type="button" onClick={provision} disabled={provisioning} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50">
-            <RefreshCw className={`size-4 ${provisioning ? 'animate-spin' : ''}`} aria-hidden="true" /> Generate missing codes
-          </button>
+          <BadgeGenerationMenu
+            provisioning={provisioning}
+            regenerating={regenerating}
+            regenerateDisabled={rows.length === 0}
+            onProvision={() => void provision()}
+            onRegenerate={() => void regenerate()}
+          />
           <BadgeExportMenu
             activeCategoryLabel={activeCategoryLabel}
             exporting={exporting}
