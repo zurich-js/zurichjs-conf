@@ -377,7 +377,7 @@ BEGIN
     RETURN jsonb_build_object('outcome', 'denied', 'failureReason', 'not_entitled');
   END IF;
 
-  v_is_vip := (v_ticket.type = 'vip');
+  v_is_vip := (v_ticket.ticket_type = 'vip');
 
   -- Update individual items when they are handed for the first time.
   -- NULL p_tshirt_size means "did not hand the t-shirt this time", not "undo".

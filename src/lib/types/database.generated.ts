@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       accommodation_booking_rooms: {
@@ -3010,11 +3005,11 @@ export type Database = {
           ticket_category: string
           ticket_stage: string
           ticket_type: Database["public"]["Enums"]["ticket_type"]
-          tshirt_handed_at: string | null
-          tshirt_handed_by: string | null
           transferred_at: string | null
           transferred_from_email: string | null
           transferred_from_name: string | null
+          tshirt_handed_at: string | null
+          tshirt_handed_by: string | null
           updated_at: string
           user_id: string | null
         }
@@ -3057,11 +3052,11 @@ export type Database = {
           ticket_category: string
           ticket_stage: string
           ticket_type: Database["public"]["Enums"]["ticket_type"]
-          tshirt_handed_at?: string | null
-          tshirt_handed_by?: string | null
           transferred_at?: string | null
           transferred_from_email?: string | null
           transferred_from_name?: string | null
+          tshirt_handed_at?: string | null
+          tshirt_handed_by?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -3104,11 +3099,11 @@ export type Database = {
           ticket_category?: string
           ticket_stage?: string
           ticket_type?: Database["public"]["Enums"]["ticket_type"]
-          tshirt_handed_at?: string | null
-          tshirt_handed_by?: string | null
           transferred_at?: string | null
           transferred_from_email?: string | null
           transferred_from_name?: string | null
+          tshirt_handed_at?: string | null
+          tshirt_handed_by?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -3135,6 +3130,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_hoodie_handed_by_fkey"
+            columns: ["hoodie_handed_by"]
+            isOneToOne: false
+            referencedRelation: "checkin_staff"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_partnership_coupon_id_fkey"
             columns: ["partnership_coupon_id"]
             isOneToOne: false
@@ -3153,6 +3155,13 @@ export type Database = {
             columns: ["partnership_voucher_id"]
             isOneToOne: false
             referencedRelation: "partnership_vouchers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_tshirt_handed_by_fkey"
+            columns: ["tshirt_handed_by"]
+            isOneToOne: false
+            referencedRelation: "checkin_staff"
             referencedColumns: ["id"]
           },
           {
