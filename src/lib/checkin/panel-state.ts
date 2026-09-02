@@ -9,7 +9,19 @@
 
 import type { DoorCheckInResult, DoorOccasion, DoorResolveHit } from '@/lib/types/checkin';
 
-export type DoorPanelState = 'admit' | 'admitted' | 'already' | 'refused' | 'unknown';
+/**
+ * `pickup` / `picked_up` are the community-day pair: that occasion has no
+ * check-ins, so the badge IS the verdict the banner announces.
+ */
+export type DoorPanelState =
+  | 'admit'
+  | 'admitted'
+  | 'already'
+  | 'pickup'
+  | 'picked_up'
+  | 'nothing_today'
+  | 'refused'
+  | 'unknown';
 
 /** How far through their workshop-day check-ins this person is. */
 export interface WorkshopSeatProgress {
@@ -47,6 +59,8 @@ export function checkedInAtFor(
   attendee: DoorResolveHit,
   occasion: DoorOccasion
 ): string | null {
+  // The warm-up meetup has no check-ins at all, only badge pickups.
+  if (occasion === 'community_day') return null;
   if (occasion !== 'workshop_day') return attendee.checkIn.conferenceDayAt;
 
   const seats = attendee.workshops.held;
@@ -82,6 +96,15 @@ export function resolveDoorPanelState(
     return 'refused';
   }
   if (!attendee.admissible) return 'refused';
+
+  // On the warm-up meetup the badge is the whole transaction, so the banner
+  // reads it instead of the (non-existent) check-in state. Badges belong to
+  // conference tickets; a workshop-only attendee has nothing to record there.
+  if (occasion === 'community_day') {
+    if (!attendee.ticket) return 'nothing_today';
+    return attendee.badge.pickedUpAt ? 'picked_up' : 'pickup';
+  }
+
   if (lastResult?.outcome === 'applied') return 'admitted';
   if (lastResult?.outcome === 'duplicate' || checkedInAtFor(attendee, occasion)) {
     return 'already';
@@ -101,7 +124,12 @@ export function canOfferCheckIn(
   occasion: DoorOccasion,
   canCheckInByRole: boolean
 ): boolean {
-  return canCheckInByRole && attendee.admissible && !checkedInAtFor(attendee, occasion);
+  return (
+    occasion !== 'community_day' &&
+    canCheckInByRole &&
+    attendee.admissible &&
+    !checkedInAtFor(attendee, occasion)
+  );
 }
 
 /** Time in the venue's timezone, so two stations never disagree about an arrival. */
@@ -129,6 +157,14 @@ export function resolveDoorPanelDetail(
     return at ? `Arrived at ${formatDoorTime(at)}` : 'Already recorded for today';
   }
   if (state === 'admitted') return 'Recorded — send them through';
+  if (state === 'picked_up') {
+    const at = attendee.badge.pickedUpAt;
+    return at ? `Handed over at ${formatDoorTime(at)}` : 'Already handed over';
+  }
+  if (state === 'pickup') return 'Hand over their badge';
+  if (state === 'nothing_today') {
+    return 'Workshop only — their check-in happens at the workshop door';
+  }
   if (state === 'admit') {
     // Someone mid-way through a multi-workshop day: say so, or the second
     // door's volunteer wonders why a "ready to admit" person claims to be in.

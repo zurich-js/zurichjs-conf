@@ -20,8 +20,10 @@ export type DoorEventType =
   | 'checked_in'
   | 'check_in_undone'
   | 'goodie_handed'
+  | 'goodie_undone'
   | 'manual_admit'
   | 'badge_pickup'
+  | 'badge_pickup_undone'
   | 'denied';
 
 export interface DoorEventRecord {

@@ -3934,10 +3934,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      door_badge_picked_up_at: {
+        Args: { p_registration_id: string; p_ticket_id: string }
+        Returns: string
+      }
       door_badge_pickup: {
         Args: {
           p_occasion?: string
           p_occurred_at?: string
+          p_scanned_id: string
+          p_staff_id: string
+          p_station?: string
+        }
+        Returns: Json
+      }
+      door_badge_pickup_undo: {
+        Args: {
+          p_occasion?: string
+          p_occurred_at?: string
+          p_reason?: string
           p_scanned_id: string
           p_staff_id: string
           p_station?: string
@@ -3981,6 +3996,19 @@ export type Database = {
           p_station?: string
           p_ticket_id: string
           p_tshirt_size?: string
+        }
+        Returns: Json
+      }
+      door_goodie_undo: {
+        Args: {
+          p_occasion?: string
+          p_occurred_at?: string
+          p_reason?: string
+          p_staff_id: string
+          p_station?: string
+          p_ticket_id: string
+          p_undo_hoodie?: boolean
+          p_undo_tshirt?: boolean
         }
         Returns: Json
       }

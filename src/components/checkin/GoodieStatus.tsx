@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gift, PackageCheck } from 'lucide-react';
+import { Gift, PackageCheck, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
 import { TSHIRT_SIZES } from '@/lib/validations/cfp';
 
@@ -9,6 +9,12 @@ export interface GoodieHandoverPayload {
   hoodieSize: string | null;
   /** Composed summary of anything missing, plus whatever the volunteer typed. */
   note?: string;
+}
+
+/** Which handed items go back on the table. */
+export interface GoodieUndoPayload {
+  undoTshirt: boolean;
+  undoHoodie: boolean;
 }
 
 export interface GoodieStatusProps {
@@ -27,10 +33,12 @@ export interface GoodieStatusProps {
   preferredHoodieSize?: string | null;
   /** Hoodies are part of the VIP package only. */
   isVip?: boolean;
-  /** Whether this role may record a handover. */
+  /** Whether this role may record a handover — and take one back. */
   canHandOver?: boolean;
   pending?: boolean;
   onHandOver?: (payload: GoodieHandoverPayload) => void;
+  /** Take a mistaken handover back, per item. */
+  onUndo?: (payload: GoodieUndoPayload) => void;
   className?: string;
 }
 
@@ -85,6 +93,38 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, given, onGivenChange, size, on
   );
 };
 
+/** The quiet take-it-back affordance, styled like the check-in undo link. */
+const UndoLink: React.FC<{ label: string; onClick: () => void }> = ({ label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex min-h-11 items-center gap-1.5 text-sm font-medium text-text-muted underline-offset-2 hover:text-text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-brand-primary"
+  >
+    <RotateCcw className="h-4 w-4" aria-hidden="true" />
+    {label}
+  </button>
+);
+
+/**
+ * The preferred sizes, folded into the goodie row.
+ *
+ * This replaced the standalone "Apparel" card: the sizes only matter at the
+ * moment of the handover, and a separate card repeated them a screen away from
+ * the button that uses them. "Not given" is spelled out because a blank reads
+ * as a bug, while "ask" is the actual next action.
+ */
+function askedForLine(
+  tshirtOwed: boolean,
+  hoodieOwed: boolean,
+  tshirtSize: string | null,
+  hoodieSize: string | null
+): string | null {
+  const parts: string[] = [];
+  if (tshirtOwed) parts.push(tshirtSize ? `T-shirt ${tshirtSize.toUpperCase()}` : 'T-shirt size not given — ask');
+  if (hoodieOwed) parts.push(hoodieSize ? `Hoodie ${hoodieSize.toUpperCase()}` : 'Hoodie size not given — ask');
+  return parts.length > 0 ? `Asked for: ${parts.join(' · ')}` : null;
+}
+
 /**
  * Goodie-bag state and the action to record one.
  *
@@ -111,6 +151,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
   canHandOver = false,
   pending = false,
   onHandOver,
+  onUndo,
   className = '',
 }) => {
   const [open, setOpen] = useState(false);
@@ -140,6 +181,9 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
 
   // Full handover complete: everything entitled was handed.
   if (handedAt && !anythingOwed) {
+    // A row from before per-item tracking has no item timestamps; the only
+    // honest undo there is the whole handover.
+    const legacyRow = !tshirtHandedAt && !hoodieHandedAt;
     return (
       <div
         className={`rounded-xl border border-success/40 bg-success/10 px-4 py-3 ${className}`}
@@ -157,6 +201,31 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
           <p className="mt-2 border-t border-success/20 pt-2 text-xs text-text-secondary">
             {note}
           </p>
+        ) : null}
+        {canHandOver && onUndo ? (
+          <div className="mt-1 flex flex-wrap gap-x-5 border-t border-success/20 pt-1">
+            {legacyRow ? (
+              <UndoLink
+                label="Undo handover"
+                onClick={() => onUndo({ undoTshirt: true, undoHoodie: isVip })}
+              />
+            ) : (
+              <>
+                {tshirtHandedAt ? (
+                  <UndoLink
+                    label="Take t-shirt back"
+                    onClick={() => onUndo({ undoTshirt: true, undoHoodie: false })}
+                  />
+                ) : null}
+                {hoodieHandedAt ? (
+                  <UndoLink
+                    label="Take hoodie back"
+                    onClick={() => onUndo({ undoTshirt: false, undoHoodie: true })}
+                  />
+                ) : null}
+              </>
+            )}
+          </div>
         ) : null}
       </div>
     );
@@ -188,6 +257,8 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
     else owedItems.push('Hoodie');
   }
 
+  const askedFor = askedForLine(tshirtOwed, hoodieOwed, preferredTshirtSize, preferredHoodieSize);
+
   if (!canHandOver || !onHandOver) {
     return (
       <div className={`rounded-xl bg-surface-elevated px-4 py-3 ${className}`}>
@@ -199,6 +270,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
                 ? `Still owed: ${owedItems.join(', ')}`
                 : 'Goodies not yet handed over'}
             </p>
+            {askedFor ? <p className="text-xs text-text-tertiary">{askedFor}</p> : null}
             {handedItems.length > 0 && (
               <p className="text-xs text-text-tertiary">
                 Already handed: {handedItems.join(', ')}
@@ -227,6 +299,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
                   ? `Still owed: ${owedItems.join(', ')}`
                   : 'Goodies not yet handed over'}
               </p>
+              {askedFor ? <p className="text-xs text-text-tertiary">{askedFor}</p> : null}
               {handedItems.length > 0 && (
                 <p className="text-xs text-text-tertiary">
                   Already handed: {handedItems.join(', ')}
@@ -234,7 +307,12 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
               )}
             </div>
           </div>
-          <Button size="sm" variant="primary" onClick={() => setOpen(true)}>
+          <Button
+            size="sm"
+            variant="primary"
+            className="whitespace-nowrap"
+            onClick={() => setOpen(true)}
+          >
             {handedItems.length > 0 ? 'Complete' : 'Hand over'}
           </Button>
         </div>
@@ -242,6 +320,24 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
           <p className="mt-2 border-t border-gray-200 pt-2 text-xs text-text-secondary">
             {note}
           </p>
+        ) : null}
+        {/* A partial handover can be a mistake too — the handed half stays
+            reversible from the same row that offers completing the rest. */}
+        {onUndo && handedItems.length > 0 ? (
+          <div className="mt-1 flex flex-wrap gap-x-5">
+            {tshirtHandedAt ? (
+              <UndoLink
+                label="Take t-shirt back"
+                onClick={() => onUndo({ undoTshirt: true, undoHoodie: false })}
+              />
+            ) : null}
+            {hoodieHandedAt ? (
+              <UndoLink
+                label="Take hoodie back"
+                onClick={() => onUndo({ undoTshirt: false, undoHoodie: true })}
+              />
+            ) : null}
+          </div>
         ) : null}
       </div>
     );

@@ -68,8 +68,14 @@ describe('door RPC error contract', () => {
     await expect(doorResolve('abc')).rejects.toThrow(/door_resolve failed: returned no payload/);
   });
 
-  it('rejects an occasion value outside the contract', async () => {
+  it('accepts the warm-up meetup as a server-derived occasion', async () => {
     mocks.rpcImpl.mockResolvedValue({ data: 'community_day', error: null });
+
+    await expect(doorCurrentOccasion()).resolves.toBe('community_day');
+  });
+
+  it('rejects an occasion value outside the contract', async () => {
+    mocks.rpcImpl.mockResolvedValue({ data: 'gala_day', error: null });
 
     await expect(doorCurrentOccasion()).rejects.toThrow(/unknown occasion/);
   });

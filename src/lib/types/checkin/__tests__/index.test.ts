@@ -4,6 +4,7 @@ import {
   DOOR_ABILITY_GUIDE,
   DOOR_FAILURE_MESSAGES,
   DOOR_OCCASIONS,
+  DOOR_OCCASION_TASKS,
   DOOR_ROLES,
   DOOR_ROLE_ABILITIES,
   DOOR_ROLE_DESCRIPTIONS,
@@ -134,8 +135,16 @@ describe('doorFailureMessage', () => {
 });
 
 describe('occasions', () => {
-  it('covers only the two days that are actually checked in', () => {
-    expect([...DOOR_OCCASIONS]).toEqual(['workshop_day', 'conference_day']);
+  it('covers the three days the door actually works, in calendar order', () => {
+    expect([...DOOR_OCCASIONS]).toEqual(['community_day', 'workshop_day', 'conference_day']);
+  });
+
+  it('explains what each day does on the start screen', () => {
+    // The warm-up meetup hands badges and never checks anyone in — the one
+    // rule a volunteer must not learn by mis-tapping.
+    expect(DOOR_OCCASION_TASKS.community_day).toMatch(/badge/i);
+    expect(DOOR_OCCASION_TASKS.workshop_day).toMatch(/workshop/i);
+    expect(DOOR_OCCASION_TASKS.conference_day).toMatch(/check/i);
   });
 });
 

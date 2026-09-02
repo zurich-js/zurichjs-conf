@@ -46,7 +46,7 @@ import { disarmDoorAudio } from '@/lib/checkin/feedback';
 import { readQueue } from '@/lib/checkin/mutation-queue';
 import { checkinKeys } from '@/lib/checkin/query-keys';
 import type { DoorSearchableRecord } from '@/lib/checkin/roster-index';
-import type { GoodieHandoverPayload } from '@/components/checkin';
+import type { GoodieHandoverPayload, GoodieUndoPayload } from '@/components/checkin';
 import { canOfferCheckIn, checkedInAtFor, toneForOutcome } from '@/lib/checkin/panel-state';
 import { supabase } from '@/lib/supabase/client';
 import {
@@ -121,13 +121,20 @@ export default function DoorStationPage() {
     // when it concerns the attendee still on screen.
     onOutcome: (entry, result) => {
       const subject =
-        entry.payload.kind === 'goodie' ? entry.payload.ticketId : entry.payload.scannedId;
+        entry.payload.kind === 'goodie' || entry.payload.kind === 'undo_goodie'
+          ? entry.payload.ticketId
+          : entry.payload.scannedId;
       if (subject !== scanRef.current?.subjectId) return;
       // The optimistic path already said this, so re-announcing it would beep
       // twice for one admission.
       if (result.outcome === 'applied') return;
       // An undo's echo must not repaint the banner as a check-in verdict.
-      if (entry.payload.kind === 'undo_check_in' || entry.payload.kind === 'badge_pickup') {
+      if (
+        entry.payload.kind === 'undo_check_in' ||
+        entry.payload.kind === 'undo_goodie' ||
+        entry.payload.kind === 'badge_pickup' ||
+        entry.payload.kind === 'undo_badge_pickup'
+      ) {
         return;
       }
 
@@ -150,6 +157,17 @@ export default function DoorStationPage() {
   }, []);
 
   const scanner = useDoorScanner({ onScan: handleScan });
+
+  // Dev-only seam so visual tests (Playwright) can inject a scan without a
+  // camera. Dead code in production builds — NODE_ENV is inlined at build time.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    const testWindow = window as Window & { __doorScan?: (raw: string) => void };
+    testWindow.__doorScan = handleScan;
+    return () => {
+      delete testWindow.__doorScan;
+    };
+  }, [handleScan]);
 
   /**
    * Writes this volunteer left behind — a tab the OS recycled mid-shift, or a
@@ -310,6 +328,27 @@ export default function DoorStationPage() {
     signal('success');
   }, [queue, scan?.subjectId, signal]);
 
+  const handleUndoBadge = useCallback(() => {
+    if (!scan?.subjectId) return;
+    queue.submit({ kind: 'undo_badge_pickup', scannedId: scan.subjectId });
+    // No beep — nothing was handed. The badge row recomputes from the patch.
+  }, [queue, scan?.subjectId]);
+
+  const handleUndoGoodie = useCallback(
+    (payload: GoodieUndoPayload) => {
+      // Like the handover, keyed on the conference ticket.
+      const current = scanRef.current;
+      if (!current?.subjectId) return;
+      queue.submit({
+        kind: 'undo_goodie',
+        ticketId: current.subjectId,
+        undoTshirt: payload.undoTshirt,
+        undoHoodie: payload.undoHoodie,
+      });
+    },
+    [queue]
+  );
+
   const handleManualAdmit = useCallback(
     (reason: string) => {
       if (!scan?.subjectId) return;
@@ -341,6 +380,23 @@ export default function DoorStationPage() {
     // would otherwise re-open the panel the instant it is dismissed; leaving the
     // window to expire means a re-scan is a deliberate act.
   }, [clearFeedback]);
+
+  /**
+   * Back to the start screen WITHOUT signing out: the way to switch day (or
+   * hand the phone over) that does not cost a re-authentication. The camera is
+   * released; queued writes and the session are kept.
+   */
+  const exitShift = useCallback(() => {
+    scanner.stop();
+    setShiftStarted(false);
+    setScan(null);
+    clearFeedback();
+    setLastResult(null);
+    setEscalating(false);
+    setFromLookup(false);
+    setLookupOpen(false);
+    setMyListOpen(false);
+  }, [clearFeedback, scanner]);
 
   const signOut = useCallback(async () => {
     // Signing out drops the queue, and those check-ins would simply never have
@@ -467,6 +523,7 @@ export default function DoorStationPage() {
           pendingWrites={queue.pending}
           onRefreshRoster={roster.refetch}
           refreshing={roster.isLoading}
+          onExit={exitShift}
           onSignOut={() => void signOut()}
         />
 
@@ -499,17 +556,19 @@ export default function DoorStationPage() {
           onPickCamera={(deviceId) => void scanner.start(deviceId)}
         />
 
-        <div className="flex gap-3">
+        {/* A two-up grid, not flex: equal halves at every width, and nowrap
+            keeps each label on one line down to the narrowest phones. */}
+        <div className="grid grid-cols-2 gap-2">
           {/* Always reachable, not only after a failed scan: a lead working the
               problem desk searches for people who never got as far as a badge. */}
           {!lookupOpen && roleCan(staff.role, 'lookup') && roster.index ? (
             <Button
               variant="dark"
-              size="lg"
-              className="flex-1"
+              size="md"
+              className="min-h-12 whitespace-nowrap text-sm"
               onClick={() => setLookupOpen(true)}
             >
-              <Search className="h-4 w-4" aria-hidden="true" />
+              <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
               Find by name
             </Button>
           ) : null}
@@ -517,11 +576,11 @@ export default function DoorStationPage() {
           {!myListOpen ? (
             <Button
               variant="dark"
-              size="lg"
-              className="flex-1"
+              size="md"
+              className="min-h-12 whitespace-nowrap text-sm"
               onClick={() => setMyListOpen(true)}
             >
-              <ListChecks className="h-4 w-4" aria-hidden="true" />
+              <ListChecks className="h-4 w-4 shrink-0" aria-hidden="true" />
               My check-ins
             </Button>
           ) : null}
@@ -561,7 +620,9 @@ export default function DoorStationPage() {
               onUndo={handleUndo}
               onUndoSeat={handleUndoSeat}
               onHandOverGoodie={handleGoodie}
+              onUndoGoodie={handleUndoGoodie}
               onHandOverBadge={handleBadgePickup}
+              onUndoBadge={handleUndoBadge}
               onEscalate={() => setEscalating(true)}
             />
 
@@ -590,12 +651,13 @@ export default function DoorStationPage() {
         {escalating ? (
           <DoorNotice
             tone="info"
-            title="Wave a door lead over — they can sort this"
-            actionLabel="Dismiss"
+            title="Wave a door lead over in person — nothing is sent automatically"
+            actionLabel="Got it"
             onAction={() => setEscalating(false)}
           >
-            A door lead can admit someone without a working code, look people up with
-            contact details, and settle payment questions at the desk.
+            This button only shows this note. Find a door lead in the room: they can admit
+            someone without a working code, look people up with contact details, and settle
+            payment questions at the desk.
             {scan?.subjectId ? (
               <>
                 {' '}
