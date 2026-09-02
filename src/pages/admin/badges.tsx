@@ -16,7 +16,6 @@ export default function BadgeAdminPage() {
       <div className="min-h-screen bg-gray-50">
         <AdminHeader
           title="Badge Admin"
-          subtitle="Review, supplement, render, and rotate conference badges"
           onLogout={logout}
         />
         <main className="mx-auto max-w-[96rem] px-4 py-6 sm:px-6 lg:px-8">
