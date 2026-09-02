@@ -16,6 +16,7 @@ function entry(category: BadgeCategory, suffix: string = category): BadgeEntry {
     lastName: 'Lovelace',
     role: 'Maintainer of an intentionally long software project title',
     company: 'Analytical Engines International GmbH',
+    label: category === 'organizer' ? 'Core' : category[0].toUpperCase() + category.slice(1),
     publicId: `badge-${id}`,
     badgeCode: id,
     shareUrl: `https://conf.example.test/share/badge-${id}`,

@@ -148,6 +148,13 @@ describe('POST /api/admin/badges/export', () => {
       },
     }), sponsorOverrideRes);
     expect(sponsorOverrideRes.statusCode).toBe(400);
+
+    const emptyLabelOverrideRes = makeRes();
+    await handler(makeReq('POST', {
+      provisionShareIds: false,
+      labelOverrides: { 'manual:badge-row': '' },
+    }), emptyLabelOverrideRes);
+    expect(emptyLabelOverrideRes.statusCode).toBe(400);
   });
 
   it('allows a read-only deployed export for authenticated bots', async () => {
@@ -208,6 +215,7 @@ describe('POST /api/admin/badges/export', () => {
         company: 'Analytical Engines',
       },
     };
+    const labelOverrides = { 'speaker:public-speaker': 'Guest Speaker' };
 
     await handler(makeReq('POST', {
       provisionShareIds: false,
@@ -215,6 +223,7 @@ describe('POST /api/admin/badges/export', () => {
       category: 'vip',
       includedIds,
       entryOverrides,
+      labelOverrides,
     }), res);
 
     expect(mockLoadBadgeSources).toHaveBeenCalledWith(
@@ -229,6 +238,7 @@ describe('POST /api/admin/badges/export', () => {
       'https://conf.example.test',
       expect.objectContaining({
         entryOverrides: new Map(Object.entries(entryOverrides)),
+        labelOverrides: new Map(Object.entries(labelOverrides)),
       })
     );
     expect(res.headers['Content-Disposition']).toMatch(

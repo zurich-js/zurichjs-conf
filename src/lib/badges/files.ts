@@ -8,7 +8,11 @@ import {
   combinedCsv,
   type BadgeExportSources,
 } from '@/lib/badges/export';
-import { applyBadgeEntryOverrides, type BadgeEntryOverride } from '@/lib/badges/overrides';
+import {
+  applyBadgeEntryOverrides,
+  applyBadgeLabelOverrides,
+  type BadgeEntryOverride,
+} from '@/lib/badges/overrides';
 import { buildBadgePdfFiles } from '@/lib/badges/pdf';
 
 export interface BadgeExportFile {
@@ -27,6 +31,7 @@ interface BuildBadgeFilesOptions {
   fetchLogo?: typeof fetch;
   includeDataFiles?: boolean;
   entryOverrides?: ReadonlyMap<string, BadgeEntryOverride>;
+  labelOverrides?: ReadonlyMap<string, string>;
   logoOverrides?: ReadonlyMap<string, BadgeLogoOverride>;
   onWarning?: (message: string) => void;
 }
@@ -74,9 +79,9 @@ export async function buildBadgeExportFiles(
   baseUrl: string,
   options: BuildBadgeFilesOptions
 ): Promise<BadgeExportFile[]> {
-  const entries = applyBadgeEntryOverrides(
-    buildBadgeEntries(sources, baseUrl),
-    options.entryOverrides
+  const entries = applyBadgeLabelOverrides(
+    applyBadgeEntryOverrides(buildBadgeEntries(sources, baseUrl), options.entryOverrides),
+    options.labelOverrides
   );
   const warnings: string[] = [];
   const warn = (message: string) => {

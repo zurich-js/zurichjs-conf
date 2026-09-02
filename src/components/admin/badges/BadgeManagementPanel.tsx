@@ -16,11 +16,12 @@ import { BadgeExportEditModal } from '@/components/admin/badges/BadgeExportEditM
 import { BadgeTable } from '@/components/admin/badges/BadgeTable';
 import { ManualBadgeModal } from '@/components/admin/badges/ManualBadgeModal';
 import type { BadgeReviewResponse, BadgeReviewRow } from '@/components/admin/badges/types';
-import type { BadgeCategory } from '@/lib/badges/export';
+import { defaultBadgeLabel, type BadgeCategory } from '@/lib/badges/export';
 import { createBrowserZip, type BrowserZipFile } from '@/lib/badges/browser-zip';
 import type { BadgeEntryOverride } from '@/lib/badges/overrides';
 
 const ENTRY_OVERRIDES_STORAGE_KEY = 'zurichjs-badge-export-entry-overrides-v1';
+const LABEL_OVERRIDES_STORAGE_KEY = 'zurichjs-badge-export-label-overrides-v1';
 
 const CATEGORIES: Array<{ id: BadgeCategory; label: string }> = [
   { id: 'vip', label: 'VIP' },
@@ -269,6 +270,33 @@ function readStoredEntryOverrides(): Map<string, BadgeEntryOverride> {
   }
 }
 
+function readStoredLabelOverrides(): Map<string, string> {
+  try {
+    const stored = window.sessionStorage.getItem(LABEL_OVERRIDES_STORAGE_KEY);
+    const parsed: unknown = stored ? JSON.parse(stored) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return new Map();
+    return new Map(Object.entries(parsed).flatMap(([selectionId, value]) => (
+      /^(attendee|speaker|sponsor|manual):[^:]+$/.test(selectionId) &&
+      typeof value === 'string' && value.trim().length > 0 && value.length <= 48
+        ? [[selectionId, value] as const]
+        : []
+    )));
+  } catch {
+    return new Map();
+  }
+}
+
+function storeLabelOverrides(overrides: ReadonlyMap<string, string>): void {
+  try {
+    window.sessionStorage.setItem(
+      LABEL_OVERRIDES_STORAGE_KEY,
+      JSON.stringify(Object.fromEntries(overrides))
+    );
+  } catch {
+    // The in-memory label still works when session storage is unavailable.
+  }
+}
+
 function storeEntryOverrides(overrides: ReadonlyMap<string, BadgeEntryOverride>): void {
   try {
     window.sessionStorage.setItem(
@@ -286,6 +314,7 @@ export function BadgeManagementPanel() {
   const [modalEntry, setModalEntry] = useState<BadgeReviewRow | null | undefined>(undefined);
   const [exportEditEntry, setExportEditEntry] = useState<BadgeReviewRow | undefined>();
   const [entryOverrides, setEntryOverrides] = useState<Map<string, BadgeEntryOverride>>(new Map());
+  const [labelOverrides, setLabelOverrides] = useState<Map<string, string>>(new Map());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [provisioning, setProvisioning] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -310,6 +339,7 @@ export function BadgeManagementPanel() {
 
   useEffect(() => {
     setEntryOverrides(readStoredEntryOverrides());
+    setLabelOverrides(readStoredLabelOverrides());
   }, []);
 
   const refresh = async () => {
@@ -442,6 +472,19 @@ export function BadgeManagementPanel() {
     setFeedback({ tone: 'success', message: 'Temporary badge edit discarded.' });
   };
 
+  const setPrintLabel = (row: BadgeReviewRow, label: string) => {
+    setLabelOverrides((current) => {
+      const next = new Map(current);
+      if (label.trim() === defaultBadgeLabel(row.category)) {
+        next.delete(row.selectionId);
+      } else {
+        next.set(row.selectionId, label);
+      }
+      storeLabelOverrides(next);
+      return next;
+    });
+  };
+
   const download = async (mode: ExportMode) => {
     setExporting(true);
     setFeedback(null);
@@ -451,6 +494,11 @@ export function BadgeManagementPanel() {
       const includedIdSet = new Set(includedIds);
       const includedEntryOverrides = Object.fromEntries(
         Array.from(entryOverrides).filter(([selectionId]) => includedIdSet.has(selectionId))
+      );
+      const includedLabelOverrides = Object.fromEntries(
+        Array.from(labelOverrides).filter(([selectionId, label]) => (
+          includedIdSet.has(selectionId) && label.trim().length > 0
+        ))
       );
 
       if (mode.endsWith('-pdfs')) {
@@ -464,6 +512,9 @@ export function BadgeManagementPanel() {
               mode: 'single-pdf',
               includedIds: [selectionId],
               entryOverrides: entryOverride ? { [selectionId]: entryOverride } : {},
+              labelOverrides: includedLabelOverrides[selectionId]
+                ? { [selectionId]: includedLabelOverrides[selectionId] }
+                : {},
             }),
           });
           if (!response.ok) throw await responseError(response);
@@ -492,6 +543,7 @@ export function BadgeManagementPanel() {
           category: isTabExport ? activeCategory : undefined,
           includedIds,
           entryOverrides: includedEntryOverrides,
+          labelOverrides: includedLabelOverrides,
         }),
       });
       if (!response.ok) throw await responseError(response);
@@ -571,7 +623,9 @@ export function BadgeManagementPanel() {
           onRotate={rotate}
           onEdit={editEntry}
           onDelete={deleteManual}
-          temporarilyEditedIds={new Set(entryOverrides.keys())}
+          temporarilyEditedIds={new Set([...entryOverrides.keys(), ...labelOverrides.keys()])}
+          printLabels={labelOverrides}
+          onLabelChange={setPrintLabel}
         />
       )}
 

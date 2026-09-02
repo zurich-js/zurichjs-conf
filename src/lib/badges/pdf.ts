@@ -16,6 +16,11 @@ const SPONSOR_LOGO_TOP_MM = 116;
 const SPONSOR_LOGO_CANVAS_WIDTH = 1080;
 const SPONSOR_LOGO_CANVAS_HEIGHT = 240;
 
+const DYNAMIC_LABEL_STYLES = {
+  speaker: { background: rgb(59 / 255, 173 / 255, 72 / 255) },
+  organizer: { background: rgb(235 / 255, 68 / 255, 30 / 255) },
+} as const;
+
 interface BadgePdfAssets {
   qrImages: ReadonlyMap<string, Buffer>;
   logoImages: ReadonlyMap<string, Buffer>;
@@ -67,7 +72,8 @@ function drawCenteredLine(
   font: PDFFont,
   preferredSize: number,
   topBaselineMm: number,
-  minimumSize: number
+  minimumSize: number,
+  color = rgb(0, 0, 0)
 ): void {
   if (!text) return;
   const maxWidth = mm(VARIABLE_WIDTH_MM);
@@ -78,7 +84,7 @@ function drawCenteredLine(
     y: page.getHeight() - mm(topBaselineMm),
     size,
     font,
-    color: rgb(0, 0, 0),
+    color,
   });
 }
 
@@ -184,6 +190,18 @@ async function addEntryPages(
   drawCenteredLine(front, entry.lastName, bold, 20, 44.217, 12);
   drawCenteredWrapped(front, entry.role, regular, 14, 60, 9);
   drawCenteredWrapped(front, entry.company, regular, 11, 76, 7);
+
+  if (entry.category in DYNAMIC_LABEL_STYLES) {
+    const style = DYNAMIC_LABEL_STYLES[entry.category as keyof typeof DYNAMIC_LABEL_STYLES];
+    front.drawRectangle({
+      x: 0,
+      y: mm(5),
+      width: front.getWidth(),
+      height: mm(23),
+      color: style.background,
+    });
+    drawCenteredLine(front, entry.label, bold, 30, 137, 16, rgb(1, 1, 1));
+  }
 
   const qrData = assets.qrImages.get(entryAssetKey(entry));
   if (!qrData) throw new Error(`Missing QR image for ${entry.selectionId}`);

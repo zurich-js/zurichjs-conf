@@ -1,15 +1,18 @@
 import { ExternalLink, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import type { BadgeReviewRow } from '@/components/admin/badges/types';
+import { defaultBadgeLabel } from '@/lib/badges/export';
 
 interface BadgeTableProps {
   rows: BadgeReviewRow[];
   excludedIds: ReadonlySet<string>;
   busyId: string | null;
   temporarilyEditedIds: ReadonlySet<string>;
+  printLabels: ReadonlyMap<string, string>;
   onToggle: (selectionId: string) => void;
   onRotate: (row: BadgeReviewRow) => void;
   onEdit: (row: BadgeReviewRow) => void;
   onDelete: (row: BadgeReviewRow) => void;
+  onLabelChange: (row: BadgeReviewRow, value: string) => void;
 }
 
 export function BadgeTable({
@@ -17,16 +20,21 @@ export function BadgeTable({
   excludedIds,
   busyId,
   temporarilyEditedIds,
+  printLabels,
   onToggle,
   onRotate,
   onEdit,
   onDelete,
+  onLabelChange,
 }: BadgeTableProps) {
   if (rows.length === 0) {
     return <p className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-600">No rows in this category.</p>;
   }
 
   const showsLogos = rows.some((row) => row.category === 'sponsor');
+  const showsPrintLabels = rows.some((row) => (
+    row.category === 'speaker' || row.category === 'organizer'
+  ));
 
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -36,6 +44,7 @@ export function BadgeTable({
             <th className="px-4 py-3"><span className="sr-only">Include</span></th>
             <th className="px-4 py-3">Person</th>
             <th className="px-4 py-3">Role / company</th>
+            {showsPrintLabels ? <th className="px-4 py-3">Print label</th> : null}
             <th className="px-4 py-3">Share page</th>
             <th className="px-4 py-3">Badge QR</th>
             {showsLogos ? <th className="px-4 py-3">Default logo</th> : null}
@@ -73,6 +82,19 @@ export function BadgeTable({
                   <p>{row.role || '—'}</p>
                   <p className="mt-1 text-xs text-gray-500">{row.company || '—'}</p>
                 </td>
+                {showsPrintLabels ? (
+                  <td className="px-4 py-4 align-top">
+                    <input
+                      type="text"
+                      maxLength={48}
+                      value={printLabels.get(row.selectionId) ?? defaultBadgeLabel(row.category)}
+                      onChange={(event) => onLabelChange(row, event.target.value)}
+                      aria-label={`Print label for ${displayName}`}
+                      className="w-32 rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Export only</p>
+                  </td>
+                ) : null}
                 <td className="px-4 py-4 align-top">
                   {row.shareUrl ? (
                     <a className="inline-flex items-center gap-1 font-medium text-blue-700 hover:underline" href={row.shareUrl} target="_blank" rel="noopener noreferrer">

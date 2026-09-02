@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BadgeEntry } from '@/lib/badges/export';
-import { applyBadgeEntryOverrides } from '@/lib/badges/overrides';
+import { applyBadgeEntryOverrides, applyBadgeLabelOverrides } from '@/lib/badges/overrides';
 
 const entry: BadgeEntry = {
   category: 'speaker',
@@ -11,6 +11,7 @@ const entry: BadgeEntry = {
   lastName: 'lovelace',
   role: 'engineer',
   company: 'engines',
+  label: 'Speaker',
   publicId: 'speaker-ada',
   badgeCode: '11111111-2222-4333-8444-555555555555',
   shareUrl: 'https://conf.example.test/share/speaker-ada',
@@ -37,5 +38,16 @@ describe('temporary badge entry overrides', () => {
     });
     expect(result[0]).not.toBe(entry);
     expect(entry).toMatchObject({ firstName: 'ADA', lastName: 'lovelace' });
+  });
+
+  it('changes only the printable label on a copied entry', () => {
+    const result = applyBadgeLabelOverrides(
+      [entry],
+      new Map([[entry.selectionId, 'Volunteer']])
+    );
+
+    expect(result[0]).toMatchObject({ label: 'Volunteer', badgeCode: entry.badgeCode });
+    expect(result[0]).not.toBe(entry);
+    expect(entry.label).toBe('Speaker');
   });
 });
