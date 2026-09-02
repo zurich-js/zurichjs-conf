@@ -9,6 +9,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import { Check, ExternalLink, QrCode, Users } from 'lucide-react';
 import { Button, Input } from '@/components/atoms';
 import type { AttendeeNetworkingProfile, NetworkingSettings } from '@/lib/types/networking';
+import { CALLOUT_WARNING } from './vip-theme';
 import type { NetworkingPreferencesData } from './types';
 
 const EMPTY_PROFILE: AttendeeNetworkingProfile = {
@@ -121,6 +122,7 @@ export function NetworkingCard({ settings, mutation }: NetworkingCardProps) {
             <span className="mb-2 block">{field.label}</span>
             <Input
               id={`networking-${field.key}`}
+              tone="light"
               data-mask
               type={field.type ?? 'text'}
               inputMode={field.type === 'url' ? 'url' : field.type === 'email' ? 'email' : 'text'}
@@ -136,7 +138,7 @@ export function NetworkingCard({ settings, mutation }: NetworkingCardProps) {
       </div>
 
       {enabled && !hasLink && (
-        <p className="mt-4 text-sm text-amber-800" role="alert">
+        <p className={`mt-4 text-sm p-3 ${CALLOUT_WARNING}`} role="alert">
           Add at least one link before publishing your page.
         </p>
       )}

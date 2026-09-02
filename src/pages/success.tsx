@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
-import { PageHeader } from '@/components/organisms';
 import Link from 'next/link';
 import { checkoutSessionQueryOptions } from '@/lib/queries/checkout';
 import { analytics } from '@/lib/analytics/client';
@@ -134,8 +133,7 @@ const SuccessPage: React.FC = () => {
       title="Payment Successful | ZurichJS Conference 2026"
       description="Your ticket purchase was successful. Check your email for confirmation details."
     >
-      <PageHeader />
-      <div className="min-h-screen bg-brand-primary py-16 md:py-24 px-6">
+      <div className="min-h-screen bg-brand-primary pt-24 pb-16 md:pt-32 md:pb-24 px-6">
         <div className="max-w-3xl mx-auto">
           {/* Loading State - Show while router is not ready OR while fetching */}
           {(!router.isReady || isLoading) && (

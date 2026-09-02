@@ -93,25 +93,25 @@ export function ImportantInfoCard() {
       <h2 className="text-xl font-bold text-brand-black mb-4">Important Information</h2>
       <ul className="space-y-2 text-brand-gray-darkest">
         <li className="flex items-start gap-2">
-          <span className="text-brand-blue mt-1">•</span>
+          <span className="text-blue-dark mt-1" aria-hidden="true">•</span>
           <span>Bring this QR code (digital or printed) to the venue for check-in</span>
         </li>
         <li className="flex items-start gap-2">
-          <span className="text-brand-blue mt-1">•</span>
+          <span className="text-blue-dark mt-1" aria-hidden="true">•</span>
           <span>Please bring a valid photo ID matching the name on your ticket</span>
         </li>
         <li className="flex items-start gap-2">
-          <span className="text-brand-blue mt-1">•</span>
+          <span className="text-blue-dark mt-1" aria-hidden="true">•</span>
           <span>
             Review our{' '}
-            <Link href="/info/refund-policy" className="text-brand-blue hover:underline">
+            <Link href="/info/refund-policy" className="text-blue-dark hover:underline">
               refund policy
             </Link>{' '}
             for cancellation terms
           </span>
         </li>
         <li className="flex items-start gap-2">
-          <span className="text-brand-blue mt-1">•</span>
+          <span className="text-blue-dark mt-1" aria-hidden="true">•</span>
           <span>Contact us at hello@zurichjs.com for any questions</span>
         </li>
       </ul>
