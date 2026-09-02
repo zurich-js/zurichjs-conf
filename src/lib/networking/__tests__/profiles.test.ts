@@ -65,6 +65,7 @@ describe('public networking profiles', () => {
     tableResults.set('networking_profiles', {
       data: {
         ticket_id: TICKET_ID,
+        enabled: true,
         profile: {
           email: 'networking@example.com',
           linkedinUrl: 'linkedin.com/in/ada',
@@ -113,12 +114,55 @@ describe('public networking profiles', () => {
     expect(selectCalls.find((call) => call.table === 'tickets')?.columns).toBe(
       'first_name, last_name, company, job_title, status'
     );
+    expect(selectCalls.find((call) => call.table === 'networking_profiles')?.columns).toBe(
+      'ticket_id, enabled, profile'
+    );
+  });
+
+  it('shows only the attendee name when their networking profile is disabled', async () => {
+    tableResults.set('networking_profiles', {
+      data: {
+        ticket_id: TICKET_ID,
+        enabled: false,
+        profile: {
+          email: 'private@example.com',
+          linkedinUrl: 'https://linkedin.com/in/private',
+          websiteUrl: 'https://private.example.com',
+        },
+      },
+      error: null,
+    });
+    tableResults.set('tickets', {
+      data: {
+        first_name: 'Ada',
+        last_name: 'Lovelace',
+        company: 'Analytical Engines',
+        job_title: 'Programmer',
+        status: 'confirmed',
+      },
+      error: null,
+    });
+
+    const profile = await resolvePublicNetworkingProfile(`attendee-${SHARE_ID}`);
+
+    expect(profile).toEqual({
+      publicId: `attendee-${SHARE_ID}`,
+      kind: 'attendee',
+      name: 'Ada Lovelace',
+      headline: 'Programmer @ Analytical Engines',
+      imageUrl: null,
+      links: [],
+      path: `/share/attendee-${SHARE_ID}`,
+    });
+    expect(JSON.stringify(profile)).not.toContain('private@example.com');
+    expect(JSON.stringify(profile)).not.toContain('linkedin.com');
   });
 
   it('rejects an attendee with an unconfirmed ticket or malformed stored profile', async () => {
     tableResults.set('networking_profiles', {
       data: {
         ticket_id: TICKET_ID,
+        enabled: true,
         profile: {
           linkedinUrl: null,
           githubUrl: null,
@@ -138,7 +182,7 @@ describe('public networking profiles', () => {
     expect(await resolvePublicNetworkingProfile(`attendee-${SHARE_ID}`)).toBeNull();
 
     tableResults.set('networking_profiles', {
-      data: { ticket_id: TICKET_ID, profile: { email: 'not-an-email' } },
+      data: { ticket_id: TICKET_ID, enabled: true, profile: { email: 'not-an-email' } },
       error: null,
     });
     expect(await resolvePublicNetworkingProfile(`attendee-${SHARE_ID}`)).toBeNull();
@@ -148,6 +192,7 @@ describe('public networking profiles', () => {
     tableResults.set('networking_profiles', {
       data: {
         sponsor_id: SPONSOR_ID,
+        enabled: true,
         profile: {
           contactName: 'Grace Hopper',
           email: 'networking@example.com',
@@ -184,6 +229,43 @@ describe('public networking profiles', () => {
     expect(selectCalls.find((call) => call.table === 'sponsors')?.columns).toBe(
       'company_name, logo_url, logo_url_color'
     );
+  });
+
+  it('shows only the sponsor name when its networking profile is disabled', async () => {
+    tableResults.set('networking_profiles', {
+      data: {
+        sponsor_id: SPONSOR_ID,
+        enabled: false,
+        profile: {
+          contactName: 'Grace Hopper',
+          email: 'private@example.com',
+          phone: '+41445550123',
+        },
+      },
+      error: null,
+    });
+    tableResults.set('sponsors', {
+      data: {
+        company_name: 'Example Sponsor',
+        logo_url: 'https://cdn.example.com/logo.svg',
+        logo_url_color: null,
+      },
+      error: null,
+    });
+
+    const profile = await resolvePublicNetworkingProfile(`sponsor-${SHARE_ID}`);
+
+    expect(profile).toEqual({
+      publicId: `sponsor-${SHARE_ID}`,
+      kind: 'sponsor',
+      name: 'Example Sponsor',
+      headline: 'Grace Hopper',
+      imageUrl: 'https://cdn.example.com/logo.svg',
+      links: [],
+      path: `/share/sponsor-${SHARE_ID}`,
+    });
+    expect(JSON.stringify(profile)).not.toContain('private@example.com');
+    expect(JSON.stringify(profile)).not.toContain('+41445550123');
   });
 
   it('maps only public speaker data and drops unsafe social URLs', async () => {
@@ -248,6 +330,7 @@ describe('public networking profiles', () => {
         role: 'Organizer',
         company: 'ZurichJS',
         logo_url: null,
+        networking_enabled: true,
         networking_profile: {
           email: 'organizer@example.com',
           linkedinUrl: 'https://linkedin.com/in/ada',
@@ -279,7 +362,40 @@ describe('public networking profiles', () => {
     });
     expect(JSON.stringify(profile)).not.toContain('private-manual-id');
     expect(selectCalls.find((call) => call.table === 'manual_badge_entries')?.columns).toBe(
-      'category, first_name, last_name, role, company, logo_url, networking_profile'
+      'category, first_name, last_name, role, company, logo_url, networking_enabled, networking_profile'
     );
+  });
+
+  it('shows only the name for a disabled manual badge profile', async () => {
+    tableResults.set('manual_badge_entries', {
+      data: {
+        category: 'organizer',
+        first_name: 'Ada',
+        last_name: 'Lovelace',
+        role: 'Organizer',
+        company: 'ZurichJS',
+        logo_url: 'https://cdn.example.com/logo.svg',
+        networking_enabled: false,
+        networking_profile: {
+          email: 'private@example.com',
+          linkedinUrl: 'https://linkedin.com/in/private',
+        },
+      },
+      error: null,
+    });
+
+    const profile = await resolvePublicNetworkingProfile(`badge-${SHARE_ID}`);
+
+    expect(profile).toEqual({
+      publicId: `badge-${SHARE_ID}`,
+      kind: 'organizer',
+      name: 'Ada Lovelace',
+      headline: 'Organizer @ ZurichJS',
+      imageUrl: 'https://cdn.example.com/logo.svg',
+      links: [],
+      path: `/share/badge-${SHARE_ID}`,
+    });
+    expect(JSON.stringify(profile)).not.toContain('private@example.com');
+    expect(JSON.stringify(profile)).not.toContain('linkedin.com');
   });
 });

@@ -33,7 +33,9 @@ export default function SharePage({ profile }: SharePageProps) {
     <>
       <SEO
         title={`${profile.name} | Networking`}
-        description={`Public networking links shared by ${profile.name} at ZurichJS Conference.`}
+        description={profile.links.length > 0
+          ? `Public networking links shared by ${profile.name} at ZurichJS Conference.`
+          : `${profile.name}'s networking profile is not public yet.`}
         canonical={profile.path}
         noindex
       />
