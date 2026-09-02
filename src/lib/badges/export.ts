@@ -9,6 +9,7 @@ export interface BadgeEntry {
   lastName: string;
   role: string;
   company: string;
+  label: string;
   publicId: string;
   badgeCode: string;
   shareUrl: string;
@@ -68,6 +69,18 @@ export interface BadgeExportSources {
 
 const CATEGORIES: BadgeCategory[] = ['vip', 'attendee', 'speaker', 'sponsor', 'organizer'];
 
+const DEFAULT_BADGE_LABELS: Record<BadgeCategory, string> = {
+  vip: 'VIP',
+  attendee: 'Attendee',
+  speaker: 'Speaker',
+  sponsor: 'Sponsor',
+  organizer: 'Organizer',
+};
+
+export function defaultBadgeLabel(category: BadgeCategory): string {
+  return DEFAULT_BADGE_LABELS[category];
+}
+
 function publicUrl(baseUrl: string, pathname: string): string {
   return new URL(pathname, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`).toString();
 }
@@ -99,6 +112,7 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
       lastName: attendee.last_name,
       role: attendee.job_title ?? '',
       company: attendee.company ?? '',
+      label: defaultBadgeLabel(category),
       publicId,
       badgeCode: attendee.badge_code,
       shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
@@ -118,6 +132,7 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
       lastName: speaker.last_name,
       role: speaker.job_title ?? '',
       company: speaker.company ?? '',
+      label: defaultBadgeLabel('speaker'),
       publicId,
       badgeCode: speaker.badge_code,
       shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
@@ -138,6 +153,7 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
       lastName: contact.lastName,
       role: 'Sponsor',
       company: sponsor.company_name,
+      label: defaultBadgeLabel('sponsor'),
       publicId,
       badgeCode: sponsor.badge_code,
       shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
@@ -157,6 +173,7 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
       lastName: entry.last_name,
       role: entry.role,
       company: entry.company,
+      label: defaultBadgeLabel(entry.category),
       publicId,
       badgeCode: entry.badge_code,
       shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
@@ -188,6 +205,7 @@ export function categoryCsv(
     `${prefix}_last_name`,
     `${prefix}_role`,
     `${prefix}_company`,
+    `${prefix}_label`,
     `@${prefix}_qr`,
   ];
   if (category === 'sponsor') headers.push('@sponsor_logo');
@@ -199,6 +217,7 @@ export function categoryCsv(
       entry.lastName,
       entry.role,
       entry.company,
+      entry.label,
       qrPaths.get(entry.selectionId) ?? '',
     ];
     if (category === 'sponsor') row.push(logoPaths.get(entry.selectionId) ?? '');
@@ -217,6 +236,7 @@ export function combinedCsv(
     `${category}_last_name`,
     `${category}_role`,
     `${category}_company`,
+    `${category}_label`,
     `@${category}_qr`,
     ...(category === 'sponsor' ? ['@sponsor_logo'] : []),
   ]);
@@ -228,6 +248,7 @@ export function combinedCsv(
       [`${entry.category}_last_name`, entry.lastName],
       [`${entry.category}_role`, entry.role],
       [`${entry.category}_company`, entry.company],
+      [`${entry.category}_label`, entry.label],
       [`@${entry.category}_qr`, qrPaths.get(entry.selectionId) ?? ''],
     ]);
     if (entry.category === 'sponsor') {

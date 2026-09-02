@@ -129,6 +129,21 @@ describe('deployed badge export files', () => {
     });
   });
 
+  it('applies a temporary print label without persisting it to source data', async () => {
+    const files = await buildBadgeExportFiles(sources, 'https://conf.example.test', {
+      csvPath: (fileName) => fileName,
+      labelOverrides: new Map([['speaker:public-speaker', 'Guest Speaker']]),
+      fetchLogo: async () => new Response(Buffer.from('logo'), {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    });
+
+    const speakerCsv = files.find((file) => file.name === 'speaker.csv')?.data.toString();
+    expect(speakerCsv).toContain('Public,Speaker,Speaker,ZurichJS,Guest Speaker');
+    expect(sources.speakers[0]).not.toHaveProperty('label');
+  });
+
   it('uses a one-time sponsor PNG override without downloading or persisting it', async () => {
     const override = await sharp({
       create: { width: 320, height: 80, channels: 4, background: '#3366ff' },

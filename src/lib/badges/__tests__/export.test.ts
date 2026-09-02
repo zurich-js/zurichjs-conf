@@ -116,11 +116,11 @@ describe('badge export data', () => {
     const logoPaths = new Map([['sponsor:sponsor-one', '/exports/logos/color.svg']]);
 
     expect(categoryCsv('vip', entries, qrPaths, logoPaths)).toBe(
-      'vip_first_name,vip_last_name,vip_role,vip_company,@vip_qr\n' +
-      'Ada,Lovelace,Programmer,"Analytical, Engines",/exports/qr/ticket-vip.png\n'
+      'vip_first_name,vip_last_name,vip_role,vip_company,vip_label,@vip_qr\n' +
+      'Ada,Lovelace,Programmer,"Analytical, Engines",VIP,/exports/qr/ticket-vip.png\n'
     );
     expect(categoryCsv('sponsor', entries, qrPaths, logoPaths)).toContain(
-      'sponsor_first_name,sponsor_last_name,sponsor_role,sponsor_company,@sponsor_qr,@sponsor_logo\n'
+      'sponsor_first_name,sponsor_last_name,sponsor_role,sponsor_company,sponsor_label,@sponsor_qr,@sponsor_logo\n'
     );
     expect(categoryCsv('sponsor', entries, qrPaths, logoPaths)).toContain('/exports/logos/color.svg');
   });

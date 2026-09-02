@@ -69,6 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       entryOverrides: new Map<string, BadgeEntryOverride>(
         Object.entries(result.data.entryOverrides)
       ),
+      labelOverrides: new Map(Object.entries(result.data.labelOverrides)),
       logoOverrides: decodeLogoOverrides(result.data.logoOverrides),
       onWarning: (message) => log.warn(message),
     });

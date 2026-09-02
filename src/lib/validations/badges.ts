@@ -79,6 +79,10 @@ const badgeEntryOverridesSchema = z
   .record(temporaryBadgeOverrideSelectionIdSchema, badgeEntryOverrideSchema)
   .refine((value) => Object.keys(value).length <= 5_000, 'Too many badge entry overrides');
 
+const badgeLabelOverridesSchema = z
+  .record(badgeSelectionIdSchema, z.string().trim().min(1).max(48))
+  .refine((value) => Object.keys(value).length <= 5_000, 'Too many badge label overrides');
+
 const exportLogoOverrideSchema = z.object({
   fileName: z.string().trim().min(1).max(255).regex(/\.png$/i, 'Logo override must be a PNG'),
   dataUrl: z
@@ -102,6 +106,7 @@ export const badgeExportRequestSchema = z
     category: badgeCategorySchema.optional(),
     includedIds: z.array(badgeSelectionIdSchema).max(5_000).optional(),
     entryOverrides: badgeEntryOverridesSchema.default({}),
+    labelOverrides: badgeLabelOverridesSchema.default({}),
     logoOverrides: z.record(badgeSelectionIdSchema, exportLogoOverrideSchema).default({}),
   })
   .strict()

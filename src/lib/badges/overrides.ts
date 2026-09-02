@@ -17,3 +17,14 @@ export function applyBadgeEntryOverrides(
     return override ? { ...entry, ...override } : entry;
   });
 }
+
+export function applyBadgeLabelOverrides(
+  entries: BadgeEntry[],
+  overrides: ReadonlyMap<string, string> | undefined
+): BadgeEntry[] {
+  if (!overrides?.size) return entries;
+  return entries.map((entry) => {
+    const label = overrides.get(entry.selectionId)?.trim();
+    return label ? { ...entry, label } : entry;
+  });
+}

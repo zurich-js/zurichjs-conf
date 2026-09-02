@@ -4,7 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import QRCode from 'qrcode';
 import sharp from 'sharp';
-import type { BadgeCategory, BadgeEntry } from '@/lib/badges/export';
+import { defaultBadgeLabel, type BadgeCategory, type BadgeEntry } from '@/lib/badges/export';
 import { buildBadgePdfFiles } from '@/lib/badges/pdf';
 
 const CATEGORIES: BadgeCategory[] = ['vip', 'attendee', 'speaker', 'sponsor', 'organizer'];
@@ -21,6 +21,7 @@ function sampleEntry(category: BadgeCategory, index: number): BadgeEntry {
     lastName: category === 'sponsor' ? 'Lovelace-Hopper' : 'Lovelace',
     role: 'Maintainer of TanStack Query, Software Engineer',
     company: 'IGS Informatikgesellschaft für Sozialversicherungen GmbH',
+    label: defaultBadgeLabel(category),
     publicId: `badge-${id}`,
     badgeCode: id,
     shareUrl: `https://conf.zurichjs.com/share/badge-${id}`,
