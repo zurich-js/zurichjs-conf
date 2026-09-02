@@ -14,6 +14,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { requireDoorStaff } from '@/lib/checkin/guard';
 import { buildDoorRoster, type DoorRoster } from '@/lib/checkin/roster';
 import { doorCurrentOccasion } from '@/lib/checkin/rpc';
+import type { DoorOccasion } from '@/lib/types/checkin';
+import { occasionQuerySchema } from '@/lib/validations/checkin';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Door Roster API');
@@ -32,7 +34,12 @@ export default async function handler(
   }
 
   try {
-    const occasion = await doorCurrentOccasion();
+    // The volunteer's chosen day, when it is one of the known two; the server
+    // clock otherwise. The roster payload is the same either way — the occasion
+    // decides which check-in column the station reads and writes.
+    const requested = typeof req.query.occasion === 'string' ? req.query.occasion : undefined;
+    const validatedOccasion = occasionQuerySchema.parse(requested) as DoorOccasion | undefined;
+    const occasion: DoorOccasion = validatedOccasion ?? (await doorCurrentOccasion());
     const roster = await buildDoorRoster(occasion);
 
     // Attendee PII must never sit in a shared cache, and a station that asks

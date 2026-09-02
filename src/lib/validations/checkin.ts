@@ -6,11 +6,13 @@ import { DOOR_OCCASIONS, DOOR_ROLES } from '@/lib/types/checkin';
  *
  * Two rules shape these:
  *
- *  - The OCCASION is never accepted from a client. It is derived server-side by
- *    `door_current_occasion()`, because a station with a wrong date or a tab
- *    left open across midnight would otherwise write the wrong day into an
- *    append-only table. It appears below only where an organiser is FILTERING
- *    existing records.
+ *  - The OCCASION is a deliberate staff choice, validated against the two known
+ *    values — the volunteer picks which day they are checking people in FOR on
+ *    the start screen (badges are picked up and workshops rehearsed on other
+ *    days). It is never a free-text client claim: anything outside the enum is
+ *    rejected here, and the database falls back to its own clock for a missing
+ *    value, so a device with a wrong date still cannot write an unknown day
+ *    into an append-only table.
  *
  *  - `occurredAt` IS accepted, because a station may queue a check-in while
  *    offline and sync it later, and the audit trail needs the real time. The
@@ -33,25 +35,66 @@ const stationSchema = z
   .optional();
 
 /**
- * `occurredAt` is bounded on both sides. The lower bound stops a broken client
- * backdating an action to before the event existed; the upper bound is belt and
- * braces, since the database clamps a future timestamp anyway.
+ * `occurredAt` sanity check. The database clamps out-of-range timestamps on
+ * both sides (see door_check_in etc.), so this schema only rejects obviously
+ * broken values — a device with date in year 2000 or 1970 is malformed data,
+ * not a fixable clock skew. Dates predating the event but within reason are
+ * clamped to NOW() in SQL, keeping the check-in rather than losing it.
  */
 const occurredAtSchema = z
   .string()
   .datetime({ message: 'occurredAt must be an ISO 8601 timestamp' })
-  .refine((value) => new Date(value) >= new Date('2026-09-01T00:00:00Z'), {
-    message: 'occurredAt predates the event',
+  .refine((value) => new Date(value) >= new Date('2020-01-01T00:00:00Z'), {
+    message: 'occurredAt is unreasonably old',
   })
   .optional();
+
+/** The staff-chosen day. Optional: omitted means "whatever the server clock says". */
+const occasionSchema = z.enum(DOOR_OCCASIONS).optional();
+
+/** Validates an occasion from a query parameter (string or undefined). */
+export const occasionQuerySchema = z
+  .string()
+  .optional()
+  .transform((value) =>
+    value && (DOOR_OCCASIONS as readonly string[]).includes(value)
+      ? (value as (typeof DOOR_OCCASIONS)[number])
+      : undefined
+  );
 
 export const doorCheckInSchema = z.object({
   scannedId: z.string().uuid('Not a valid code'),
   station: stationSchema,
   occurredAt: occurredAtSchema,
+  occasion: occasionSchema,
 });
 
 export type DoorCheckInInput = z.infer<typeof doorCheckInSchema>;
+
+/**
+ * Undoing a mistaken check-in. The reason is optional — unlike a manual
+ * admission, the common case ("scanned the wrong badge of a pair") is obvious
+ * from the adjacent audit rows — but it is stored when given.
+ */
+export const doorCheckInUndoSchema = z.object({
+  scannedId: z.string().uuid('Not a valid code'),
+  station: stationSchema,
+  occurredAt: occurredAtSchema,
+  occasion: occasionSchema,
+  reason: z.string().trim().max(500, 'Reason is too long').optional(),
+});
+
+export type DoorCheckInUndoInput = z.infer<typeof doorCheckInUndoSchema>;
+
+/** Recording a badge handover — early pickup included. Never moves check-in state. */
+export const doorBadgePickupSchema = z.object({
+  scannedId: z.string().uuid('Not a valid code'),
+  station: stationSchema,
+  occurredAt: occurredAtSchema,
+  occasion: occasionSchema,
+});
+
+export type DoorBadgePickupInput = z.infer<typeof doorBadgePickupSchema>;
 
 /**
  * A manual admission always carries a reason. One without a reason is
@@ -62,6 +105,7 @@ export const doorManualAdmitSchema = z.object({
   scannedId: z.string().uuid('Not a valid code'),
   station: stationSchema,
   occurredAt: occurredAtSchema,
+  occasion: occasionSchema,
   reason: z
     .string()
     .trim()
@@ -71,12 +115,20 @@ export const doorManualAdmitSchema = z.object({
 
 export type DoorManualAdmitInput = z.infer<typeof doorManualAdmitSchema>;
 
+/** A handed size, e.g. "M". Free-ish text: the apparel preferences are too. */
+const handedSizeSchema = z.string().trim().min(1).max(12, 'Size is too long').optional();
+
 export const doorGoodieHandoverSchema = z.object({
   ticketId: z.string().uuid('Not a valid ticket'),
   station: stationSchema,
   occurredAt: occurredAtSchema,
+  occasion: occasionSchema,
   /** Set when only part of the entitlement was handed over. */
   note: z.string().trim().max(280, 'Note is too long').optional(),
+  /** Size actually handed over. Omitted = the t-shirt was NOT handed. */
+  tshirtSize: handedSizeSchema,
+  /** Size actually handed over. Omitted = the hoodie was NOT handed. */
+  hoodieSize: handedSizeSchema,
 });
 
 export type DoorGoodieHandoverInput = z.infer<typeof doorGoodieHandoverSchema>;
@@ -118,7 +170,14 @@ export type DoorStaffUpdateInput = z.infer<typeof doorStaffUpdateSchema>;
 export const doorEventQuerySchema = z.object({
   occasion: z.enum(DOOR_OCCASIONS).optional(),
   eventType: z
-    .enum(['checked_in', 'check_in_undone', 'goodie_handed', 'manual_admit', 'denied'])
+    .enum([
+      'checked_in',
+      'check_in_undone',
+      'goodie_handed',
+      'manual_admit',
+      'badge_pickup',
+      'denied',
+    ])
     .optional(),
   subjectId: z.string().uuid().optional(),
   staffId: z.string().uuid().optional(),

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, Gift, Pause, Play, Users } from 'lucide-react';
+import { Activity, Gift, IdCard, Pause, Play, Users } from 'lucide-react';
 import { AdminErrorState } from '@/components/admin/AdminErrorState';
 import {
   DOOR_DASHBOARD_BUSY_POLL_MS,
@@ -107,7 +107,7 @@ export const DoorDashboardTab: React.FC<DoorDashboardTabProps> = ({ className = 
         <p className="py-8 text-center text-sm text-gray-600">Loading the door…</p>
       ) : data ? (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <DoorStatTile
               label="Arrived"
               value={data.arrived}
@@ -131,13 +131,20 @@ export const DoorDashboardTab: React.FC<DoorDashboardTabProps> = ({ className = 
               icon={Gift}
               tone="neutral"
             />
+            <DoorStatTile
+              label="Badges picked up"
+              value={data.badgesPickedUp}
+              secondary="early pickups included"
+              icon={IdCard}
+              tone="neutral"
+            />
           </div>
 
           <DoorStationList stations={data.stations} volunteers={data.volunteers} />
 
           <section>
             <h2 className="mb-3 text-lg font-semibold text-black">Worth a look</h2>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
               <DoorStatTile
                 label="Manual admissions"
                 value={data.anomalies.manualAdmits}
@@ -153,6 +160,12 @@ export const DoorDashboardTab: React.FC<DoorDashboardTabProps> = ({ className = 
               <DoorStatTile
                 label="Unrecognised codes"
                 value={data.anomalies.notFound}
+                tone="neutral"
+              />
+              <DoorStatTile
+                label="Undone check-ins"
+                value={data.anomalies.undos}
+                secondary="mis-scans corrected at the lane"
                 tone="neutral"
               />
               <DoorStatTile

@@ -1,13 +1,14 @@
 import React from 'react';
 import { CloudOff, LogOut, RefreshCw, Users } from 'lucide-react';
-import { DOOR_OCCASION_LABELS, DOOR_ROLE_LABELS } from '@/lib/types/checkin';
+import { DOOR_OCCASIONS, DOOR_OCCASION_LABELS, DOOR_ROLE_LABELS } from '@/lib/types/checkin';
 import type { DoorOccasion, DoorRole } from '@/lib/types/checkin';
 import { formatDoorTime } from '@/lib/checkin/panel-state';
 
 export interface StationBarProps {
+  /** The day being worked. Changing it re-keys the roster and future writes. */
   occasion: DoorOccasion;
+  onOccasionChange?: (occasion: DoorOccasion) => void;
   role: DoorRole;
-  station: string;
   /** Attendees held in memory, so a volunteer can see the roster really loaded. */
   rosterSize: number | null;
   /** When the held roster was built on the server. */
@@ -24,9 +25,14 @@ export interface StationBarProps {
  * One compact line of state, above the camera.
  *
  * Everything here answers a question a volunteer asks out loud during a shift:
- * which day is this, what am I allowed to do, which door am I, did the roster
- * actually load, and is anything stuck. Nothing here is decoration — the screen
- * is small and the panel below it is what matters.
+ * which day am I working, what am I allowed to do, did the roster actually
+ * load, and is anything stuck. Nothing here is decoration — the screen is small
+ * and the panel below it is what matters.
+ *
+ * The day is a control, not a label: badges are picked up and workshops
+ * rehearsed on other days, so a volunteer must be able to switch without
+ * ending the shift. Writes taken before the switch keep the day they were
+ * taken for — the queue stamps each entry at enqueue.
  *
  * The pending-writes count is the honest part of an optimistic UI. The station
  * tells a volunteer a check-in worked before the server has confirmed it, so it
@@ -34,8 +40,8 @@ export interface StationBarProps {
  */
 export const StationBar: React.FC<StationBarProps> = ({
   occasion,
+  onOccasionChange,
   role,
-  station,
   rosterSize,
   generatedAt,
   pendingWrites,
@@ -48,10 +54,26 @@ export const StationBar: React.FC<StationBarProps> = ({
     className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl bg-surface-card px-4 py-3 ${className}`}
   >
     <div className="min-w-0 flex-1">
-      <p className="truncate text-sm font-semibold text-text-primary">
-        {DOOR_OCCASION_LABELS[occasion]}
-        {station ? ` · ${station}` : ''}
-      </p>
+      {onOccasionChange ? (
+        <label className="block">
+          <span className="sr-only">Day being worked</span>
+          <select
+            value={occasion}
+            onChange={(event) => onOccasionChange(event.target.value as DoorOccasion)}
+            className="max-w-full cursor-pointer rounded-lg bg-surface-elevated px-2 py-1 text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          >
+            {DOOR_OCCASIONS.map((option) => (
+              <option key={option} value={option}>
+                {DOOR_OCCASION_LABELS[option]}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <p className="truncate text-sm font-semibold text-text-primary">
+          {DOOR_OCCASION_LABELS[occasion]}
+        </p>
+      )}
       <p className="truncate text-xs text-text-muted">
         {DOOR_ROLE_LABELS[role]}
         {rosterSize !== null ? ` · ${rosterSize} in memory` : ''}

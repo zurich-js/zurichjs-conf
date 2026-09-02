@@ -77,4 +77,8 @@ export const checkinKeys = {
   /** The audit trail, filtered. Every filter belongs in the key. */
   events: () => [...checkinKeys.all, 'events'] as const,
   eventList: (params: DoorEventListParams) => [...checkinKeys.events(), 'list', params] as const,
+
+  /** One volunteer's own actions, for the station's "my check-ins" view. */
+  myActivity: (occasion: DoorOccasion | null) =>
+    [...checkinKeys.all, 'my-activity', occasion] as const,
 } as const;

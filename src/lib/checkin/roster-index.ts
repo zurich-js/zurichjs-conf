@@ -107,8 +107,11 @@ function ticketToHit(
       entitled: ticket.status === 'confirmed',
       handedAt: ticket.goodieHandedAt,
       note: ticket.goodieNote,
+      tshirtHandedAt: ticket.tshirtHandedAt,
+      hoodieHandedAt: ticket.hoodieHandedAt,
     },
     apparel: { tshirtSize: ticket.tshirtSize, hoodieSize: ticket.hoodieSize },
+    badge: { pickedUpAt: ticket.badgePickedUpAt },
     doorNote: ticket.doorNote,
     workshops,
   };
@@ -222,8 +225,9 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
         admissible: true,
         refusalReason: null,
         checkIn: { workshopDayAt: registration.checkedInAt, conferenceDayAt: null },
-        goodie: { entitled: false, handedAt: null, note: null },
+        goodie: { entitled: false, handedAt: null, note: null, tshirtHandedAt: null, hoodieHandedAt: null },
         apparel: { tshirtSize: null, hoodieSize: null },
+        badge: { pickedUpAt: registration.badgePickedUpAt },
         doorNote: null,
         workshops: seats,
       };

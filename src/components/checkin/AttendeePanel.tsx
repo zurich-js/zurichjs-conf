@@ -1,5 +1,5 @@
 import React from 'react';
-import { StickyNote } from 'lucide-react';
+import { RotateCcw, StickyNote } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
 import {
   doorFailureMessage,
@@ -11,13 +11,16 @@ import {
 } from '@/lib/types/checkin';
 import {
   canOfferCheckIn,
+  checkedInAtFor,
   resolveDoorPanelDetail,
   resolveDoorPanelState,
+  workshopSeatProgress,
 } from '@/lib/checkin/panel-state';
 import { ApparelSizes } from './ApparelSizes';
 import { AttendeeIdentity } from './AttendeeIdentity';
+import { BadgeStatus } from './BadgeStatus';
 import { DoorRefusalHint, DoorStateBanner } from './DoorStateBanner';
-import { GoodieStatus } from './GoodieStatus';
+import { GoodieStatus, type GoodieHandoverPayload } from './GoodieStatus';
 import { WorkshopSeats } from './WorkshopSeats';
 
 export interface AttendeePanelProps {
@@ -29,7 +32,13 @@ export interface AttendeePanelProps {
   checkInPending?: boolean;
   goodiePending?: boolean;
   onCheckIn?: () => void;
-  onHandOverGoodie?: () => void;
+  /** Per-seat check-in: on workshop day each held seat is its own arrival. */
+  onCheckInSeat?: (registrationId: string) => void;
+  /** Clears a mistaken check-in — the whole person, or one seat. */
+  onUndo?: () => void;
+  onUndoSeat?: (registrationId: string) => void;
+  onHandOverGoodie?: (payload: GoodieHandoverPayload) => void;
+  onHandOverBadge?: () => void;
   onEscalate?: () => void;
   className?: string;
 }
@@ -41,7 +50,9 @@ export interface AttendeePanelProps {
  * Order is deliberate and follows what the volunteer does: the verdict first
  * (they read colour), then the name (they say it out loud), then the entitlements
  * they are about to hand over, then the action. Workshops and notes come last
- * because they are reference, not decision.
+ * because they are reference, not decision — except on workshop day, where the
+ * seats ARE the action: each held workshop is its own check-in, so someone
+ * attending two workshops plus the conference is checked in three times.
  */
 export const AttendeePanel: React.FC<AttendeePanelProps> = ({
   attendee,
@@ -51,7 +62,11 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
   checkInPending = false,
   goodiePending = false,
   onCheckIn,
+  onCheckInSeat,
+  onUndo,
+  onUndoSeat,
   onHandOverGoodie,
+  onHandOverBadge,
   onEscalate,
   className = '',
 }) => {
@@ -62,6 +77,21 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
   // handler and offers a manual admission instead — which is a different audit
   // event, not the same one with a different origin.
   const canCheckIn = canOfferCheckIn(attendee, occasion, roleCan(role, 'check_in'));
+
+  // On workshop day, held seats replace the person-level button: the seat is
+  // the unit of check-in and the buttons live on the seat rows below.
+  const seats = workshopSeatProgress(attendee, occasion);
+  const seatDriven = seats.total > 0;
+
+  // Undo is offered immediately after admission and on re-scan. The "wrong
+  // person of a pair" mistake is realised within a second of the tap, so both
+  // 'admitted' (just now) and 'already' (from the roster) show the undo link.
+  // Seat-level undo lives on the seat rows.
+  const canUndo =
+    roleCan(role, 'check_in') &&
+    !seatDriven &&
+    ((state === 'already' && checkedInAtFor(attendee, occasion) !== null) ||
+      state === 'admitted');
 
   return (
     <section className={`space-y-4 ${className}`} aria-label="Attendee">
@@ -88,6 +118,15 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
         />
       </div>
 
+      {/* The physical badge: its own fact, because it can be collected early —
+          the day before — without consuming any day's check-in. */}
+      <BadgeStatus
+        key={`badge-${attendee.subjectId}`}
+        pickedUpAt={attendee.badge.pickedUpAt}
+        canHandOver={roleCan(role, 'badge_pickup') && attendee.admissible}
+        onHandOver={onHandOverBadge}
+      />
+
       {/* Only meaningful for someone entitled to swag. */}
       {attendee.goodie.entitled ? (
         <div className="rounded-2xl bg-surface-card p-5">
@@ -100,9 +139,15 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
       ) : null}
 
       <GoodieStatus
+        key={attendee.subjectId}
         entitled={attendee.goodie.entitled}
         handedAt={attendee.goodie.handedAt}
         note={attendee.goodie.note}
+        tshirtHandedAt={attendee.goodie.tshirtHandedAt}
+        hoodieHandedAt={attendee.goodie.hoodieHandedAt}
+        preferredTshirtSize={attendee.apparel.tshirtSize}
+        preferredHoodieSize={attendee.apparel.hoodieSize}
+        isVip={attendee.ticket?.isVip ?? false}
         canHandOver={roleCan(role, 'goodie') && attendee.admissible}
         pending={goodiePending}
         onHandOver={onHandOverGoodie}
@@ -114,6 +159,19 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
           <WorkshopSeats
             held={attendee.workshops.held}
             purchasedForOthers={attendee.workshops.purchasedForOthers}
+            // Seat buttons only on workshop day, and only when this panel is
+            // allowed to check in at all (the lookup path routes through
+            // manual admission instead — see onCheckIn above).
+            onCheckInSeat={
+              occasion === 'workshop_day' && canCheckIn && onCheckIn && onCheckInSeat
+                ? onCheckInSeat
+                : undefined
+            }
+            onUndoSeat={
+              occasion === 'workshop_day' && roleCan(role, 'check_in') && onUndoSeat
+                ? onUndoSeat
+                : undefined
+            }
           />
         </div>
       ) : null}
@@ -125,10 +183,21 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
         </div>
       ) : null}
 
+      {canUndo && onUndo ? (
+        <button
+          type="button"
+          onClick={onUndo}
+          className="flex min-h-11 items-center gap-2 text-sm font-medium text-text-muted underline-offset-2 hover:text-text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-brand-primary"
+        >
+          <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          Wrong person? Undo this check-in
+        </button>
+      ) : null}
+
       {/* Sticky so the primary action stays reachable with one thumb however
           long the panel gets. */}
       <div className="sticky bottom-0 -mx-1 flex gap-3 bg-surface-page/95 px-1 py-3 backdrop-blur">
-        {canCheckIn && onCheckIn ? (
+        {canCheckIn && onCheckIn && !seatDriven ? (
           <Button
             variant="primary"
             size="lg"
@@ -143,10 +212,10 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
           <Button
             variant="dark"
             size="lg"
-            className={canCheckIn && onCheckIn ? '' : 'flex-1'}
+            className={canCheckIn && onCheckIn && !seatDriven ? '' : 'flex-1'}
             onClick={onEscalate}
           >
-            Get a lead
+            Call a door lead
           </Button>
         ) : null}
       </div>

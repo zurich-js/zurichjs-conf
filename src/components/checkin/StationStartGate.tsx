@@ -1,12 +1,22 @@
 import React from 'react';
 import { AlertTriangle, Cpu, Info, ScanLine } from 'lucide-react';
-import { Button, Heading, Input } from '@/components/atoms';
+import { Button, Heading } from '@/components/atoms';
 import type { ScannerSupport } from '@/lib/checkin/scanner-policy';
-import { DOOR_OCCASION_LABELS, type DoorOccasion, type DoorRole } from '@/lib/types/checkin';
-import { DOOR_ROLE_LABELS } from '@/lib/types/checkin';
+import {
+  DOOR_OCCASIONS,
+  DOOR_OCCASION_DATES,
+  DOOR_OCCASION_LABELS,
+  DOOR_ROLE_LABELS,
+  type DoorOccasion,
+  type DoorRole,
+} from '@/lib/types/checkin';
 
 export interface StationStartGateProps {
+  /** The day the volunteer is checking people in FOR. */
   occasion: DoorOccasion;
+  /** What the server's clock says today is, so a mismatch can be called out. */
+  serverOccasion: DoorOccasion;
+  onOccasionChange: (occasion: DoorOccasion) => void;
   role: DoorRole;
   staffName: string | null;
   /**
@@ -15,13 +25,25 @@ export interface StationStartGateProps {
    * volunteer on every load.
    */
   support: ScannerSupport | null;
-  station: string;
-  onStationChange: (value: string) => void;
   onStart: () => void;
   starting?: boolean;
   /** Number of writes left over from a previous session on this device. */
   pendingWrites?: number;
   className?: string;
+}
+
+/** "Wed 10 Sep" from the occasion's fixed calendar date. Static data, so SSR-safe. */
+function occasionDate(occasion: DoorOccasion): string {
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'Europe/Zurich',
+    }).format(new Date(`${DOOR_OCCASION_DATES[occasion]}T12:00:00Z`));
+  } catch {
+    return DOOR_OCCASION_DATES[occasion];
+  }
 }
 
 /**
@@ -30,21 +52,21 @@ export interface StationStartGateProps {
  * WHY A GATE AT ALL, GIVEN THE GOAL IS FEWER TAPS
  * Two things unlock only inside a real user gesture: the camera permission
  * prompt and the AudioContext that produces the scan beep, which iOS starts
- * suspended. Trying either on mount gets one denied and the other silently
- * muted. Putting both behind a single tap means the volunteer is asked once,
+ * suspended. Putting both behind a single tap means the volunteer is asked once,
  * before anyone is queueing, rather than mid-scan with a person waiting.
  *
- * It also collects the station label. That is the only field, it is remembered,
- * and it exists because the audit trail and the live dashboard are close to
- * useless without knowing which door a scan came from.
+ * It also collects the DAY being worked. The server's clock preselects it, but
+ * badges are picked up and workshops rehearsed on other days, so the choice is
+ * explicit and loud — writing the wrong day into the audit trail is the one
+ * mistake this screen exists to prevent.
  */
 export const StationStartGate: React.FC<StationStartGateProps> = ({
   occasion,
+  serverOccasion,
+  onOccasionChange,
   role,
   staffName,
   support,
-  station,
-  onStationChange,
   onStart,
   starting = false,
   pendingWrites = 0,
@@ -54,7 +76,7 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
     <div className="rounded-2xl bg-surface-card p-6 text-center">
       <ScanLine className="mx-auto mb-4 h-10 w-10 text-brand-primary" aria-hidden="true" />
       <Heading level="h1" className="mb-1 text-2xl font-bold">
-        {DOOR_OCCASION_LABELS[occasion]}
+        Door check-in
       </Heading>
       <p className="text-text-secondary">
         {staffName ? `${staffName} · ` : ''}
@@ -105,24 +127,68 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
       </div>
     ) : null}
 
-    <div className="rounded-2xl bg-surface-card p-6">
-      <label htmlFor="door-station" className="mb-2 block text-sm font-semibold text-text-primary">
-        Which door are you on?
-      </label>
-      <Input
-        id="door-station"
-        value={station}
-        onChange={(event) => onStationChange(event.target.value)}
-        placeholder="Main entrance"
-        maxLength={60}
-        autoCapitalize="words"
-        fullWidth
-      />
-      <p className="mt-2 flex items-start gap-2 text-xs text-text-muted">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        Recorded with every scan, so a lead can see which door is backing up.
+    <fieldset className="rounded-2xl bg-surface-card p-6">
+      <legend className="sr-only">Which day are you checking people in for?</legend>
+      <p className="mb-3 text-sm font-semibold text-text-primary">
+        Checking people in for
       </p>
-    </div>
+      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Day">
+        {DOOR_OCCASIONS.map((option, index) => {
+          const selected = option === occasion;
+          const handleKeyDown = (event: React.KeyboardEvent) => {
+            const { key } = event;
+            if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) return;
+            event.preventDefault();
+            const nextIndex =
+              key === 'ArrowLeft' || key === 'ArrowUp'
+                ? (index - 1 + DOOR_OCCASIONS.length) % DOOR_OCCASIONS.length
+                : (index + 1) % DOOR_OCCASIONS.length;
+            const nextOption = DOOR_OCCASIONS[nextIndex];
+            onOccasionChange(nextOption);
+            const nextButton = document.querySelector<HTMLButtonElement>(
+              `[data-occasion="${nextOption}"]`
+            );
+            nextButton?.focus();
+          };
+          return (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              data-occasion={option}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => onOccasionChange(option)}
+              onKeyDown={handleKeyDown}
+              className={`min-h-16 rounded-xl border-2 px-3 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary ${
+                selected
+                  ? 'border-brand-primary bg-brand-primary/10'
+                  : 'border-divider bg-surface-elevated hover:border-text-muted'
+              }`}
+            >
+              <span className="block text-sm font-semibold text-text-primary">
+                {DOOR_OCCASION_LABELS[option]}
+              </span>
+              <span className="block text-xs text-text-muted">{occasionDate(option)}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-3 flex items-start gap-2 text-xs text-text-muted">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        {occasion === serverOccasion ? (
+          <span>
+            Every check-in and badge pickup is recorded against this day. You can change it
+            later from the bar at the top.
+          </span>
+        ) : (
+          <span className="font-medium text-warning">
+            This is not the day the server thinks it is — pick it only if you really are
+            processing {DOOR_OCCASION_LABELS[occasion]} arrivals.
+          </span>
+        )}
+      </p>
+    </fieldset>
 
     <Button
       variant="primary"

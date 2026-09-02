@@ -7,7 +7,25 @@ import {
   resolveDoorPanelDetail,
   resolveDoorPanelState,
   toneForOutcome,
+  workshopSeatProgress,
 } from '../panel-state';
+import type { DoorHeldWorkshop } from '@/lib/types/checkin';
+
+function heldSeat(overrides: Partial<DoorHeldWorkshop> = {}): DoorHeldWorkshop {
+  return {
+    registrationId: 'r1',
+    workshopId: 'w1',
+    title: 'Testing Effectively',
+    room: 'Room 1',
+    date: '2026-09-10',
+    startTime: '09:00',
+    endTime: '12:00',
+    seatIndex: 0,
+    checkedInAt: null,
+    matchedBy: 'own_email',
+    ...overrides,
+  };
+}
 
 function hit(overrides: Partial<DoorResolveHit> = {}): DoorResolveHit {
   return {
@@ -23,8 +41,9 @@ function hit(overrides: Partial<DoorResolveHit> = {}): DoorResolveHit {
     admissible: true,
     refusalReason: null,
     checkIn: { workshopDayAt: null, conferenceDayAt: null },
-    goodie: { entitled: true, handedAt: null, note: null },
+    goodie: { entitled: true, handedAt: null, note: null, tshirtHandedAt: null, hoodieHandedAt: null },
     apparel: { tshirtSize: 'L', hoodieSize: null },
+    badge: { pickedUpAt: null },
     doorNote: null,
     workshops: { held: [], purchasedForOthers: [] },
     ...overrides,
@@ -47,6 +66,60 @@ describe('checkedInAtFor', () => {
     expect(checkedInAtFor(attendee, 'workshop_day')).toBe('2026-09-10T08:00:00.000Z');
     // Day-two re-entry must read as a fresh check-in, not a duplicate.
     expect(checkedInAtFor(attendee, 'conference_day')).toBeNull();
+  });
+
+  // On workshop day the unit of check-in is the seat: two workshops are two
+  // arrivals, and someone half-way through must not read as "already in".
+  it('counts a seat-holder as in only when EVERY seat is checked in', () => {
+    const partial = hit({
+      workshops: {
+        held: [
+          heldSeat({ registrationId: 'r1', checkedInAt: '2026-09-10T08:00:00.000Z' }),
+          heldSeat({ registrationId: 'r2', checkedInAt: null }),
+        ],
+        purchasedForOthers: [],
+      },
+    });
+    expect(checkedInAtFor(partial, 'workshop_day')).toBeNull();
+
+    const complete = hit({
+      workshops: {
+        held: [
+          heldSeat({ registrationId: 'r1', checkedInAt: '2026-09-10T08:00:00.000Z' }),
+          heldSeat({ registrationId: 'r2', checkedInAt: '2026-09-10T13:00:00.000Z' }),
+        ],
+        purchasedForOthers: [],
+      },
+    });
+    expect(checkedInAtFor(complete, 'workshop_day')).toBe('2026-09-10T13:00:00.000Z');
+  });
+
+  it('ignores seats entirely on conference day', () => {
+    const attendee = hit({
+      checkIn: { workshopDayAt: null, conferenceDayAt: '2026-09-11T07:14:00.000Z' },
+      workshops: { held: [heldSeat()], purchasedForOthers: [] },
+    });
+    expect(checkedInAtFor(attendee, 'conference_day')).toBe('2026-09-11T07:14:00.000Z');
+  });
+});
+
+describe('workshopSeatProgress', () => {
+  it('reports how many of the held seats are already in', () => {
+    const attendee = hit({
+      workshops: {
+        held: [
+          heldSeat({ registrationId: 'r1', checkedInAt: '2026-09-10T08:00:00.000Z' }),
+          heldSeat({ registrationId: 'r2', checkedInAt: null }),
+        ],
+        purchasedForOthers: [],
+      },
+    });
+    expect(workshopSeatProgress(attendee, 'workshop_day')).toEqual({ total: 2, checkedIn: 1 });
+  });
+
+  it('reports nothing outside workshop day', () => {
+    const attendee = hit({ workshops: { held: [heldSeat()], purchasedForOthers: [] } });
+    expect(workshopSeatProgress(attendee, 'conference_day')).toEqual({ total: 0, checkedIn: 0 });
   });
 });
 

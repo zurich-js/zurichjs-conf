@@ -38,7 +38,8 @@ describe('callDoorRpc binding', () => {
     mocks.rpcImpl.mockResolvedValue({ data: 'conference_day', error: null });
 
     await expect(doorCurrentOccasion()).resolves.toBe('conference_day');
-    expect(mocks.rpcImpl).toHaveBeenCalledWith('door_current_occasion', {});
+    // Functions with Args: never are called without a second argument.
+    expect(mocks.rpcImpl).toHaveBeenCalledWith('door_current_occasion', undefined);
   });
 });
 

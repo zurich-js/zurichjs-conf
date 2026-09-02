@@ -13,26 +13,46 @@
  * link, tap "Send sign-in link", tap the link in the mail. No typing at all.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { AlertCircle, MailCheck, ScanLine } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input } from '@/components/atoms';
 import { useDoorSession } from '@/hooks/checkin/useDoorSession';
 
+/**
+ * Deliberately loose. The server re-validates properly; this exists only to
+ * catch "no @" and "nothing after the dot" BEFORE a request leaves the phone,
+ * so the volunteer sees the field marked red instead of a generic failure.
+ */
+const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function DoorLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  /** A problem with the ADDRESS — rendered on the input itself. */
+  const [emailError, setEmailError] = useState<string | null>(null);
+  /** A problem with the REQUEST — rendered as the banner above the form. */
   const [error, setError] = useState<string | null>(null);
 
   // Resolves concurrently with the form rendering. A volunteer who is already
   // signed in never sees this page for more than a moment.
   const session = useDoorSession();
 
+  /**
+   * Fired AT MOST ONCE. The station redirects signed-out visitors back here, so
+   * an unguarded replace() on cached session data can ping-pong with it until
+   * the browser throws SecurityError ("history.pushState more than 100 times
+   * per 10 seconds") — which is what sign-out used to trigger.
+   */
+  const redirected = useRef(false);
   useEffect(() => {
-    if (session.data) void router.replace('/checkin');
+    if (session.data && !redirected.current) {
+      redirected.current = true;
+      void router.replace('/checkin');
+    }
   }, [session.data, router]);
 
   // The invitation link carries the address, so the volunteer types nothing.
@@ -44,18 +64,35 @@ export default function DoorLoginPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    // A malformed address never leaves the phone: the field itself turns red
+    // and says why, which beats a "Validation failed" banner that reads like
+    // the system is broken rather than the address being mistyped.
+    const trimmed = email.trim();
+    if (!LOOKS_LIKE_EMAIL.test(trimmed)) {
+      setEmailError('That doesn’t look like an email address — check for typos.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
+    setEmailError(null);
 
     try {
       const response = await fetch('/api/checkin/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: trimmed }),
       });
 
       if (!response.ok) {
         const body: { error?: string } = await response.json().catch(() => ({}));
+        // A 400 is always "the address is invalid" (the route validates nothing
+        // else), so it belongs on the field, not in the banner.
+        if (response.status === 400) {
+          setEmailError('That email address looks invalid — check for typos.');
+          return;
+        }
         throw new Error(body.error ?? 'Could not send the sign-in link');
       }
 
@@ -125,7 +162,9 @@ export default function DoorLoginPage() {
                 </div>
               ) : null}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {/* noValidate: the field renders its own error, phrased for a
+                  volunteer, instead of the browser's native bubble. */}
+              <form onSubmit={handleSubmit} noValidate className="space-y-6">
                 <div>
                   <label
                     htmlFor="door-email"
@@ -138,7 +177,12 @@ export default function DoorLoginPage() {
                     name="email"
                     type="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      // Typing is the fix, so the red state clears as they type.
+                      if (emailError) setEmailError(null);
+                    }}
+                    error={emailError ?? undefined}
                     placeholder="you@example.com"
                     // Keeps a phone keyboard from capitalising and autocorrecting
                     // an address, which on iOS it will do by default.

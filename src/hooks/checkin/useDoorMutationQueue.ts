@@ -33,12 +33,15 @@ import {
   type FlushResult,
 } from '@/lib/checkin/mutation-queue';
 import {
+  patchRosterBadgePickup,
   patchRosterCheckIn,
   patchRosterGoodie,
+  patchRosterUndo,
   revertRosterCheckIn,
   revertRosterGoodie,
 } from './useDoorRoster';
 import type {
+  DoorBadgePickupResult,
   DoorCheckInResult,
   DoorGoodieResult,
   DoorOccasion,
@@ -46,7 +49,7 @@ import type {
 } from '@/lib/types/checkin';
 
 /** What the server said about one write. `outcome` is always present. */
-export type DoorMutationResult = DoorCheckInResult | DoorGoodieResult;
+export type DoorMutationResult = DoorCheckInResult | DoorGoodieResult | DoorBadgePickupResult;
 
 /**
  * Retry cadence while writes are stuck. Slow on purpose: the flush stops at the
@@ -108,13 +111,33 @@ export function useDoorMutationQueue({
   /**
    * Roll back the optimistic patch for a write the server refused, and report
    * the real outcome.
+   *
+   * The payload's OWN occasion wins over the current one: a write queued on
+   * workshop day and refused after the volunteer switched days must undo the
+   * patch where it was made.
    */
   const revertOptimistic = useCallback(
     (payload: DoorMutationPayload, currentOccasion: DoorOccasion) => {
-      if (payload.kind === 'goodie') {
-        revertRosterGoodie(queryClient, currentOccasion, payload.ticketId);
-      } else {
-        revertRosterCheckIn(queryClient, currentOccasion, payload.scannedId);
+      const occasionOf = payload.occasion ?? currentOccasion;
+      switch (payload.kind) {
+        case 'goodie':
+          revertRosterGoodie(queryClient, occasionOf, payload.ticketId);
+          break;
+        case 'badge_pickup':
+          patchRosterBadgePickup(queryClient, occasionOf, payload.scannedId, null);
+          break;
+        case 'undo_check_in':
+          // A refused undo (deactivated volunteer) needs to restore the roster
+          // from the server because patchRosterUndo already cleared the cached
+          // arrival time. Invalidate without immediate refetch since the roster
+          // is expensive; the next mutation or visibility change will refetch.
+          void queryClient.invalidateQueries({
+            queryKey: ['checkin', 'roster', { occasion: occasionOf }],
+            refetchType: 'none',
+          });
+          break;
+        default:
+          revertRosterCheckIn(queryClient, occasionOf, payload.scannedId);
       }
     },
     [queryClient]
@@ -130,6 +153,25 @@ export function useDoorMutationQueue({
 
         if (currentOccasion && (outcome === 'denied' || outcome === 'not_found')) {
           revertOptimistic(entry.payload, currentOccasion);
+        }
+
+        // A duplicate badge pickup carries the time the badge ACTUALLY left the
+        // desk; the optimistic patch wrote this station's later time, so fold
+        // the real one in.
+        if (
+          currentOccasion &&
+          outcome === 'duplicate' &&
+          entry.payload.kind === 'badge_pickup' &&
+          settled &&
+          'alreadyPickedUpAt' in settled &&
+          settled.alreadyPickedUpAt
+        ) {
+          patchRosterBadgePickup(
+            queryClient,
+            entry.payload.occasion ?? currentOccasion,
+            entry.payload.scannedId,
+            settled.alreadyPickedUpAt
+          );
         }
 
         if (settled) onOutcomeRef.current?.(entry, settled);
@@ -148,7 +190,7 @@ export function useDoorMutationQueue({
       }
       setPending(result.pending);
     },
-    [revertOptimistic]
+    [queryClient, revertOptimistic]
   );
 
   /**
@@ -193,24 +235,43 @@ export function useDoorMutationQueue({
       const currentOccasion = occasionRef.current;
       if (!id || !currentOccasion) return null;
 
-      const withStation = station ? { ...payload, station } : payload;
-      const entry = enqueue({ staffId: id, payload: withStation });
+      // The occasion is stamped at enqueue, like occurredAt: a write queued on
+      // one day and flushed on another must still land on the day it was taken.
+      const stamped: DoorMutationPayload = {
+        ...payload,
+        occasion: payload.occasion ?? currentOccasion,
+        ...(station ? { station } : {}),
+      };
+      const entry = enqueue({ staffId: id, payload: stamped });
 
-      if (entry.payload.kind === 'goodie') {
-        patchRosterGoodie(
-          queryClient,
-          currentOccasion,
-          entry.payload.ticketId,
-          entry.occurredAt,
-          entry.payload.note ?? null
-        );
-      } else {
-        patchRosterCheckIn(
-          queryClient,
-          currentOccasion,
-          entry.payload.scannedId,
-          entry.occurredAt
-        );
+      switch (entry.payload.kind) {
+        case 'goodie':
+          patchRosterGoodie(
+            queryClient,
+            currentOccasion,
+            entry.payload.ticketId,
+            entry.occurredAt,
+            entry.payload.note ?? null
+          );
+          break;
+        case 'undo_check_in':
+          patchRosterUndo(queryClient, currentOccasion, entry.payload.scannedId);
+          break;
+        case 'badge_pickup':
+          patchRosterBadgePickup(
+            queryClient,
+            currentOccasion,
+            entry.payload.scannedId,
+            entry.occurredAt
+          );
+          break;
+        default:
+          patchRosterCheckIn(
+            queryClient,
+            currentOccasion,
+            entry.payload.scannedId,
+            entry.occurredAt
+          );
       }
 
       setPending(readQueue(id).length);

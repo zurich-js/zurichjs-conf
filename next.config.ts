@@ -125,6 +125,22 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
 
+  // The door station uses the CAMERA and nothing else. The microphone is
+  // denied at the browser level so no code path — ours or a library's — can
+  // ever request it, and the station can never appear as a mic user in a
+  // phone's site permissions. `:path*` matches zero segments, so /checkin
+  // itself is covered too.
+  async headers() {
+    return [
+      {
+        source: '/checkin/:path*',
+        headers: [
+          { key: 'Permissions-Policy', value: 'camera=(self), microphone=()' },
+        ],
+      },
+    ];
+  },
+
   // Proxy PostHog requests to bypass ad blockers
   async rewrites() {
     return [

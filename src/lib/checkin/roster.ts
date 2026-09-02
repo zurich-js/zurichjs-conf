@@ -20,6 +20,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { doorBadgePickups } from './rpc';
 import type { Database } from '@/lib/types/database.generated';
 import type { DoorOccasion, DoorTicketStatus } from '@/lib/types/checkin';
 
@@ -57,6 +58,12 @@ export interface RosterTicket {
   checkedInConferenceDayAt: string | null;
   goodieHandedAt: string | null;
   goodieNote: string | null;
+  /** When the t-shirt was physically handed over (null = not yet). */
+  tshirtHandedAt: string | null;
+  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  hoodieHandedAt: string | null;
+  /** When the physical badge was handed over (early pickup included). */
+  badgePickedUpAt: string | null;
   doorNote: string | null;
   tshirtSize: string | null;
   hoodieSize: string | null;
@@ -72,6 +79,8 @@ export interface RosterRegistration {
   company: string | null;
   seatIndex: number;
   checkedInAt: string | null;
+  /** Set for workshop-only attendees who picked their badge up on their seat id. */
+  badgePickedUpAt: string | null;
 }
 
 export interface RosterWorkshop {
@@ -130,6 +139,8 @@ interface TicketRow {
   checked_in_conference_day_at: string | null;
   goodie_handed_at: string | null;
   goodie_note: string | null;
+  tshirt_handed_at: string | null;
+  hoodie_handed_at: string | null;
   door_note: string | null;
 }
 
@@ -171,13 +182,13 @@ interface WorkshopRow {
 export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoster> {
   const supabase = createServiceRoleClient();
 
-  const [tickets, apparel, registrations, workshops] = await Promise.all([
+  const [tickets, apparel, registrations, workshops, badgePickups] = await Promise.all([
     fetchAllPages<TicketRow>(
       (from, to) =>
         supabase
           .from('tickets')
           .select(
-            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, door_note'
+            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, tshirt_handed_at, hoodie_handed_at, door_note'
           )
           .order('created_at', { ascending: true })
           .range(from, to),
@@ -212,9 +223,13 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
           .range(from, to),
       'workshops'
     ),
+    // Badge pickup state lives in door_events, not on the subject rows, so it
+    // ships as one (subjectId, pickedUpAt) aggregate and is merged here.
+    doorBadgePickups(),
   ]);
 
   const apparelByTicket = new Map(apparel.map((a) => [a.ticket_id, a]));
+  const badgeBySubject = new Map(badgePickups.map((b) => [b.subjectId, b.pickedUpAt]));
 
   return {
     occasion,
@@ -239,6 +254,9 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         checkedInConferenceDayAt: t.checked_in_conference_day_at,
         goodieHandedAt: t.goodie_handed_at,
         goodieNote: t.goodie_note,
+        tshirtHandedAt: t.tshirt_handed_at,
+        hoodieHandedAt: t.hoodie_handed_at,
+        badgePickedUpAt: badgeBySubject.get(t.id) ?? null,
         doorNote: t.door_note,
         tshirtSize: sizes?.tshirt_size ?? null,
         hoodieSize: sizes?.hoodie_size ?? null,
@@ -254,6 +272,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
       company: r.company,
       seatIndex: r.seat_index,
       checkedInAt: r.checked_in_at,
+      badgePickedUpAt: badgeBySubject.get(r.id) ?? null,
     })),
     workshops: workshops.map((w) => ({
       id: w.id,

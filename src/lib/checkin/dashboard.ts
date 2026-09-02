@@ -22,9 +22,14 @@ export interface DoorStationStat {
 export interface DoorVolunteerStat {
   staffEmail: string;
   staffRole: DoorRole;
+  /** Every action this volunteer performed, whatever the outcome. */
+  scans: number;
   admitted: number;
   manualAdmits: number;
+  undos: number;
+  badgePickups: number;
   refusals: number;
+  duplicates: number;
   lastSeenAt: string | null;
 }
 
@@ -32,6 +37,7 @@ export interface DoorAnomalies {
   refusals: number;
   notFound: number;
   manualAdmits: number;
+  undos: number;
   duplicates: number;
 }
 
@@ -42,8 +48,11 @@ export interface DoorDashboard {
   arrived: number;
   remaining: number;
   goodieHandedOver: number;
+  /** Badges collected, early pickups included — not scoped to one occasion. */
+  badgesPickedUp: number;
   arrivalsLast15Min: number;
   arrivalsLast5Min: number;
+  /** Only rows old enough to carry a station label; the volunteer list leads now. */
   stations: DoorStationStat[];
   volunteers: DoorVolunteerStat[];
   anomalies: DoorAnomalies;
@@ -56,7 +65,7 @@ export async function doorDashboard(occasion?: DoorOccasion): Promise<DoorDashbo
   const supabase = createServiceRoleClient<DoorDatabase>();
 
   const { data, error } = await supabase.rpc('door_dashboard', {
-    p_occasion: occasion ?? null,
+    p_occasion: occasion,
   });
 
   // No logging here: the dashboard route catches and logs, and logging in both

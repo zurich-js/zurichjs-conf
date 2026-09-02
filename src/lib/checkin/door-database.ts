@@ -20,6 +20,7 @@
 
 import type { Database } from '@/lib/types/database';
 import type {
+  DoorBadgePickupResult,
   DoorCheckInResult,
   DoorGoodieResult,
   DoorOccasion,
@@ -27,13 +28,20 @@ import type {
 } from '@/lib/types/checkin';
 import type { DoorDashboard } from './dashboard';
 
+/** One badge already handed over, from door_badge_pickups(). */
+export interface DoorBadgePickupRow {
+  /** Ticket id or workshop registration id — the same id space a scan resolves. */
+  subjectId: string;
+  pickedUpAt: string;
+}
+
 // A `type`, not an `interface`: interfaces have no implicit index signature, so
 // an interface here would fail supabase-js's `Record<string, GenericFunction>`
 // schema constraint and silently degrade every rpc call's typing to `never`.
 type DoorFunctions = {
   /** RETURNS TEXT — narrowed to DoorOccasion at runtime by the wrapper. */
   door_current_occasion: {
-    Args: Record<PropertyKey, never>;
+    Args: never;
     Returns: string;
   };
   door_resolve: {
@@ -44,10 +52,22 @@ type DoorFunctions = {
     Args: {
       p_scanned_id: string;
       p_staff_id: string;
-      p_station?: string | null;
-      p_occurred_at?: string | null;
+      p_station?: string;
+      p_occurred_at?: string;
       p_manual?: boolean;
-      p_reason?: string | null;
+      p_reason?: string;
+      p_occasion?: DoorOccasion;
+    };
+    Returns: DoorCheckInResult;
+  };
+  door_check_in_undo: {
+    Args: {
+      p_scanned_id: string;
+      p_staff_id: string;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_reason?: string;
+      p_occasion?: DoorOccasion;
     };
     Returns: DoorCheckInResult;
   };
@@ -55,14 +75,35 @@ type DoorFunctions = {
     Args: {
       p_ticket_id: string;
       p_staff_id: string;
-      p_station?: string | null;
-      p_occurred_at?: string | null;
-      p_note?: string | null;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_note?: string;
+      p_occasion?: DoorOccasion;
+      p_tshirt_size?: string;
+      p_hoodie_size?: string;
     };
     Returns: DoorGoodieResult;
   };
+  door_badge_pickup: {
+    Args: {
+      p_scanned_id: string;
+      p_staff_id: string;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_occasion?: DoorOccasion;
+    };
+    Returns: DoorBadgePickupResult;
+  };
+  door_badge_pickups: {
+    Args: never;
+    Returns: DoorBadgePickupRow[];
+  };
+  door_events_delete: {
+    Args: { p_ids: string[] };
+    Returns: { deleted: number };
+  };
   door_dashboard: {
-    Args: { p_occasion?: DoorOccasion | null };
+    Args: { p_occasion?: DoorOccasion };
     Returns: DoorDashboard;
   };
 };

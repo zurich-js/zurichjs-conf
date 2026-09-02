@@ -64,9 +64,9 @@ export const DOOR_ROLE_DESCRIPTIONS: Record<DoorRole, string> = {
  * offering a button that fails.
  */
 export const DOOR_ROLE_ABILITIES = {
-  door_lead: ['check_in', 'goodie', 'manual_admit', 'lookup', 'view_contact'],
-  scanner: ['check_in', 'lookup'],
-  goodie: ['goodie', 'lookup'],
+  door_lead: ['check_in', 'goodie', 'manual_admit', 'lookup', 'view_contact', 'badge_pickup'],
+  scanner: ['check_in', 'lookup', 'badge_pickup'],
+  goodie: ['goodie', 'lookup', 'badge_pickup'],
 } as const satisfies Record<DoorRole, readonly DoorAbility[]>;
 
 export const DOOR_ABILITIES = [
@@ -75,6 +75,7 @@ export const DOOR_ABILITIES = [
   'manual_admit',
   'lookup',
   'view_contact',
+  'badge_pickup',
 ] as const;
 export type DoorAbility = (typeof DOOR_ABILITIES)[number];
 
@@ -126,6 +127,12 @@ export const DOOR_ABILITY_GUIDE: Record<
     withIt: 'Email addresses appear on the attendee panel and in lookup results.',
     withoutIt:
       'Names and companies show, email addresses do not. Enough to confirm who someone is without handing a volunteer the attendee list.',
+  },
+  badge_pickup: {
+    label: 'Hand over badges',
+    withIt:
+      'A "Badge handed over" button records the pickup — including early pickup the day before — without touching any day\'s check-in.',
+    withoutIt: 'Badge pickups cannot be recorded from this account.',
   },
 };
 
@@ -195,14 +202,31 @@ export interface DoorGoodieState {
    * entitled to a goodie bag, so this is false for them by construction.
    */
   entitled: boolean;
+  /** Set when the FULL entitlement (t-shirt and, for VIPs, hoodie) was handed. */
   handedAt: string | null;
   /** Set when only part of the entitlement was handed over. */
   note: string | null;
+  /** When the t-shirt was physically handed over (null = not yet). */
+  tshirtHandedAt: string | null;
+  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  hoodieHandedAt: string | null;
 }
 
 export interface DoorApparel {
   tshirtSize: string | null;
   hoodieSize: string | null;
+}
+
+/**
+ * Whether the physical badge has been handed over yet.
+ *
+ * Deliberately separate from check-in: badges can be collected early (the
+ * community day before the workshops), and picking one up must not consume the
+ * next morning's arrival. The state lives in `door_events` — the applied
+ * `badge_pickup` row IS the pickup — so it needs no ticket column.
+ */
+export interface DoorBadgeState {
+  pickedUpAt: string | null;
 }
 
 /**
@@ -260,6 +284,7 @@ export interface DoorResolveHit {
   checkIn: DoorCheckInState;
   goodie: DoorGoodieState;
   apparel: DoorApparel;
+  badge: DoorBadgeState;
   doorNote: string | null;
   workshops: DoorWorkshops;
 }
@@ -298,6 +323,14 @@ export interface DoorGoodieResult {
   failureReason?: string;
 }
 
+export interface DoorBadgePickupResult {
+  outcome: DoorOutcome;
+  subjectKind?: DoorSubjectKind;
+  /** Present when the outcome is `duplicate`: when the badge actually left the desk. */
+  alreadyPickedUpAt?: string | null;
+  failureReason?: string;
+}
+
 /**
  * Human-facing text for every refusal the functions can return. Keyed on the
  * machine reason so a volunteer never sees a raw enum, and so an unmapped
@@ -316,6 +349,8 @@ export const DOOR_FAILURE_MESSAGES: Record<string, string> = {
   registration_pending: 'This workshop payment has not settled. Send them to the desk.',
   registration_cancelled: 'This workshop seat was cancelled. Send them to the desk.',
   registration_refunded: 'This workshop seat was refunded. Send them to the desk.',
+  workshop_registration_wrong_day:
+    'Workshop badges cannot be checked in on conference day. Scan their conference ticket instead.',
 };
 
 export function doorFailureMessage(reason: string | undefined): string {

@@ -31,20 +31,53 @@
  */
 
 import { logger } from '@/lib/logger';
+import type { DoorOccasion } from '@/lib/types/checkin';
 
 const log = logger.scope('Door Queue');
 
-export type DoorMutationKind = 'check_in' | 'manual_admit' | 'goodie';
+export type DoorMutationKind =
+  | 'check_in'
+  | 'manual_admit'
+  | 'undo_check_in'
+  | 'goodie'
+  | 'badge_pickup';
 
 /**
- * The three writes a station can make, as a discriminated union so a payload
- * cannot be built without the fields its endpoint requires — a manual admission
+ * The writes a station can make, as a discriminated union so a payload cannot
+ * be built without the fields its endpoint requires — a manual admission
  * without a reason is rejected by both the schema and the database.
+ *
+ * Every payload carries the occasion it was taken FOR, stamped at enqueue like
+ * `occurredAt`: a write queued on workshop day and flushed after midnight must
+ * still land on workshop day.
  */
 export type DoorMutationPayload =
-  | { kind: 'check_in'; scannedId: string; station?: string }
-  | { kind: 'manual_admit'; scannedId: string; reason: string; station?: string }
-  | { kind: 'goodie'; ticketId: string; note?: string; station?: string };
+  | { kind: 'check_in'; scannedId: string; occasion?: DoorOccasion; station?: string }
+  | {
+      kind: 'manual_admit';
+      scannedId: string;
+      reason: string;
+      occasion?: DoorOccasion;
+      station?: string;
+    }
+  | {
+      kind: 'undo_check_in';
+      scannedId: string;
+      reason?: string;
+      occasion?: DoorOccasion;
+      station?: string;
+    }
+  | {
+      kind: 'goodie';
+      ticketId: string;
+      note?: string;
+      /** Size actually handed over; absent = that item was NOT handed. */
+      tshirtSize?: string;
+      hoodieSize?: string;
+      occasion?: DoorOccasion;
+      station?: string;
+    }
+  | { kind: 'badge_pickup'; scannedId: string; occasion?: DoorOccasion; station?: string };
 
 export interface DoorQueuedMutation {
   /** Client-generated, so a log line can be followed across retries. */
@@ -67,7 +100,9 @@ export interface DoorQueuedMutation {
 const ENDPOINTS: Record<DoorMutationKind, string> = {
   check_in: '/api/checkin/check-in',
   manual_admit: '/api/checkin/manual-admit',
+  undo_check_in: '/api/checkin/undo',
   goodie: '/api/checkin/goodie',
+  badge_pickup: '/api/checkin/badge-pickup',
 };
 
 /**

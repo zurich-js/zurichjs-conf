@@ -38,7 +38,7 @@ export default async function handler(
     return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
   }
 
-  const { scannedId, station, occurredAt, reason } = parsed.data;
+  const { scannedId, station, occurredAt, occasion, reason } = parsed.data;
 
   try {
     const result = await doorCheckIn({
@@ -46,6 +46,7 @@ export default async function handler(
       staffId: guard.staff.id,
       station,
       occurredAt,
+      occasion,
       manual: true,
       reason,
     });

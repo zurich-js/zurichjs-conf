@@ -14,6 +14,8 @@ export interface ScannerViewportProps {
   torchOn?: boolean;
   onToggleTorch?: () => void;
   cameras?: CameraChoice[];
+  /** deviceId of the live stream, so the picker shows which lens is on. */
+  activeCameraId?: string | null;
   onPickCamera?: (deviceId: string) => void;
   className?: string;
 }
@@ -39,6 +41,7 @@ export const ScannerViewport: React.FC<ScannerViewportProps> = ({
   torchOn = false,
   onToggleTorch,
   cameras = [],
+  activeCameraId = null,
   onPickCamera,
   className = '',
 }) => (
@@ -118,10 +121,25 @@ export const ScannerViewport: React.FC<ScannerViewportProps> = ({
         {cameras.length > 1 && onPickCamera ? (
           <label className="flex items-center gap-2 text-sm text-text-muted">
             <span className="sr-only">Choose a camera</span>
+            {/* Controlled on the LIVE stream's deviceId, not whatever was last
+                clicked: `environment` resolves to a lens of the browser's
+                choosing, and an uncontrolled select silently showing the wrong
+                current camera is exactly how "I can't switch back" happens. */}
             <select
               className="min-h-11 rounded-xl bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              onChange={(event) => onPickCamera(event.target.value)}
+              value={
+                activeCameraId && cameras.some((camera) => camera.deviceId === activeCameraId)
+                  ? activeCameraId
+                  : ''
+              }
+              onChange={(event) => {
+                if (event.target.value) onPickCamera(event.target.value);
+              }}
             >
+              {/* Shown only while the live lens is not identifiable. */}
+              <option value="" disabled>
+                Switch camera…
+              </option>
               {cameras.map((camera, index) => (
                 <option key={camera.deviceId} value={camera.deviceId}>
                   {camera.label || `Camera ${index + 1}`}
