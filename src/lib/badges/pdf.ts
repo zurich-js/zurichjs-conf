@@ -1,7 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import fontkit from '@pdf-lib/fontkit';
-import { PDFDocument, type PDFEmbeddedPage, type PDFFont, type PDFPage, rgb } from 'pdf-lib';
+import {
+  decodePDFRawStream,
+  PDFDocument,
+  PDFName,
+  PDFRawStream,
+  type PDFEmbeddedPage,
+  type PDFFont,
+  type PDFPage,
+  rgb,
+} from 'pdf-lib';
 import sharp from 'sharp';
 import type { BadgeCategory, BadgeEntry } from '@/lib/badges/export';
 import type { BadgeExportFile } from '@/lib/badges/files';
@@ -16,10 +25,7 @@ const SPONSOR_LOGO_TOP_MM = 116;
 const SPONSOR_LOGO_CANVAS_WIDTH = 1080;
 const SPONSOR_LOGO_CANVAS_HEIGHT = 240;
 
-const DYNAMIC_LABEL_STYLES = {
-  speaker: { background: rgb(59 / 255, 173 / 255, 72 / 255) },
-  organizer: { background: rgb(235 / 255, 68 / 255, 30 / 255) },
-} as const;
+const DYNAMIC_LABEL_CATEGORIES = new Set<BadgeCategory>(['speaker', 'organizer']);
 
 interface BadgePdfAssets {
   qrImages: ReadonlyMap<string, Buffer>;
@@ -58,6 +64,31 @@ function copyPageBoxes(target: PDFPage, source: PDFPage): void {
   target.setBleedBox(bleed.x, bleed.y, bleed.width, bleed.height);
   target.setTrimBox(trim.x, trim.y, trim.width, trim.height);
   target.setArtBox(art.x, art.y, art.width, art.height);
+}
+
+/**
+ * Speaker and organizer source templates each contain one PDF text object: the
+ * fixed bottom label. Remove that object before embedding the page so the
+ * original profiled background remains untouched and the export can draw the
+ * selected label in its place.
+ */
+function removeFixedTemplateLabel(page: PDFPage, category: BadgeCategory): void {
+  const contents = page.node.Contents();
+  if (!(contents instanceof PDFRawStream)) {
+    throw new Error(`${category} badge template must have one decodable content stream`);
+  }
+
+  const decoded = Buffer.from(decodePDFRawStream(contents).decode()).toString('latin1');
+  const textObjects = [...decoded.matchAll(/BT[\s\S]*?ET/g)];
+  if (textObjects.length !== 1) {
+    throw new Error(`${category} badge template must contain exactly one fixed text label`);
+  }
+
+  const contentWithoutLabel = decoded.replace(textObjects[0][0], '');
+  page.node.set(
+    PDFName.of('Contents'),
+    page.doc.context.flateStream(Buffer.from(contentWithoutLabel, 'latin1'))
+  );
 }
 
 function fittedSize(font: PDFFont, text: string, preferred: number, maxWidth: number, minimum: number): number {
@@ -191,15 +222,7 @@ async function addEntryPages(
   drawCenteredWrapped(front, entry.role, regular, 14, 60, 9);
   drawCenteredWrapped(front, entry.company, regular, 11, 76, 7);
 
-  if (entry.category in DYNAMIC_LABEL_STYLES) {
-    const style = DYNAMIC_LABEL_STYLES[entry.category as keyof typeof DYNAMIC_LABEL_STYLES];
-    front.drawRectangle({
-      x: 0,
-      y: mm(5),
-      width: front.getWidth(),
-      height: mm(23),
-      color: style.background,
-    });
+  if (DYNAMIC_LABEL_CATEGORIES.has(entry.category)) {
     drawCenteredLine(front, entry.label, bold, 30, 137, 16, rgb(1, 1, 1));
   }
 
@@ -249,6 +272,9 @@ export async function buildBadgePdfFiles(
     const template = await PDFDocument.load(templateBytes);
     if (template.getPageCount() !== 2) {
       throw new Error(`${category} badge template must contain exactly two pages`);
+    }
+    if (DYNAMIC_LABEL_CATEGORIES.has(category)) {
+      removeFixedTemplateLabel(template.getPage(0), category);
     }
 
     for (const entry of categoryEntries) {
