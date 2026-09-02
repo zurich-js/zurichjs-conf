@@ -172,6 +172,37 @@ export function assignMissingBadgeCodes(
   }));
 }
 
+export function assignRegeneratedBadgeCodes(
+  targets: BadgeCodeRow[],
+  createCode: () => string = randomUUID
+): BadgeCodeRow[] {
+  return targets.map((target) => ({
+    ...target,
+    code: createCode(),
+  }));
+}
+
+export async function regenerateAllBadgeCodes(client: SupabaseClient): Promise<number> {
+  const existingCodes = await fetchAll<BadgeCodeRow>((from, to) => client
+    .from('badge_qr_codes')
+    .select('subject_key, target_public_id, code')
+    .order('subject_key', { ascending: true })
+    .range(from, to) as unknown as PromiseLike<{
+      data: BadgeCodeRow[] | null;
+      error: { message: string } | null;
+    }>);
+
+  for (const rows of chunks(existingCodes)) {
+    const { error } = await client.from('badge_qr_codes').upsert(
+      assignRegeneratedBadgeCodes(rows),
+      { onConflict: 'subject_key' }
+    );
+    if (error) throw new Error(`Failed to regenerate badge QR codes: ${error.message}`);
+  }
+
+  return existingCodes.length;
+}
+
 function publicUrl(baseUrl: string, pathname: string): string {
   return new URL(pathname, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`).toString();
 }

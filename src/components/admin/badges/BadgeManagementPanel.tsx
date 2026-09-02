@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   Plus,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
 } from 'lucide-react';
 import { BadgeExportEditModal } from '@/components/admin/badges/BadgeExportEditModal';
@@ -220,6 +221,7 @@ export function BadgeManagementPanel() {
   const [entryOverrides, setEntryOverrides] = useState<Map<string, BadgeEntryOverride>>(new Map());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [provisioning, setProvisioning] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'error' | 'success' | 'warning'; message: string } | null>(null);
   const queryClient = useQueryClient();
@@ -268,6 +270,35 @@ export function BadgeManagementPanel() {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Provisioning failed' });
     } finally {
       setProvisioning(false);
+    }
+  };
+
+  const regenerate = async () => {
+    if (!window.confirm(
+      'Regenerate every badge QR code? All existing downloaded or printed badge QRs will stop working immediately. Stable share-page IDs and profile data will not change.'
+    )) return;
+    setRegenerating(true);
+    setFeedback(null);
+    try {
+      const response = await fetch('/api/admin/badges/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmInvalidateExisting: true }),
+      });
+      if (!response.ok) throw await responseError(response);
+      const body = await response.json() as { regenerated: number };
+      await refresh();
+      setFeedback({
+        tone: 'success',
+        message: `Regenerated ${body.regenerated} badge QR codes. Re-export all badge PDFs before printing.`,
+      });
+    } catch (error) {
+      setFeedback({
+        tone: 'error',
+        message: error instanceof Error ? error.message : 'Badge QR regeneration failed',
+      });
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -444,6 +475,15 @@ export function BadgeManagementPanel() {
           </button>
           <button type="button" onClick={provision} disabled={provisioning} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50">
             <RefreshCw className={`size-4 ${provisioning ? 'animate-spin' : ''}`} aria-hidden="true" /> Generate missing codes
+          </button>
+          <button
+            type="button"
+            onClick={regenerate}
+            disabled={regenerating || provisioning || rows.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-800 hover:bg-red-50 disabled:opacity-50"
+          >
+            <RotateCcw className={`size-4 ${regenerating ? 'animate-spin' : ''}`} aria-hidden="true" />
+            {regenerating ? 'Regenerating all…' : 'Regenerate all QR codes'}
           </button>
           <BadgeExportMenu
             activeCategoryLabel={activeCategoryLabel}
