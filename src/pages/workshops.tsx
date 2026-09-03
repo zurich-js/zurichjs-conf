@@ -11,6 +11,7 @@ import { workshopProgramSections } from '@/data';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
+import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 
 const TAB_VALUES = ['morning', 'lunch', 'afternoon'] as const;
 type TabValue = (typeof TAB_VALUES)[number];
@@ -40,6 +41,57 @@ function hasPublishedWorkshop(items: PublicProgramScheduleItem[]) {
   return items.some((item) => item.type === 'session' && item.session?.type === 'workshop');
 }
 
+function getWorkshopOffering(
+  item: PublicProgramScheduleItem,
+  offerings: Record<string, WorkshopOfferingSummary>
+) {
+  if (item.type !== 'session' || item.session?.type !== 'workshop') {
+    return null;
+  }
+
+  return offerings[item.session.id]
+    ?? (item.session.cfp_submission_id
+      ? offerings[item.session.cfp_submission_id]
+      : undefined)
+    ?? null;
+}
+
+function orderWorkshopsByOccupancy(
+  items: PublicProgramScheduleItem[],
+  offerings: Record<string, WorkshopOfferingSummary>
+) {
+  const workshops = items
+    .map((item, originalIndex) => ({
+      item,
+      offering: getWorkshopOffering(item, offerings),
+      originalIndex,
+    }))
+    .filter(({ item }) => item.type === 'session' && item.session?.type === 'workshop')
+    .sort((a, b) => {
+      const availabilityRank = (offering: WorkshopOfferingSummary | null) =>
+        offering?.soldOut ? 2 : offering ? 0 : 1;
+      const rankDifference = availabilityRank(a.offering) - availabilityRank(b.offering);
+      if (rankDifference !== 0) return rankDifference;
+      if (!a.offering || !b.offering) return a.originalIndex - b.originalIndex;
+
+      const aOccupancy = a.offering.capacity > 0
+        ? a.offering.enrolledCount / a.offering.capacity
+        : a.offering.enrolledCount;
+      const bOccupancy = b.offering.capacity > 0
+        ? b.offering.enrolledCount / b.offering.capacity
+        : b.offering.enrolledCount;
+
+      return aOccupancy - bOccupancy || a.originalIndex - b.originalIndex;
+    })
+    .map(({ item }) => item);
+
+  let workshopIndex = 0;
+  return items.map((item) => {
+    if (item.type !== 'session' || item.session?.type !== 'workshop') return item;
+    return workshops[workshopIndex++] ?? item;
+  });
+}
+
 export default function WorkshopsPage() {
   // URL-driven so back-navigation and shared links preserve the slot view.
   const [activeTab, setActiveTab] = useQueryState<TabValue>(
@@ -60,18 +112,18 @@ export default function WorkshopsPage() {
     [data]
   );
 
-  const visibleItems =
-    partitioned
-      ? activeTab === 'morning'
-        ? partitioned.morning
-        : activeTab === 'afternoon'
-          ? partitioned.afternoon
-          : partitioned.lunch
-      : [];
+  const visibleItems = useMemo(() => {
+    if (!partitioned || !data) return [];
 
-  const firstPublishedIndex = visibleItems.findIndex(
-    (item) => item.type === 'session' && Boolean(item.session)
-  );
+    const items = activeTab === 'morning'
+      ? partitioned.morning
+      : activeTab === 'afternoon'
+        ? partitioned.afternoon
+        : partitioned.lunch;
+
+    return orderWorkshopsByOccupancy(items, data.offeringsBySubmissionId);
+  }, [activeTab, data, partitioned]);
+
   const showAfternoonMobileHint =
     activeTab === 'morning' && Boolean(partitioned && hasPublishedWorkshop(partitioned.afternoon));
 
@@ -142,11 +194,10 @@ export default function WorkshopsPage() {
                 </p>
               )}
               {data &&
-                visibleItems.map((item, index) => (
+                visibleItems.map((item) => (
                   <ProgramScheduleItemCard
                     key={item.id}
                     item={item}
-                    defaultOpen={index === firstPublishedIndex}
                     placeholderVariant={activeTab === 'lunch' ? 'slot' : 'plain'}
                     expandableSessions
                     offeringsBySubmissionId={data.offeringsBySubmissionId}
