@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
 import { formatTimeRange } from './utils';
@@ -19,9 +19,11 @@ export interface EventCardProps {
   actions?: ReactNode;
   /** Quiet external link rendered on the card's trailing edge (e.g. "Info and RSVP"). */
   link?: EventCardLink;
+  /** When true, displays a "VIP only" badge to indicate exclusive access. */
+  vipOnly?: boolean;
 }
 
-export function EventCard({ id, title, description, startTime, durationMinutes, className, actions, link }: EventCardProps) {
+export function EventCard({ id, title, description, startTime, durationMinutes, className, actions, link, vipOnly }: EventCardProps): ReactElement {
   const hasPanel = Boolean(description) || Boolean(actions);
 
   return (
@@ -42,7 +44,14 @@ export function EventCard({ id, title, description, startTime, durationMinutes, 
       header={(
         <>
           <p className="text-sm text-brand-gray-medium">{formatTimeRange(startTime, durationMinutes)}</p>
-          <h3 className="mt-1 text-lg font-bold leading-tight text-brand-black">{title}</h3>
+          <div className="mt-1 flex items-center gap-2">
+            <h3 className="text-lg font-bold leading-tight text-brand-black">{title}</h3>
+            {vipOnly && (
+              <span className="inline-flex items-center rounded-full bg-[color:var(--color-vip)] px-2 py-0.5 text-xs font-semibold text-white">
+                VIP only
+              </span>
+            )}
+          </div>
         </>
       )}
       panel={hasPanel ? (

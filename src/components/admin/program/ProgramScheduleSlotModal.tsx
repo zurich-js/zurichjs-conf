@@ -43,6 +43,7 @@ export function ProgramScheduleSlotModal({
     title: item?.title ?? '',
     description: item?.description ?? '',
     is_visible: initialIsSessionPlaceholder ? false : (item?.is_visible ?? false),
+    vip_only: item?.vip_only ?? false,
   });
 
   const selectedSession = sessions.find((session) => session.id === form.session_id);
@@ -70,6 +71,7 @@ export function ProgramScheduleSlotModal({
       title: form.type === 'session' ? (selectedSession?.title ?? (form.title || 'TBA')) : form.title,
       description: form.type === 'session' ? null : form.description || null,
       is_visible: form.is_visible,
+      vip_only: form.type === 'event' ? form.vip_only : false,
     };
 
     try {
@@ -183,23 +185,40 @@ export function ProgramScheduleSlotModal({
             ) : null}
           </>
         ) : null}
-        <div className="flex w-fit items-center gap-3 rounded-md border border-gray-200 px-3 py-2">
-          <span className="text-sm font-medium text-gray-800">Visible publicly</span>
-          <ToggleButton
-            label={form.is_visible ? 'Public' : 'Hidden'}
-            checked={form.is_visible}
-            disabled={isSessionPlaceholder}
-            activeClassName="bg-green-500"
-            title={isSessionPlaceholder
-              ? 'Select a session before making this slot public'
-              : form.is_visible
-                ? 'Visible publicly'
-                : 'Hidden from public schedule'}
-            onClick={() => {
-              if (isSessionPlaceholder) return;
-              setForm({ ...form, is_visible: !form.is_visible });
-            }}
-          />
+        <div className="flex flex-wrap gap-3">
+          <div className="flex w-fit items-center gap-3 rounded-md border border-gray-200 px-3 py-2">
+            <span className="text-sm font-medium text-gray-800">Visible publicly</span>
+            <ToggleButton
+              label={form.is_visible ? 'Public' : 'Hidden'}
+              checked={form.is_visible}
+              disabled={isSessionPlaceholder}
+              activeClassName="bg-green-500"
+              title={isSessionPlaceholder
+                ? 'Select a session before making this slot public'
+                : form.is_visible
+                  ? 'Visible publicly'
+                  : 'Hidden from public schedule'}
+              onClick={() => {
+                if (isSessionPlaceholder) return;
+                setForm({ ...form, is_visible: !form.is_visible });
+              }}
+            />
+          </div>
+          {form.type === 'event' && (
+            <div className="flex w-fit items-center gap-3 rounded-md border border-gray-200 px-3 py-2">
+              <span className="text-sm font-medium text-gray-800">VIP only</span>
+              <ToggleButton
+                label={form.vip_only ? 'VIP' : 'All'}
+                checked={form.vip_only}
+                disabled={false}
+                activeClassName="bg-[color:var(--color-vip)]"
+                title={form.vip_only
+                  ? 'Event is exclusive to VIP ticket holders'
+                  : 'Event is open to all attendees'}
+                onClick={() => setForm({ ...form, vip_only: !form.vip_only })}
+              />
+            </div>
+          )}
         </div>
       </form>
     </AdminModal>

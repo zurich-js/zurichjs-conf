@@ -76,6 +76,7 @@ export function ProgramScheduleItemCard({
         durationMinutes={item.duration_minutes}
         actions={eventActions}
         link={eventLink}
+        vipOnly={item.vip_only}
       />
     );
   }

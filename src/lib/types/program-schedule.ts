@@ -14,6 +14,7 @@ export interface ProgramScheduleItemRecord {
   session_id?: string | null;
   submission_id: string | null;
   is_visible: boolean;
+  vip_only: boolean;
   created_at?: string;
   updated_at?: string;
   program_session?: {
@@ -67,6 +68,7 @@ export interface ProgramScheduleItemInput {
   session_id?: string | null;
   submission_id?: string | null;
   is_visible?: boolean;
+  vip_only?: boolean;
 }
 
 export interface PublicSpeakerSessionMapEntry {

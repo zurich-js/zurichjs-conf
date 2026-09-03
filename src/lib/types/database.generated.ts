@@ -2228,6 +2228,7 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["program_schedule_item_type"]
           updated_at: string
+          vip_only: boolean
         }
         Insert: {
           created_at?: string
@@ -2243,6 +2244,7 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["program_schedule_item_type"]
           updated_at?: string
+          vip_only?: boolean
         }
         Update: {
           created_at?: string
@@ -2258,6 +2260,7 @@ export type Database = {
           title?: string
           type?: Database["public"]["Enums"]["program_schedule_item_type"]
           updated_at?: string
+          vip_only?: boolean
         }
         Relationships: [
           {

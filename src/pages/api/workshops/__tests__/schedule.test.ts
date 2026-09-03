@@ -32,6 +32,7 @@ function makeWorkshopItem(
     session_id: 'session-1',
     submission_id: 'submission-1',
     is_visible: true,
+    vip_only: false,
     session: {
       id: 'session-1',
       cfp_submission_id: 'submission-1',

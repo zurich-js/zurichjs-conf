@@ -304,6 +304,7 @@ export async function createProgramScheduleItem(input: ProgramScheduleItemInput)
       session_id: input.session_id ?? null,
       submission_id: input.submission_id ?? (await resolveScheduleSubmissionId(input)),
       is_visible: input.is_visible ?? false,
+      vip_only: input.vip_only ?? false,
     })
     .select('*')
     .single();
@@ -375,6 +376,7 @@ export async function updateProgramScheduleItem(id: string, input: Partial<Progr
     updates.submission_id = resolvedSubmissionId;
   }
   if (input.is_visible !== undefined) updates.is_visible = input.is_visible;
+  if (input.vip_only !== undefined) updates.vip_only = input.vip_only;
 
   const { data, error } = await supabase
     .from('program_schedule_items')

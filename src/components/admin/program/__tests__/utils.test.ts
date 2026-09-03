@@ -75,6 +75,7 @@ const scheduleItem: ProgramScheduleItemRecord = {
   session_id: 'session-1',
   submission_id: 'submission-1',
   is_visible: true,
+  vip_only: false,
 };
 
 it('counts schedule placements by session id or legacy submission id', () => {

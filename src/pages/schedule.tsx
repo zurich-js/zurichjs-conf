@@ -20,20 +20,18 @@ interface SchedulePageProps {
   items: PublicProgramScheduleItem[];
 }
 
-const DAY_PARAMS = ['community', 'workshop', 'conf', 'post-conf'] as const;
+const DAY_PARAMS = ['community', 'workshop', 'conf'] as const;
 
 const scheduleDayParamToTab: Record<(typeof DAY_PARAMS)[number], (typeof publicProgramTabs)[number]['id']> = {
   community: 'community',
   workshop: 'warmup',
   conf: 'conference',
-  'post-conf': 'post-conference',
 };
 
 const scheduleTabToDayParam: Record<(typeof publicProgramTabs)[number]['id'], (typeof DAY_PARAMS)[number]> = {
   community: 'community',
   warmup: 'workshop',
   conference: 'conf',
-  'post-conference': 'post-conf',
 };
 
 export default function SchedulePage({ items }: SchedulePageProps) {
@@ -51,7 +49,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
   const { data: workshopsData } = useQuery(createWorkshopsScheduleQueryOptions(currency));
   const dayItems = activeScheduleTab.sessionDate
     ? items.filter((item) => item.date === activeScheduleTab.sessionDate)
-    : items.filter((item) => item.date === (activeTab === 'community' ? '2026-09-09' : '2026-09-12'));
+    : items.filter((item) => item.date === '2026-09-09');
   const visibleItems = activeTab === 'warmup'
     ? [...dayItems, warmupChillRunScheduleItem].sort((a, b) => a.start_time.localeCompare(b.start_time))
     : dayItems;
@@ -86,7 +84,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
       <main className="min-h-screen bg-brand-white">
         <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
           <Kicker variant="dark" className="block mt-10">
-            September 9-12, 2026
+            September 9-11, 2026
           </Kicker>
           <Heading level="h1" variant="dark" className="mt-4 text-3xl font-bold leading-none">
             ZurichJS Conf 2026 Schedule

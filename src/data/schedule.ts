@@ -9,7 +9,7 @@ import type { ScheduleSectionProps } from '@/components/organisms';
 
 export const scheduleData: ScheduleSectionProps = {
   title: 'JS Conference by humans, for humans',
-  subtitle: 'Join us for four days of community building, learning, and networking. From grassroots meetups to cutting-edge technical sessions, we\'re bringing together JavaScript enthusiasts from around the world.',
+  subtitle: 'Join us for three days of community building, learning, and networking. From grassroots meetups to cutting-edge technical sessions, we\'re bringing together JavaScript enthusiasts from around the world.',
   aboutLink: {
     label: 'View full schedule',
     href: '/schedule',
@@ -29,11 +29,6 @@ export const scheduleData: ScheduleSectionProps = {
       id: 'conference',
       label: 'Conference Day',
       date: 'September 11, 2026',
-    },
-    {
-      id: 'post-conference',
-      label: 'Post-conf chill Day',
-      date: 'September 12, 2026',
     },
   ],
 };
