@@ -53,7 +53,6 @@ const LEVEL_LABELS: Record<PublicSession['level'], string> = {
 const AVAILABILITY_TONE_CLASSES = {
   red: 'text-brand-red',
   orange: 'text-brand-orange',
-  yellow: 'text-brand-yellow-main',
   green: 'text-brand-green',
 } as const;
 

@@ -46,7 +46,7 @@ export function formatDuration(durationMinutes: number | null | undefined) {
   return `${hours}h${minutes ? `${minutes}m` : ''}`;
 }
 
-export type WorkshopAvailabilityTone = 'red' | 'orange' | 'yellow' | 'green';
+export type WorkshopAvailabilityTone = 'red' | 'orange' | 'green';
 
 export interface WorkshopAvailability {
   /** Human-readable seats label, e.g. "12 seats left". */
@@ -74,13 +74,11 @@ export function formatWorkshopAvailability(offering: {
   const { capacityRemaining, capacity } = offering;
   const suffix = capacityRemaining === 1 ? 'seat left' : 'seats left';
   const capacityLeft = capacity > 0 ? capacityRemaining / capacity : 1;
-  const tone: WorkshopAvailabilityTone = capacityLeft < 0.175
+  const tone: WorkshopAvailabilityTone = capacityLeft < 0.2
     ? 'red'
-    : capacityLeft <= 0.3
+    : capacityLeft < 0.5
       ? 'orange'
-      : capacityLeft <= 0.5
-        ? 'yellow'
-        : 'green';
+      : 'green';
 
   return {
     label: `${capacityRemaining} ${suffix}`,
