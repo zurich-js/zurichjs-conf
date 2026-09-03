@@ -31,6 +31,13 @@ interface WorkshopPurchasePanelProps {
   title: string;
 }
 
+const AVAILABILITY_TONE_CLASSES = {
+  red: 'text-brand-red',
+  orange: 'text-brand-orange',
+  yellow: 'text-brand-yellow-main',
+  green: 'text-brand-green',
+} as const;
+
 export function WorkshopPurchasePanel({
   cfpSubmissionId,
   sessionId,
@@ -117,8 +124,8 @@ export function WorkshopPurchasePanel({
                   return (
                     <span
                       className={cn(
-                        'inline-flex items-center gap-1.5',
-                        (availability.soldOut || availability.isLow) && 'font-semibold text-brand-red'
+                        'inline-flex items-center gap-1.5 font-semibold',
+                        AVAILABILITY_TONE_CLASSES[availability.tone]
                       )}
                     >
                       <Users size={14} aria-hidden="true" />

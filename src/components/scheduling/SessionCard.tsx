@@ -50,6 +50,13 @@ const LEVEL_LABELS: Record<PublicSession['level'], string> = {
   advanced: 'Advanced',
 };
 
+const AVAILABILITY_TONE_CLASSES = {
+  red: 'text-brand-red',
+  orange: 'text-brand-orange',
+  yellow: 'text-brand-yellow-main',
+  green: 'text-brand-green',
+} as const;
+
 export function SessionCard({
   session,
   speaker,
@@ -125,9 +132,8 @@ export function SessionCard({
             <strong>Seats:</strong>{' '}
             <span
               className={cn(
-                availability.soldOut || availability.isLow
-                  ? 'font-semibold text-brand-red'
-                  : 'text-brand-gray-medium'
+                'font-semibold',
+                AVAILABILITY_TONE_CLASSES[availability.tone]
               )}
             >
               {availability.label}
