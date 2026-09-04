@@ -2,5 +2,11 @@
  * Orders Module Exports
  */
 
-export { getOrderDetails } from './order-details';
-export type { OrderDetailsResponse } from './order-details';
+export { getOrderDetails, getOrderDetailsForToken } from './order-details';
+export type {
+  GetOrderDetailsForTokenOptions,
+  GetOrderDetailsOptions,
+  ManageOrderTicket,
+  OrderDetailsResponse,
+  OrderLookupResult,
+} from './order-details';
