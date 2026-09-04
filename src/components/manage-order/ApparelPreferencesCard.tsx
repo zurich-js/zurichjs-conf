@@ -8,6 +8,7 @@ import { Shirt, Sparkles, Check } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { Button, Select } from '@/components/atoms';
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
+import { VIP_ICON, VIP_PANEL } from './vip-theme';
 import type { ApparelPreferences, ApparelPreferencesData } from './types';
 
 const SIZE_OPTIONS = APPAREL_SIZES.map((size) => ({ value: size, label: size }));
@@ -50,10 +51,10 @@ export function ApparelPreferencesCard({ isVip, preferences, mutation }: Apparel
         />
 
         {isVip && (
-          <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-500/50 rounded-lg p-4">
+          <div className={`p-4 ${VIP_PANEL}`}>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-amber-400" aria-hidden="true" />
-              <h3 className="text-amber-400 font-semibold text-sm">VIP Package Hoodie</h3>
+              <Sparkles className={`w-4 h-4 ${VIP_ICON}`} aria-hidden="true" />
+              <h3 className="text-brand-black font-semibold text-sm">VIP Package Hoodie</h3>
             </div>
             <p className="text-brand-gray-darkest text-sm mb-3">
               Your VIP package includes an exclusive conference hoodie. Feel free to pick a different size than your

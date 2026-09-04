@@ -16,7 +16,6 @@ import { useQuery, useMutation, useQueryClient, dehydrate, type DehydratedState 
 import { Ticket as TicketIcon, Lock, MailCheck, ArrowRightLeft } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
-import { PageHeader } from '@/components/organisms';
 import { useToast } from '@/contexts/ToastContext';
 import Link from 'next/link';
 import {
@@ -194,8 +193,7 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
 
   return (
     <Layout title="Manage Your Ticket | ZurichJS Conference 2026" description="View and manage your ZurichJS Conference 2026 ticket.">
-      <PageHeader />
-      <div className="min-h-screen bg-brand-white py-16 md:py-24 px-6">
+      <div className="min-h-screen bg-brand-white pt-24 pb-16 md:pt-32 md:pb-24 px-6">
         <div className="max-w-3xl mx-auto">
           {/* Error State */}
           {showErrorState && (
@@ -225,6 +223,9 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
               <div id={MANAGE_ORDER_SECTIONS.entryPass} className="scroll-mt-28">
                 <TicketQRCard qrCodeUrl={orderDetails.ticket.qr_code_url} />
               </div>
+              <div id={MANAGE_ORDER_SECTIONS.networking} className="scroll-mt-28">
+                <NetworkingCard settings={orderDetails.networking} mutation={networkingMutation} />
+              </div>
               <div id={MANAGE_ORDER_SECTIONS.ticketDetails} className="scroll-mt-28">
                 <TicketDetailsCard ticket={orderDetails.ticket} />
               </div>
@@ -239,9 +240,6 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
                   preferences={orderDetails.apparelPreferences}
                   mutation={apparelMutation}
                 />
-              </div>
-              <div id={MANAGE_ORDER_SECTIONS.networking} className="scroll-mt-28">
-                <NetworkingCard settings={orderDetails.networking} mutation={networkingMutation} />
               </div>
 
               {orderDetails.pendingUpgrade && (

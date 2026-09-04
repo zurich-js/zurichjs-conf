@@ -5,6 +5,7 @@
 
 import { Sparkles } from 'lucide-react';
 import { formatAmount, formatDate, getStatusColor, getStatusLabel } from './utils';
+import { VIP_PILL } from './vip-theme';
 import type { TicketData } from './types';
 
 interface TicketDetailsCardProps {
@@ -27,8 +28,8 @@ export function TicketDetailsCard({ ticket }: TicketDetailsCardProps) {
           <span className="text-brand-gray-darkest">Ticket Type</span>
           <span className="text-brand-black capitalize flex items-center gap-2">
             {ticket.ticket_category === 'vip' && (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                <Sparkles className="w-3 h-3" />
+              <span className={`inline-flex items-center gap-1 ${VIP_PILL}`}>
+                <Sparkles className="w-3 h-3" aria-hidden="true" />
                 VIP
               </span>
             )}

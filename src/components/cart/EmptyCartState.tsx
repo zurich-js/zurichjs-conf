@@ -6,7 +6,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { TicketXIcon } from 'lucide-react';
 import { Button } from '@/components/atoms';
-import { PageHeader } from '@/components/organisms';
 
 export function EmptyCartState() {
   return (
@@ -15,7 +14,6 @@ export function EmptyCartState() {
         <title>No Tickets Selected | ZurichJS Conference 2026</title>
       </Head>
 
-      <PageHeader />
 
       <div className="min-h-screen bg-brand-gray-darkest flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">

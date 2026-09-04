@@ -46,10 +46,10 @@ interface SectionNavProps {
 export function SectionNav({ isVip, hasPendingUpgrade }: SectionNavProps) {
   const sections: SectionLink[] = [
     { id: MANAGE_ORDER_SECTIONS.entryPass, label: 'Entry Pass', icon: QrCode },
+    { id: MANAGE_ORDER_SECTIONS.networking, label: 'Networking', icon: Users },
     { id: MANAGE_ORDER_SECTIONS.ticketDetails, label: 'Ticket Details', icon: Ticket },
     ...(isVip ? [{ id: MANAGE_ORDER_SECTIONS.vipBenefits, label: 'VIP Benefits', icon: Crown }] : []),
     { id: MANAGE_ORDER_SECTIONS.apparel, label: 'Apparel', icon: Shirt },
-    { id: MANAGE_ORDER_SECTIONS.networking, label: 'Networking', icon: Users },
     ...(hasPendingUpgrade || !isVip
       ? [{ id: MANAGE_ORDER_SECTIONS.vipUpgrade, label: 'VIP Upgrade', icon: Sparkles }]
       : []),

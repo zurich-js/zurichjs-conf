@@ -77,7 +77,11 @@ export function Select({
                 : 'bg-white border border-gray-300 text-black hover:bg-gray-50'
             }`}
           >
-            <span className={`block truncate ${!selectedOption?.label ? 'text-gray-400' : ''}`}>
+            <span
+              className={`block truncate ${
+                selectedOption?.label ? '' : isDark ? 'text-brand-gray-light' : 'text-gray-500'
+              }`}
+            >
               {selectedOption?.label || placeholder}
             </span>
             <ChevronDown

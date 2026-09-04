@@ -7,6 +7,7 @@
 import { AlertTriangle, Building2, Check, Clock, CreditCard } from 'lucide-react';
 import { BANK_TRANSFER_DETAILS } from '@/lib/types/ticket-upgrade';
 import { VIP_BENEFITS } from '@/data/vip-benefits';
+import { CALLOUT_WARNING, VIP_ICON } from './vip-theme';
 import type { PendingUpgrade } from './types';
 
 interface PendingUpgradeCardProps {
@@ -18,14 +19,14 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
   const ModeIcon = isStripe ? CreditCard : Building2;
 
   return (
-    <section aria-labelledby="pending-upgrade-heading" className="bg-brand-gray-lightest border border-blue-500/40 rounded-2xl mb-8 overflow-hidden">
-      <div className="h-1 bg-gradient-to-r from-blue-600 via-blue-300 to-blue-600" aria-hidden="true" />
+    <section aria-labelledby="pending-upgrade-heading" className="bg-brand-gray-lightest border border-blue-primary/40 rounded-2xl mb-8 overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-blue-dark via-blue-primary to-blue-dark" aria-hidden="true" />
 
       <div className="p-6 md:p-8">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-400/10 border border-blue-400/40 shrink-0">
-              <ModeIcon className="w-5 h-5 text-blue-400" aria-hidden="true" />
+            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-primary/10 border border-blue-primary/40 shrink-0">
+              <ModeIcon className="w-5 h-5 text-blue-dark" aria-hidden="true" />
             </span>
             <div>
               <h2 id="pending-upgrade-heading" className="text-xl font-bold text-brand-black">
@@ -34,7 +35,7 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
               <p className="text-sm text-brand-gray-darkest">{isStripe ? 'Pay online by card' : 'Pay by bank transfer'}</p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-blue-300 bg-blue-400/10 border border-blue-400/40 rounded-full px-3 py-1">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-brand-white bg-blue-dark rounded-full px-3 py-1">
             <Clock className="w-3.5 h-3.5" aria-hidden="true" />
             Pending
           </span>
@@ -47,7 +48,7 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
         <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
           {VIP_BENEFITS.map((benefit) => (
             <li key={benefit.id} className="flex items-start gap-2 text-sm text-brand-gray-darkest bg-brand-white border border-brand-gray-light rounded-lg p-3">
-              <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+              <Check className={`w-4 h-4 shrink-0 mt-0.5 ${VIP_ICON}`} aria-hidden="true" />
               {benefit.title}
             </li>
           ))}
@@ -65,7 +66,7 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
         {isStripe && upgrade.stripePaymentLinkUrl && (
           <a
             href={upgrade.stripePaymentLinkUrl}
-            className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+            className="flex items-center justify-center gap-2 bg-blue-dark hover:bg-blue-primary text-brand-white font-semibold py-4 px-6 rounded-lg transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-primary focus-visible:ring-offset-2"
           >
             <CreditCard className="w-5 h-5" aria-hidden="true" />
             Complete Payment Now
@@ -91,7 +92,7 @@ function BankTransferDetails({ upgrade }: { upgrade: PendingUpgrade }) {
           {upgrade.bankTransferReference && (
             <div className="flex justify-between gap-4 pt-2 border-t border-brand-gray-light">
               <dt className="text-brand-gray-darkest">Reference</dt>
-              <dd className="text-amber-700 font-mono font-bold">{upgrade.bankTransferReference}</dd>
+              <dd className="text-brand-orange-dark font-mono font-bold">{upgrade.bankTransferReference}</dd>
             </div>
           )}
           {upgrade.bankTransferDueDate && (
@@ -107,7 +108,7 @@ function BankTransferDetails({ upgrade }: { upgrade: PendingUpgrade }) {
           )}
         </dl>
       </div>
-      <p className="flex items-start gap-2 text-sm text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-3">
+      <p className={`flex items-start gap-2 text-sm p-3 ${CALLOUT_WARNING}`}>
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
         Please include the reference number in your transfer. Your ticket will be upgraded once payment is confirmed.
       </p>
