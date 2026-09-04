@@ -185,11 +185,47 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
           transferredFromName={attendee.ticket?.transferredFromName ?? null}
           showContact={roleCan(role, 'view_contact')}
         />
+
+        {/* Primary actions integrated into the identity card */}
+        {(primaryAction || onEscalate) && !seatDriven ? (
+          <div className="mt-4 flex items-stretch gap-3 border-t border-divider pt-4">
+            {primaryAction ? (
+              <Button
+                variant="primary"
+                size="lg"
+                className="flex-1 whitespace-nowrap"
+                loading={primaryAction.loading}
+                onClick={primaryAction.onClick}
+              >
+                {primaryAction.label}
+              </Button>
+            ) : null}
+            {onEscalate ? (
+              <Button
+                variant="dark"
+                size={primaryAction ? 'md' : 'lg'}
+                className={primaryAction ? 'shrink-0 px-4!' : 'flex-1'}
+                aria-label="Get help from a door lead"
+                onClick={onEscalate}
+              >
+                <LifeBuoy className="h-4 w-4" aria-hidden="true" />
+                Help
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      {/* On workshop day the seats are the action, so they come first;
-          everywhere else they are reference and come after the handovers. */}
+      {/* On workshop day the seats are the primary action, shown prominently.
+          On other days, workshop info is hidden to reduce visual clutter. */}
       {workshopDay ? workshopSection : null}
+
+      {/* Follow-up tasks section header for badge and goodies */}
+      {(showBadge || showGoodies) && !communityDay ? (
+        <p className="mt-2 text-xs font-medium uppercase tracking-wider text-text-muted">
+          Follow-up tasks
+        </p>
+      ) : null}
 
       {badgeSection}
 
@@ -220,8 +256,6 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
         />
       ) : null}
 
-      {!workshopDay ? workshopSection : null}
-
       {attendee.doorNote ? (
         <div className="flex items-start gap-3 rounded-xl border border-info/40 bg-info/10 px-4 py-3">
           <StickyNote className="mt-0.5 h-5 w-5 shrink-0 text-info" aria-hidden="true" />
@@ -240,43 +274,22 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
         </button>
       ) : null}
 
-      {/* Sticky so the primary action stays reachable with one thumb however
-          long the panel gets. ONE primary — help is deliberately quiet. */}
-      <div className="sticky bottom-0 -mx-1 flex items-stretch gap-3 bg-surface-page/95 px-1 py-3 backdrop-blur">
-        {primaryAction ? (
-          <Button
-            variant="primary"
-            size="lg"
-            // text-base! keeps the longest label ("Badge handed over") plus the
-            // Help button inside a 360px phone without the bar overflowing.
-            className="flex-1 whitespace-nowrap px-4! text-base!"
-            loading={primaryAction.loading}
-            onClick={primaryAction.onClick}
-          >
-            {primaryAction.label}
-          </Button>
-        ) : null}
-        {onEscalate ? (
+      {/* Sticky help bar only shown when seat-driven (workshop day) since
+          primary actions are now in the identity card for non-seat flows. */}
+      {seatDriven && onEscalate ? (
+        <div className="sticky bottom-0 -mx-1 flex items-center justify-center bg-surface-page/95 px-1 py-3 backdrop-blur">
           <Button
             variant="dark"
-            // Full width only when help IS the next step (refused, already in).
-            // Next to a primary action — or seat buttons above — it stays quiet.
-            size={primaryAction || seatDriven ? 'md' : 'lg'}
-            className={
-              primaryAction
-                ? 'shrink-0 whitespace-nowrap px-4!'
-                : seatDriven
-                  ? 'mx-auto whitespace-nowrap'
-                  : 'flex-1 whitespace-nowrap'
-            }
+            size="md"
+            className="whitespace-nowrap"
             aria-label="Get help from a door lead"
             onClick={onEscalate}
           >
             <LifeBuoy className="h-4 w-4" aria-hidden="true" />
             Help
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 };

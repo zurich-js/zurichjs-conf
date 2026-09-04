@@ -91,13 +91,13 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
   pendingWrites = 0,
   className = '',
 }) => (
-  <div className={`mx-auto w-full max-w-md space-y-5 ${className}`}>
-    <div className="rounded-2xl bg-surface-card p-6 text-center">
-      <ScanLine className="mx-auto mb-4 h-10 w-10 text-brand-primary" aria-hidden="true" />
-      <Heading level="h1" className="mb-1 text-2xl font-bold">
+  <div className={`mx-auto w-full max-w-md space-y-4 ${className}`}>
+    <div className="rounded-2xl bg-surface-card p-4 text-center">
+      <ScanLine className="mx-auto mb-2 h-8 w-8 text-brand-primary" aria-hidden="true" />
+      <Heading level="h1" className="mb-0.5 text-lg font-semibold">
         Door check-in
       </Heading>
-      <p className="text-text-secondary">
+      <p className="text-sm text-text-secondary">
         {staffName ? `${staffName} · ` : ''}
         {DOOR_ROLE_LABELS[role]}
       </p>

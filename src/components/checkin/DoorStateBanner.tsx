@@ -63,10 +63,10 @@ const STATE_STYLES: Record<DoorState, string> = {
 };
 
 const STATE_LABELS: Record<DoorState, string> = {
-  admit: 'Ready to admit',
+  admit: 'Verified — tap to check in',
   admitted: 'Checked in',
   already: 'Already checked in',
-  pickup: 'Ready for badge pickup',
+  pickup: 'Verified — hand over badge',
   picked_up: 'Badge already picked up',
   nothing_today: 'Nothing to record today',
   refused: 'Do not admit',
