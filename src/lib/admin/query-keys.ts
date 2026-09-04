@@ -75,6 +75,10 @@ export const adminKeys = {
   apparel: () => [...adminKeys.all, 'apparel'] as const,
   apparelOverview: () => [...adminKeys.apparel(), 'overview'] as const,
 
+  /** Hoodie allocation tab */
+  hoodies: () => [...adminKeys.all, 'hoodies'] as const,
+  hoodieAllocation: () => [...adminKeys.hoodies(), 'allocation'] as const,
+
   /** Cart-builder catalog (Stripe prices + workshops), currency-scoped */
   cartBuilderCatalog: (currency: SupportedCurrency) =>
     [...adminKeys.all, 'cart-builder', 'catalog', currency] as const,
