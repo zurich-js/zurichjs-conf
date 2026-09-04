@@ -84,6 +84,40 @@ describe('classifyVipTicket', () => {
     ).toEqual({ eligible: true, reason: 'sponsor_comp' });
   });
 
+  it('a sponsor comp ticket that was later upgraded to VIP for free still qualifies', () => {
+    const upgrades = new Map([
+      ['u-comp', upgrade({ id: 'u-comp', upgrade_mode: 'complimentary', admin_note: null })],
+    ]);
+    expect(
+      classifyVipTicket(
+        ticket({ amount_paid: 0, payment_type: 'complimentary', complimentary_reason: 'sponsor', upgrade_id: 'u-comp', upgraded_from: 'standard' }),
+        upgrades
+      )
+    ).toEqual({ eligible: true, reason: 'sponsor_comp' });
+    // Even when the upgrade record is gone, the ticket's own sponsor reason is enough
+    expect(
+      classifyVipTicket(
+        ticket({ amount_paid: 0, payment_type: 'complimentary', complimentary_reason: 'sponsor', upgrade_id: 'gone', upgraded_from: 'standard' }),
+        none
+      )
+    ).toEqual({ eligible: true, reason: 'sponsor_comp' });
+  });
+
+  it('sponsor comps never land in the excluded list', () => {
+    const result = buildHoodieAllocation({
+      speakers: [],
+      tickets: [
+        ticket({ id: 't1', email: 's1@sponsor.example', amount_paid: 0, payment_type: 'complimentary', complimentary_reason: 'sponsor' }),
+        ticket({ id: 't2', email: 's2@sponsor.example', first_name: 'Two', amount_paid: 0, payment_type: 'complimentary', complimentary_reason: 'SPONSOR', upgrade_id: 'u-comp', upgraded_from: 'standard' }),
+        ticket({ id: 't3', email: 'v@example.com', first_name: 'Vol', amount_paid: 0, payment_type: 'complimentary', complimentary_reason: 'volunteer' }),
+      ],
+      upgrades: [upgrade({ id: 'u-comp', upgrade_mode: 'complimentary', admin_note: null })],
+    });
+    expect(result.eligible.map((e) => e.email).sort()).toEqual(['s1@sponsor.example', 's2@sponsor.example']);
+    expect(result.eligible.every((e) => e.reason === 'sponsor_comp')).toBe(true);
+    expect(result.excluded.map((e) => e.email)).toEqual(['v@example.com']);
+  });
+
   it('other comp reasons still do not qualify', () => {
     for (const reason of ['speaker', 'organizer', 'volunteer', 'media', 'partner', 'contest_winner', 'other', '']) {
       expect(

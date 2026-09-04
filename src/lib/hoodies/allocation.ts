@@ -154,6 +154,10 @@ export function classifyVipTicket(
   ticket: HoodieTicketInput,
   upgradesById: Map<string, HoodieUpgradeInput>
 ): { eligible: true; reason: HoodieReason } | { eligible: false; exclusion: HoodieExclusion } {
+  // The sponsor exception wins however the ticket became VIP: issued as a
+  // comp VIP directly, or issued as a comp lower tier and upgraded later.
+  if (isSponsorComp(ticket.complimentary_reason)) return { eligible: true, reason: 'sponsor_comp' };
+
   if (ticket.upgrade_id || ticket.upgraded_from) {
     const upgrade = ticket.upgrade_id ? upgradesById.get(ticket.upgrade_id) : undefined;
     if (!upgrade) return { eligible: false, exclusion: 'upgrade_record_missing' };
@@ -165,7 +169,6 @@ export function classifyVipTicket(
   }
 
   if (ticket.payment_type === 'complimentary' || ticket.amount_paid <= 0) {
-    if (isSponsorComp(ticket.complimentary_reason)) return { eligible: true, reason: 'sponsor_comp' };
     return { eligible: false, exclusion: 'complimentary_vip_ticket' };
   }
   return { eligible: true, reason: 'vip_ticket_paid' };
