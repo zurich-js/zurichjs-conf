@@ -45,14 +45,21 @@ import type { AttendeeNetworkingProfile, NetworkingSettings } from '@/lib/types/
 type FetchError = Error & { status?: number };
 
 /**
- * Outcome of the server-side token check:
- * - `ok`        — token verified, order details hydrated into the query cache
- * - `missing`   — no token in the URL
- * - `invalid`   — signature no longer verifies (predates a secret rotation)
- * - `not-found` — token verified but the ticket no longer exists
- * - `error`     — transient server-side failure; the client retries via the API
+ * How long SSR will spend loading the order before handing off to the client.
+ * Covers the token check and the details fetch together.
  */
-type TokenStatus = 'ok' | 'missing' | 'invalid' | 'not-found' | 'error';
+const SSR_ORDER_LOOKUP_BUDGET_MS = 5000;
+
+/**
+ * Outcome of the server-side token check:
+ * - `ok`      — token verified, order details hydrated into the query cache
+ * - `missing` — no token in the URL
+ * - `invalid` — the token no longer grants access: the signature does not
+ *               verify, or the ticket is gone. Both are handled by resending
+ *               a freshly signed link.
+ * - `error`   — transient server-side failure; the client retries via the API
+ */
+type TokenStatus = 'ok' | 'missing' | 'invalid' | 'error';
 
 interface ManageOrderPageProps {
   token: string;
@@ -188,8 +195,7 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
     },
   });
 
-  const showErrorState =
-    tokenStatus === 'missing' || tokenStatus === 'not-found' || isInvalidToken || (!!error && !orderDetails);
+  const showErrorState = tokenStatus === 'missing' || isInvalidToken || (!!error && !orderDetails);
 
   return (
     <Layout title="Manage Your Ticket | ZurichJS Conference 2026" description="View and manage your ZurichJS Conference 2026 ticket.">
@@ -303,8 +309,7 @@ export const getServerSideProps: GetServerSideProps<ManageOrderPageProps> = asyn
   ctx.res.setHeader('X-Robots-Tag', 'noindex, nofollow');
 
   // These imports are server-only; Next.js strips them from the client bundle
-  const { verifyOrderTokenForCurrentTicket } = await import('@/lib/auth/orderTokenServer');
-  const { getOrderDetails } = await import('@/lib/orders');
+  const { getOrderDetailsForToken } = await import('@/lib/orders');
   const { getQueryClient } = await import('@/lib/query-client');
   const { logger } = await import('@/lib/logger');
 
@@ -314,27 +319,35 @@ export const getServerSideProps: GetServerSideProps<ManageOrderPageProps> = asyn
     return { props: { token: '', tokenStatus: 'missing' } };
   }
 
-  const ticketId = await verifyOrderTokenForCurrentTicket(token);
-  if (!ticketId) {
-    return { props: { token, tokenStatus: 'invalid' } };
-  }
+  const log = logger.scope('Manage Order Page');
 
   try {
-    // Cap the lookup so a hung DB connection can't stall SSR indefinitely —
-    // on timeout the page falls back to client-side fetching via the API
-    const details = await Promise.race([
-      getOrderDetails(ticketId),
-      new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Order details lookup timed out after 3000ms')), 3000);
-      }),
-    ]);
+    // One budget for the whole lookup — the token check is a database round
+    // trip too, so timing only the details fetch left the real cost unbounded.
+    // On expiry the queries are cancelled and the page falls back to
+    // client-side fetching via the API.
+    const lookup = await getOrderDetailsForToken(token, { timeoutMs: SSR_ORDER_LOOKUP_BUDGET_MS });
 
-    if (!details) {
-      return { props: { token, tokenStatus: 'not-found' } };
+    if (lookup.status === 'unauthorized') {
+      return { props: { token, tokenStatus: 'invalid' } };
+    }
+
+    if (lookup.status !== 'ok') {
+      // A designed degradation, not a failure: the client refetches and the
+      // visitor still gets their ticket. Logged at warn so it does not page
+      // anyone, while staying visible if it starts happening in bulk.
+      if (lookup.status === 'timed-out') {
+        log.warn('SSR order lookup exceeded its budget, falling back to client fetch', {
+          budgetMs: SSR_ORDER_LOOKUP_BUDGET_MS,
+        });
+      } else {
+        log.warn('SSR order lookup failed, falling back to client fetch');
+      }
+      return { props: { token, tokenStatus: 'error' } };
     }
 
     const queryClient = getQueryClient();
-    queryClient.setQueryData(['order', token], details);
+    queryClient.setQueryData(['order', token], lookup.details);
 
     return {
       props: {
@@ -344,7 +357,7 @@ export const getServerSideProps: GetServerSideProps<ManageOrderPageProps> = asyn
       },
     };
   } catch (err) {
-    logger.scope('Manage Order Page').error('SSR order details fetch failed', err, { ticketId });
+    log.error('SSR order rendering failed', err);
     return { props: { token, tokenStatus: 'error' } };
   }
 };
@@ -421,11 +434,9 @@ function ErrorState({ tokenStatus, error, isInvalidToken, recoverLinkMutation }:
 
   const errorMessage = !hasToken
     ? 'No access token found. Please use the link from your confirmation email.'
-    : tokenStatus === 'not-found'
-      ? 'We could not find a ticket for this link. It may have been transferred or refunded.'
-      : error
-        ? error.message
-        : 'An unexpected error occurred while loading your ticket.';
+    : error
+      ? error.message
+      : 'An unexpected error occurred while loading your ticket.';
 
   return (
     <div className="text-center">

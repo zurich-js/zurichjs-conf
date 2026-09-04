@@ -9,6 +9,42 @@ import { createServiceRoleClient } from '@/lib/supabase';
 
 const log = logger.scope('Order Token');
 
+/** Ticket columns the access check reads. */
+export const ORDER_TOKEN_TICKET_COLUMNS = 'manage_token_nonce, legacy_manage_token_valid' as const;
+
+/** The access state a token is checked against, as stored on the ticket row. */
+export interface OrderTokenTicketState {
+  manage_token_nonce: string;
+  legacy_manage_token_valid: boolean;
+}
+
+/**
+ * Decide whether a token grants access, given the ticket's current access state.
+ *
+ * Split out from the fetch so a caller that already has the ticket row — the
+ * manage-order lookup reads it in the same query it needs for the response —
+ * can reuse the exact same gate rather than restating it.
+ */
+export function resolveOrderTokenAccess(
+  token: string,
+  ticket: OrderTokenTicketState
+): VerifiedOrderToken | null {
+  const currentTicketId = verifyOrderToken(token, ticket.manage_token_nonce);
+  if (currentTicketId) {
+    return { ticketId: currentTicketId, manageTokenNonce: ticket.manage_token_nonce };
+  }
+
+  const legacyTicketId = ticket.legacy_manage_token_valid
+    ? verifyLegacyOrderToken(token)
+    : null;
+  // Legacy tokens carry no nonce. This is the current stored value, not an
+  // authenticated token claim; callers may use it only as a current-row
+  // concurrency check after this legacy access gate succeeds.
+  return legacyTicketId
+    ? { ticketId: legacyTicketId, manageTokenNonce: ticket.manage_token_nonce }
+    : null;
+}
+
 /**
  * Verify an order token against the ticket's current access state.
  *
@@ -28,7 +64,7 @@ export async function verifyOrderTokenClaimsForCurrentTicket(
     const supabase = createServiceRoleClient();
     const { data: ticket, error } = await supabase
       .from('tickets')
-      .select('manage_token_nonce, legacy_manage_token_valid')
+      .select(ORDER_TOKEN_TICKET_COLUMNS)
       .eq('id', ticketId)
       .maybeSingle();
 
@@ -39,20 +75,7 @@ export async function verifyOrderTokenClaimsForCurrentTicket(
 
     if (!ticket) return null;
 
-    const currentTicketId = verifyOrderToken(token, ticket.manage_token_nonce);
-    if (currentTicketId) {
-      return { ticketId: currentTicketId, manageTokenNonce: ticket.manage_token_nonce };
-    }
-
-    const legacyTicketId = ticket.legacy_manage_token_valid
-      ? verifyLegacyOrderToken(token)
-      : null;
-    // Legacy tokens carry no nonce. This is the current stored value, not an
-    // authenticated token claim; callers may use it only as a current-row
-    // concurrency check after this legacy access gate succeeds.
-    return legacyTicketId
-      ? { ticketId: legacyTicketId, manageTokenNonce: ticket.manage_token_nonce }
-      : null;
+    return resolveOrderTokenAccess(token, ticket);
   } catch (error) {
     log.error('Error verifying order token against current ticket', error, { ticketId });
     return null;
