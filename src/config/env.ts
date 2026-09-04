@@ -16,6 +16,30 @@ function getRequiredEnv(value: string | undefined, name: string): string {
   return value;
 }
 
+/** Hosts where a plain-http Supabase URL is fine: the local Supabase stack */
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', 'host.docker.internal']);
+
+/**
+ * Validate a required URL that will carry Supabase keys. It must be https
+ * everywhere except against a local Supabase instance, so a misconfigured
+ * deployment can never send the service-role key in cleartext.
+ */
+function getRequiredHttpsUrl(value: string | undefined, name: string): string {
+  const raw = getRequiredEnv(value, name);
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error(`Environment variable ${name} must be a valid URL`);
+  }
+  if (parsed.protocol !== 'https:' && !LOCAL_HOSTS.has(parsed.hostname)) {
+    throw new Error(
+      `Environment variable ${name} must use https:// (got ${parsed.protocol}//${parsed.host}) — Supabase keys must never travel in cleartext`
+    );
+  }
+  return raw;
+}
+
 /**
  * Get an optional environment variable with a default value
  */
@@ -63,7 +87,7 @@ export const clientEnv = {
   baseUrl: getVercelPreviewUrl() ??
     getRequiredEnv(process.env.NEXT_PUBLIC_BASE_URL, 'NEXT_PUBLIC_BASE_URL'),
   supabase: {
-    url: getRequiredEnv(
+    url: getRequiredHttpsUrl(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       'NEXT_PUBLIC_SUPABASE_URL'
     ),
