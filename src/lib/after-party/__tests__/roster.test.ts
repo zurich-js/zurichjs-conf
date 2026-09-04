@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import {
-  buildAfterPartyRoster,
-  type AfterPartyGuestInput,
-  type AfterPartySpeakerInput,
-  type AfterPartyTicketInput,
-} from '../roster';
+import { buildAfterPartyRoster } from '../roster';
+import type {
+  AfterPartyGuestInput,
+  AfterPartySpeakerInput,
+  AfterPartyTicketInput,
+} from '@/lib/types/after-party';
 
 function speaker(overrides: Partial<AfterPartySpeakerInput> = {}): AfterPartySpeakerInput {
   return {

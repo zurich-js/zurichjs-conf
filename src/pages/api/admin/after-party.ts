@@ -11,22 +11,17 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getAdminSpeakersWithSubmissions } from '@/lib/cfp/admin';
 import { AFTER_PARTY_CAPACITY } from '@/config/after-party';
-import {
-  buildAfterPartyRoster,
-  type AfterPartyGuestInput,
-  type AfterPartyRoster,
-  type AfterPartySpeakerInput,
-  type AfterPartyTicketInput,
-} from '@/lib/after-party';
+import { buildAfterPartyRoster } from '@/lib/after-party';
+import type {
+  AfterPartyGuestInput,
+  AfterPartyOverviewResponse,
+  AfterPartySpeakerInput,
+  AfterPartyTicketInput,
+} from '@/lib/types/after-party';
 import { logger } from '@/lib/logger';
 import type { SpeakerLogisticsRow } from '@/lib/types/speaker-logistics';
 
 const log = logger.scope('Admin After Party API');
-
-export interface AfterPartyOverviewResponse extends AfterPartyRoster {
-  /** Server time the roster was computed, for the "as of" label */
-  generated_at: string;
-}
 
 interface GuestQueryRow {
   id: string;
@@ -56,15 +51,20 @@ function readPaymentType(metadata: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+  // Attendee emails, dietary needs, and notes — never let a browser or CDN keep a copy
+  res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
     const supabase = createServiceRoleClient();
@@ -87,15 +87,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (logisticsResult.error) {
       log.error('Error fetching speaker logistics rows', logisticsResult.error);
-      return res.status(500).json({ error: 'Failed to fetch speaker logistics' });
+      res.status(500).json({ error: 'Failed to fetch speaker logistics' });
+      return;
     }
     if (guestsResult.error) {
       log.error('Error fetching after-party guests', guestsResult.error);
-      return res.status(500).json({ error: 'Failed to fetch after-party guests' });
+      res.status(500).json({ error: 'Failed to fetch after-party guests' });
+      return;
     }
     if (ticketsResult.error) {
       log.error('Error fetching VIP tickets', ticketsResult.error);
-      return res.status(500).json({ error: 'Failed to fetch VIP tickets' });
+      res.status(500).json({ error: 'Failed to fetch VIP tickets' });
+      return;
     }
 
     const logisticsBySpeaker = new Map<string, SpeakerLogisticsRow>(
@@ -165,9 +168,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ...roster,
       generated_at: new Date().toISOString(),
     };
-    return res.status(200).json(response);
+    res.status(200).json(response);
+    return;
   } catch (error) {
     log.error('Error building after party overview', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
+    return;
   }
 }

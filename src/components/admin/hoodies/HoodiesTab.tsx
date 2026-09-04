@@ -38,7 +38,7 @@ function matchesSearch(entry: { first_name: string; last_name: string; email: st
   return `${entry.first_name} ${entry.last_name}`.toLowerCase().includes(query) || entry.email.includes(query);
 }
 
-export function HoodiesTab() {
+export function HoodiesTab(): React.JSX.Element {
   const { data, isLoading, error, refetch, isFetching } = useHoodieAllocation();
   const [filter, setFilter] = useState<HoodieFilter>('all');
   const [search, setSearch] = useState('');

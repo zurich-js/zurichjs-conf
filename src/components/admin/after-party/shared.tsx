@@ -16,7 +16,11 @@ const SOURCE_BADGE_CLASSES: Record<AfterPartySource, string> = {
   vip_ticket: 'bg-purple-100 text-purple-800',
 };
 
-export function SourceBadge({ source }: { source: AfterPartySource }) {
+export interface SourceBadgeProps {
+  source: AfterPartySource;
+}
+
+export function SourceBadge({ source }: SourceBadgeProps): React.JSX.Element {
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${SOURCE_BADGE_CLASSES[source]}`}>
       {AFTER_PARTY_SOURCE_LABELS[source]}
@@ -24,7 +28,7 @@ export function SourceBadge({ source }: { source: AfterPartySource }) {
   );
 }
 
-export function TicketStatus({ attendee }: { attendee: AfterPartyAttendee }) {
+export function TicketStatus({ attendee }: { attendee: AfterPartyAttendee }): React.JSX.Element {
   if (attendee.ticket) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-green-700">
@@ -59,7 +63,7 @@ export function attendeeDetailParts(attendee: AfterPartyAttendee): string[] {
   return parts;
 }
 
-export function AttendeeDetails({ attendee }: { attendee: AfterPartyAttendee }) {
+export function AttendeeDetails({ attendee }: { attendee: AfterPartyAttendee }): React.JSX.Element | null {
   const parts = attendeeDetailParts(attendee);
   if (parts.length === 0) return null;
   return <p className="mt-0.5 text-xs text-gray-500">{parts.join(' · ')}</p>;

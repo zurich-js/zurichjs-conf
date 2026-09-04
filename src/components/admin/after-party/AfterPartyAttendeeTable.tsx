@@ -9,12 +9,12 @@ import { AfterPartyEmptyState } from './AfterPartyAttendeeCardList';
 import { AttendeeDetails, SourceBadge, TicketStatus } from './shared';
 import type { AfterPartyAttendee } from './types';
 
-interface AfterPartyAttendeeTableProps {
+export interface AfterPartyAttendeeTableProps {
   attendees: AfterPartyAttendee[];
   totalCount: number;
 }
 
-export function AfterPartyAttendeeTable({ attendees, totalCount }: AfterPartyAttendeeTableProps) {
+export function AfterPartyAttendeeTable({ attendees, totalCount }: AfterPartyAttendeeTableProps): React.JSX.Element {
   if (attendees.length === 0) return <AfterPartyEmptyState totalCount={totalCount} />;
 
   return (

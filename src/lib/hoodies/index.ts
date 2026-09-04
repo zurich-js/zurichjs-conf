@@ -1,12 +1,10 @@
+export { classifyVipTicket, isSponsorComp, buildHoodieAllocation } from './allocation';
 export {
   HOODIE_REASONS,
   HOODIE_REASON_LABELS,
   HOODIE_EXCLUSIONS,
   HOODIE_EXCLUSION_LABELS,
-  classifyVipTicket,
-  isSponsorComp,
-  buildHoodieAllocation,
-} from './allocation';
+} from '@/lib/types/hoodies';
 export type {
   HoodieReason,
   HoodieExclusion,
@@ -17,4 +15,5 @@ export type {
   HoodieExcludedEntry,
   HoodieStats,
   HoodieAllocation,
-} from './allocation';
+  HoodieAllocationResponse,
+} from '@/lib/types/hoodies';

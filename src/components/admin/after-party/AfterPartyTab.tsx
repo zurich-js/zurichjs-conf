@@ -32,7 +32,7 @@ function matchesFilter(attendee: AfterPartyAttendee, filter: AfterPartyFilter): 
   return attendee.sources.includes(filter);
 }
 
-export function AfterPartyTab() {
+export function AfterPartyTab(): React.JSX.Element {
   const { data, isLoading, error, refetch, isFetching } = useAfterPartyOverview();
   const [filter, setFilter] = useState<AfterPartyFilter>('all');
   const [search, setSearch] = useState('');

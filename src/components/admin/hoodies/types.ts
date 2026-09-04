@@ -2,8 +2,14 @@
  * Hoodie Allocation Admin Types
  */
 
-import type { HoodieAllocationResponse } from '@/pages/api/admin/hoodies';
-import type { HoodieEntry, HoodieExcludedEntry, HoodieExclusion, HoodieReason, HoodieStats } from '@/lib/hoodies';
+import type {
+  HoodieAllocationResponse,
+  HoodieEntry,
+  HoodieExcludedEntry,
+  HoodieExclusion,
+  HoodieReason,
+  HoodieStats,
+} from '@/lib/types/hoodies';
 
 export type { HoodieAllocationResponse, HoodieEntry, HoodieExcludedEntry, HoodieExclusion, HoodieReason, HoodieStats };
 

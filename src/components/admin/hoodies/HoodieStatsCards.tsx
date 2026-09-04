@@ -19,7 +19,7 @@ function StatCard({
   label: string;
   value: number;
   hint: string;
-}) {
+}): React.JSX.Element {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
       <div className="flex items-center gap-1.5 text-xs text-gray-500 sm:text-sm">
@@ -32,7 +32,11 @@ function StatCard({
   );
 }
 
-export function HoodieStatsCards({ stats }: { stats: HoodieStats }) {
+export interface HoodieStatsCardsProps {
+  stats: HoodieStats;
+}
+
+export function HoodieStatsCards({ stats }: HoodieStatsCardsProps): React.JSX.Element {
   const excludedHint = HOODIE_EXCLUSIONS.filter((key) => stats.excluded_by_reason[key] > 0)
     .map((key) => `${stats.excluded_by_reason[key]} ${HOODIE_EXCLUSION_LABELS[key].toLowerCase()}`)
     .join(' · ');

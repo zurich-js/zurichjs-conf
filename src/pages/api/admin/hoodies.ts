@@ -10,20 +10,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getAdminSpeakersWithSubmissions } from '@/lib/cfp/admin';
-import {
-  buildHoodieAllocation,
-  type HoodieAllocation,
-  type HoodieSpeakerInput,
-  type HoodieTicketInput,
-  type HoodieUpgradeInput,
-} from '@/lib/hoodies';
+import { buildHoodieAllocation } from '@/lib/hoodies';
+import type {
+  HoodieAllocationResponse,
+  HoodieSpeakerInput,
+  HoodieTicketInput,
+  HoodieUpgradeInput,
+} from '@/lib/types/hoodies';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Admin Hoodies API');
-
-export interface HoodieAllocationResponse extends HoodieAllocation {
-  generated_at: string;
-}
 
 interface TicketQueryRow {
   id: string;
@@ -41,15 +37,20 @@ function readString(metadata: unknown, field: string): string | null {
   return typeof value === 'string' && value ? value : null;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+  // Attendee emails, dietary needs, and notes — never let a browser or CDN keep a copy
+  res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
     const supabase = createServiceRoleClient();
@@ -67,15 +68,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (ticketsResult.error) {
       log.error('Error fetching VIP tickets', ticketsResult.error);
-      return res.status(500).json({ error: 'Failed to fetch VIP tickets' });
+      res.status(500).json({ error: 'Failed to fetch VIP tickets' });
+      return;
     }
     if (preferencesResult.error) {
       log.error('Error fetching apparel preferences', preferencesResult.error);
-      return res.status(500).json({ error: 'Failed to fetch apparel preferences' });
+      res.status(500).json({ error: 'Failed to fetch apparel preferences' });
+      return;
     }
     if (upgradesResult.error) {
       log.error('Error fetching ticket upgrades', upgradesResult.error);
-      return res.status(500).json({ error: 'Failed to fetch ticket upgrades' });
+      res.status(500).json({ error: 'Failed to fetch ticket upgrades' });
+      return;
     }
 
     const hoodieSizeByTicket = new Map(
@@ -113,9 +117,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const response: HoodieAllocationResponse = { ...allocation, generated_at: new Date().toISOString() };
-    return res.status(200).json(response);
+    res.status(200).json(response);
+    return;
   } catch (error) {
     log.error('Error building hoodie allocation', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
+    return;
   }
 }

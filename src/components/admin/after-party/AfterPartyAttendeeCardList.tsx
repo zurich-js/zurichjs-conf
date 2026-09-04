@@ -10,12 +10,12 @@ import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { SourceBadge, TicketStatus, attendeeDetailParts } from './shared';
 import type { AfterPartyAttendee } from './types';
 
-interface AfterPartyAttendeeCardListProps {
+export interface AfterPartyAttendeeCardListProps {
   attendees: AfterPartyAttendee[];
   totalCount: number;
 }
 
-export function AfterPartyEmptyState({ totalCount }: { totalCount: number }) {
+export function AfterPartyEmptyState({ totalCount }: { totalCount: number }): React.JSX.Element {
   return (
     <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
       <AdminEmptyState
@@ -31,7 +31,7 @@ export function AfterPartyEmptyState({ totalCount }: { totalCount: number }) {
   );
 }
 
-export function AfterPartyAttendeeCardList({ attendees, totalCount }: AfterPartyAttendeeCardListProps) {
+export function AfterPartyAttendeeCardList({ attendees, totalCount }: AfterPartyAttendeeCardListProps): React.JSX.Element {
   if (attendees.length === 0) return <AfterPartyEmptyState totalCount={totalCount} />;
 
   return (

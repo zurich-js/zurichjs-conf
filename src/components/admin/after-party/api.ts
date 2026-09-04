@@ -6,7 +6,8 @@
 import type { AfterPartyOverviewResponse } from './types';
 
 export async function fetchAfterPartyOverview(signal?: AbortSignal): Promise<AfterPartyOverviewResponse> {
-  const res = await fetch('/api/admin/after-party', { signal });
+  // Roster carries personal data — never serve it from a browser cache
+  const res = await fetch('/api/admin/after-party', { signal, cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch after party overview');
   return res.json();
 }

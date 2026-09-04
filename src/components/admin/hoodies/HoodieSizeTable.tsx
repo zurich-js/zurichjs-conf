@@ -9,7 +9,11 @@ import React from 'react';
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 import type { HoodieStats } from './types';
 
-export function HoodieSizeTable({ stats }: { stats: HoodieStats }) {
+export interface HoodieSizeTableProps {
+  stats: HoodieStats;
+}
+
+export function HoodieSizeTable({ stats }: HoodieSizeTableProps): React.JSX.Element {
   return (
     <section aria-label="Hoodie sizes to order" className="rounded-lg border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-200 px-4 py-3">

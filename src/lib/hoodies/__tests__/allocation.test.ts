@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  buildHoodieAllocation,
-  classifyVipTicket,
-  type HoodieSpeakerInput,
-  type HoodieTicketInput,
-  type HoodieUpgradeInput,
-} from '../allocation';
+import { buildHoodieAllocation, classifyVipTicket } from '../allocation';
+import type { HoodieSpeakerInput, HoodieTicketInput, HoodieUpgradeInput } from '@/lib/types/hoodies';
 
 function speaker(overrides: Partial<HoodieSpeakerInput> = {}): HoodieSpeakerInput {
   return { id: 'spk-1', first_name: 'Ada', last_name: 'Lovelace', email: 'ada@example.com', hoodie_size: 'M', ...overrides };

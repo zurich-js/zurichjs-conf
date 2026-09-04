@@ -43,9 +43,14 @@ const handler = (await import('../hoodies')).default;
 async function call(method = 'GET') {
   const json = vi.fn();
   const status = vi.fn().mockReturnThis();
-  const res = { status, json } as unknown as NextApiResponse;
+  const setHeader = vi.fn();
+  const res = { status, json, setHeader } as unknown as NextApiResponse;
   await handler({ method, cookies: {}, headers: {} } as unknown as NextApiRequest, res);
-  return { status: status.mock.calls[0]?.[0] as number, body: json.mock.calls[0]?.[0] };
+  return {
+    status: status.mock.calls[0]?.[0] as number,
+    body: json.mock.calls[0]?.[0],
+    headers: Object.fromEntries(setHeader.mock.calls as [string, string][]),
+  };
 }
 
 beforeEach(() => {
@@ -76,6 +81,13 @@ describe('GET /api/admin/hoodies', () => {
   it('rejects unauthenticated requests', async () => {
     mocks.verifyAdminAccess.mockReturnValue({ authorized: false });
     expect((await call()).status).toBe(401);
+  });
+
+  it('never lets the response be cached — it carries attendee emails and notes', async () => {
+    expect((await call()).headers['Cache-Control']).toBe('private, no-store, max-age=0');
+    // Also on the early exits, so a 401/405 body is never cached either
+    mocks.verifyAdminAccess.mockReturnValue({ authorized: false });
+    expect((await call()).headers['Cache-Control']).toBe('private, no-store, max-age=0');
   });
 
   it('only allows GET', async () => {

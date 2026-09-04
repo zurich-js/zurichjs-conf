@@ -6,7 +6,7 @@
  * one-line verdict, then a 2-up grid of source counts.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, Mic2, PartyPopper, Ticket, UserPlus, Users } from 'lucide-react';
 import { AFTER_PARTY_WARNING_THRESHOLD } from '@/config/after-party';
 import type { AfterPartyStats } from './types';
@@ -29,7 +29,7 @@ function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? '' : 's'}`;
 }
 
-function CapacityBanner({ stats, level }: { stats: AfterPartyStats; level: CapacityLevel }) {
+function CapacityBanner({ stats, level }: { stats: AfterPartyStats; level: CapacityLevel }): React.JSX.Element {
   const styles = LEVEL_STYLES[level];
   const Icon = level === 'ok' ? CheckCircle2 : AlertTriangle;
 
@@ -84,7 +84,7 @@ function SourceStat({
   label: string;
   value: number;
   hint?: string;
-}) {
+}): React.JSX.Element {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
       <div className="flex items-center gap-1.5 text-xs text-gray-500 sm:text-sm">
@@ -97,16 +97,20 @@ function SourceStat({
   );
 }
 
-interface AfterPartyCapacityCardProps {
+export interface AfterPartyCapacityCardProps {
   stats: AfterPartyStats;
   generatedAt: string;
 }
 
-export function AfterPartyCapacityCard({ stats, generatedAt }: AfterPartyCapacityCardProps) {
+export function AfterPartyCapacityCard({ stats, generatedAt }: AfterPartyCapacityCardProps): React.JSX.Element {
   const level = getCapacityLevel(stats);
   const styles = LEVEL_STYLES[level];
   const fillPercent = stats.capacity > 0 ? Math.min(100, (stats.headcount / stats.capacity) * 100) : 100;
-  const asOf = new Date(generatedAt).toLocaleTimeString('en-CH', { timeZone: 'Europe/Zurich', timeStyle: 'short' });
+  // Derived from a server-supplied timestamp, memoised so render stays free of Date construction
+  const asOf = useMemo(
+    () => new Date(generatedAt).toLocaleTimeString('en-CH', { timeZone: 'Europe/Zurich', timeStyle: 'short' }),
+    [generatedAt]
+  );
 
   return (
     <div className="space-y-3">
@@ -137,7 +141,12 @@ export function AfterPartyCapacityCard({ stats, generatedAt }: AfterPartyCapacit
           aria-label="After party headcount against capacity"
           aria-valuemin={0}
           aria-valuemax={stats.capacity}
-          aria-valuenow={stats.headcount}
+          aria-valuenow={Math.min(stats.headcount, stats.capacity)}
+          aria-valuetext={
+            level === 'over'
+              ? `${stats.headcount} of ${stats.capacity}, ${stats.over_by} over capacity`
+              : `${stats.headcount} of ${stats.capacity}`
+          }
         >
           <div className={`h-full rounded-full transition-all ${styles.bar}`} style={{ width: `${fillPercent}%` }} />
         </div>

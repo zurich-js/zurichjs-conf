@@ -21,7 +21,7 @@ export type HoodieListRow =
   | { kind: 'eligible'; entry: HoodieEntry }
   | { kind: 'excluded'; entry: HoodieExcludedEntry };
 
-function Badge({ row }: { row: HoodieListRow }) {
+function Badge({ row }: { row: HoodieListRow }): React.JSX.Element {
   if (row.kind === 'eligible') {
     return (
       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${REASON_BADGE_CLASSES[row.entry.reason]}`}>
@@ -36,7 +36,7 @@ function Badge({ row }: { row: HoodieListRow }) {
   );
 }
 
-function SizeCell({ size }: { size: string | null }) {
+function SizeCell({ size }: { size: string | null }): React.JSX.Element {
   if (size) return <span className="font-medium text-gray-900">{size}</span>;
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
@@ -46,7 +46,7 @@ function SizeCell({ size }: { size: string | null }) {
   );
 }
 
-function HandedCell({ row }: { row: HoodieListRow }) {
+function HandedCell({ row }: { row: HoodieListRow }): React.JSX.Element {
   if (row.kind === 'excluded') return <span className="text-xs text-gray-400">—</span>;
   if (row.entry.hoodie_handed_at) {
     return (
@@ -59,12 +59,12 @@ function HandedCell({ row }: { row: HoodieListRow }) {
   return <span className="text-xs text-gray-500">Not yet</span>;
 }
 
-interface HoodieListProps {
+export interface HoodieListProps {
   rows: HoodieListRow[];
   totalCount: number;
 }
 
-export function HoodieList({ rows, totalCount }: HoodieListProps) {
+export function HoodieList({ rows, totalCount }: HoodieListProps): React.JSX.Element {
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
