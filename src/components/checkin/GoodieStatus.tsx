@@ -179,11 +179,12 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
     );
   }
 
-  // Full handover complete: everything entitled was handed.
-  if (handedAt && !anythingOwed) {
-    // A row from before per-item tracking has no item timestamps; the only
-    // honest undo there is the whole handover.
-    const legacyRow = !tshirtHandedAt && !hoodieHandedAt;
+  // A row from before per-item tracking has no item timestamps; the only
+  // honest undo there is the whole handover.
+  const legacyRow = Boolean(handedAt && !tshirtHandedAt && !hoodieHandedAt);
+
+  // Full handover complete: everything entitled was handed (or it's a legacy row).
+  if (handedAt && (legacyRow || !anythingOwed)) {
     return (
       <div
         className={`rounded-xl border border-success/40 bg-success/10 px-4 py-3 ${className}`}

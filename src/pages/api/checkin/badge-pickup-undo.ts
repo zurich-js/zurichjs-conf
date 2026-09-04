@@ -20,7 +20,7 @@ const log = logger.scope('Door Badge Pickup Undo API');
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<DoorBadgePickupResult | { error: string; issues?: unknown }>
-) {
+): Promise<void> {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

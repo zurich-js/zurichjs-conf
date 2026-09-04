@@ -33,19 +33,32 @@ export interface StationStartGateProps {
   className?: string;
 }
 
-/** "Wed 10 Sep" from the occasion's fixed calendar date. Static data, so SSR-safe. */
-function occasionDate(occasion: DoorOccasion): string {
-  try {
-    return new Intl.DateTimeFormat('en-GB', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      timeZone: 'Europe/Zurich',
-    }).format(new Date(`${DOOR_OCCASION_DATES[occasion]}T12:00:00Z`));
-  } catch {
-    return DOOR_OCCASION_DATES[occasion];
-  }
-}
+/**
+ * "Wed 10 Sep" from the occasion's fixed calendar date.
+ *
+ * Precomputed at module scope to avoid constructing Date objects during render,
+ * which would cause hydration mismatches. The underlying dates are static
+ * constants, so this is safe.
+ */
+const DOOR_OCCASION_DATE_LABELS: Record<DoorOccasion, string> = (() => {
+  const format = (occasion: DoorOccasion): string => {
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'Europe/Zurich',
+      }).format(new Date(`${DOOR_OCCASION_DATES[occasion]}T12:00:00Z`));
+    } catch {
+      return DOOR_OCCASION_DATES[occasion];
+    }
+  };
+  return {
+    community_day: format('community_day'),
+    workshop_day: format('workshop_day'),
+    conference_day: format('conference_day'),
+  };
+})();
 
 /**
  * The one deliberate tap that starts a shift.
@@ -162,7 +175,7 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
                 <span className="text-base font-semibold text-text-primary">
                   {DOOR_OCCASION_LABELS[option]}
                 </span>
-                <span className="shrink-0 text-xs text-text-muted">{occasionDate(option)}</span>
+                <span className="shrink-0 text-xs text-text-muted">{DOOR_OCCASION_DATE_LABELS[option]}</span>
               </span>
               {/* What the station DOES on this day — the label alone does not say
                   that the warm-up meetup never checks anyone in. */}

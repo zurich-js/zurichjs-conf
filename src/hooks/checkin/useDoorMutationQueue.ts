@@ -134,12 +134,11 @@ export function useDoorMutationQueue({
         case 'undo_badge_pickup':
           // A refused undo or partial-goodie write cannot be reversed locally
           // without knowing the prior server state, so restore the roster from
-          // the server instead. Invalidate without immediate refetch since the
-          // roster is expensive; the next mutation or visibility change will
-          // refetch.
+          // the server instead. Actively refetch rather than just marking stale,
+          // so the optimistic patch is rolled back immediately.
           void queryClient.invalidateQueries({
             queryKey: ['checkin', 'roster', { occasion: occasionOf }],
-            refetchType: 'none',
+            refetchType: 'active',
           });
           break;
         default:

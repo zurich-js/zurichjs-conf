@@ -143,6 +143,11 @@ describe('occasions', () => {
     // The warm-up meetup hands badges and never checks anyone in — the one
     // rule a volunteer must not learn by mis-tapping.
     expect(DOOR_OCCASION_TASKS.community_day).toMatch(/badge/i);
+    // Community day must state badge pickup ONLY. The phrase should not
+    // instruct volunteers to check anyone in — "Check people in" or similar
+    // would mislead them. (The current wording "nobody is checked in" is fine.)
+    expect(DOOR_OCCASION_TASKS.community_day).toMatch(/only/i);
+    expect(DOOR_OCCASION_TASKS.community_day).not.toMatch(/^Check people in/i);
     expect(DOOR_OCCASION_TASKS.workshop_day).toMatch(/workshop/i);
     expect(DOOR_OCCASION_TASKS.conference_day).toMatch(/check/i);
   });

@@ -100,7 +100,7 @@ COMMENT ON FUNCTION public.door_occasion_or_current(TEXT) IS 'The staff-chosen o
 -- The single reader every other function goes through, so the definition of
 -- "picked up" cannot fork. NULL means "no badge in their hands right now":
 -- either never picked up, or picked up and then undone.
-CREATE FUNCTION public.door_badge_picked_up_at(
+CREATE OR REPLACE FUNCTION public.door_badge_picked_up_at(
   p_ticket_id       UUID,
   p_registration_id UUID
 )
@@ -545,7 +545,7 @@ COMMENT ON FUNCTION public.door_badge_pickup(UUID, UUID, TEXT, TIMESTAMPTZ, TEXT
 -- follow the latest event. `duplicate` means "no pickup to undo", the same
 -- already-in-the-desired-state semantics as every other door write, so a
 -- queued replay is safe.
-CREATE FUNCTION public.door_badge_pickup_undo(
+CREATE OR REPLACE FUNCTION public.door_badge_pickup_undo(
   p_scanned_id  UUID,
   p_staff_id    UUID,
   p_station     TEXT DEFAULT NULL,
@@ -622,7 +622,7 @@ COMMENT ON FUNCTION public.door_badge_pickup_undo(UUID, UUID, TEXT, TIMESTAMPTZ,
 -- entitlement satisfied" stamp) because the entitlement is no longer satisfied
 -- — the next handover call re-stamps it when everything is back over the
 -- counter.
-CREATE FUNCTION public.door_goodie_undo(
+CREATE OR REPLACE FUNCTION public.door_goodie_undo(
   p_ticket_id   UUID,
   p_staff_id    UUID,
   p_station     TEXT DEFAULT NULL,
@@ -644,6 +644,7 @@ DECLARE
   v_ticket         public.tickets;
   v_tshirt_undone  BOOLEAN := FALSE;
   v_hoodie_undone  BOOLEAN := FALSE;
+  v_rows           INT := 0;
 BEGIN
   IF v_occurred < '2026-09-01'::TIMESTAMPTZ THEN v_occurred := NOW(); END IF;
   IF v_occurred > NOW() THEN v_occurred := NOW(); END IF;
@@ -670,7 +671,8 @@ BEGIN
       tshirt_handed_by = NULL,
       updated_at = NOW()
     WHERE id = v_ticket.id AND tshirt_handed_at IS NOT NULL;
-    v_tshirt_undone := TRUE;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+    v_tshirt_undone := v_rows > 0;
   END IF;
 
   IF p_undo_hoodie AND v_ticket.hoodie_handed_at IS NOT NULL THEN
@@ -679,7 +681,8 @@ BEGIN
       hoodie_handed_by = NULL,
       updated_at = NOW()
     WHERE id = v_ticket.id AND hoodie_handed_at IS NOT NULL;
-    v_hoodie_undone := TRUE;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+    v_hoodie_undone := v_rows > 0;
   END IF;
 
   -- A row from before per-item tracking has goodie_handed_at set but no item
@@ -690,11 +693,19 @@ BEGIN
      AND v_ticket.goodie_handed_at IS NOT NULL
      AND v_ticket.tshirt_handed_at IS NULL
      AND v_ticket.hoodie_handed_at IS NULL THEN
-    v_tshirt_undone := p_undo_tshirt;
-    v_hoodie_undone := p_undo_hoodie;
-  END IF;
-
-  IF v_tshirt_undone OR v_hoodie_undone THEN
+    -- Clear the legacy full-handover stamp and report undo based on whether
+    -- the row was actually updated.
+    UPDATE public.tickets SET
+      goodie_handed_at = NULL,
+      goodie_handed_by = NULL,
+      updated_at = NOW()
+    WHERE id = v_ticket.id AND goodie_handed_at IS NOT NULL;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+    IF v_rows > 0 THEN
+      v_tshirt_undone := p_undo_tshirt;
+      v_hoodie_undone := p_undo_hoodie;
+    END IF;
+  ELSIF v_tshirt_undone OR v_hoodie_undone THEN
     -- The full-entitlement stamp cannot stand while an item is back on the
     -- table; door_goodie_handover re-stamps it when the follow-up completes.
     UPDATE public.tickets SET
@@ -904,14 +915,20 @@ BEGIN
   ) latest WHERE latest.event_type = 'badge_pickup';
 
   -- Everyone who could turn up for this occasion.
-  --   community_day: anyone with a confirmed conference ticket may collect a
-  --                  badge early, and "arrived" is badges actually handed over.
+  --   community_day: anyone who may collect a badge early — both conference
+  --                  ticket holders AND workshop-only attendees (who get a
+  --                  badge via their registration). "arrived" is badges handed.
   --   workshop_day: confirmed workshop seats, INCLUDING attendees with no
   --                 conference ticket at all.
   --   conference_day: confirmed conference tickets.
   IF v_occasion = 'community_day' THEN
-    SELECT count(*) INTO v_expected
-      FROM public.tickets WHERE status = 'confirmed';
+    -- Count confirmed tickets + workshop registrations without a ticket
+    SELECT (
+      (SELECT count(*) FROM public.tickets WHERE status = 'confirmed') +
+      (SELECT count(*) FROM public.workshop_registrations wr
+       WHERE wr.status = 'confirmed'
+         AND NOT EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = wr.ticket_id))
+    ) INTO v_expected;
     v_arrived := v_badges;
   ELSIF v_occasion = 'workshop_day' THEN
     SELECT count(*) INTO v_expected

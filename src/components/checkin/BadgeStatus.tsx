@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { IdCard, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
 import { formatDoorTime } from '@/lib/checkin/panel-state';
@@ -42,6 +42,11 @@ export const BadgeStatus: React.FC<BadgeStatusProps> = ({
   onUndo,
   className = '',
 }) => {
+  const formattedPickupTime = useMemo(
+    () => (pickedUpAt ? formatDoorTime(pickedUpAt) : null),
+    [pickedUpAt]
+  );
+
   if (pickedUpAt) {
     return (
       <div
@@ -52,7 +57,7 @@ export const BadgeStatus: React.FC<BadgeStatusProps> = ({
             <IdCard className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
             <p className="text-sm text-text-secondary">
               <span className="font-semibold text-text-primary">Badge picked up</span>{' '}
-              <time dateTime={pickedUpAt}>at {formatDoorTime(pickedUpAt)}</time>
+              <time dateTime={pickedUpAt}>at {formattedPickupTime}</time>
             </p>
           </div>
           {canHandOver && onUndo ? (
