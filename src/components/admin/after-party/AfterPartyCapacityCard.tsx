@@ -56,7 +56,9 @@ function CapacityBanner({ stats, level }: { stats: AfterPartyStats; level: Capac
     message = (
       <>
         {plural(stats.remaining, 'spot')} left of {stats.capacity}.
-        {stats.speakers_unanswered > 0 ? ` Worst case ${stats.potential_headcount} if every pending speaker says yes.` : ''}
+        {stats.speakers_unanswered > 0
+          ? ` At least ${stats.potential_headcount} if every pending speaker says yes (plus any plus ones they bring).`
+          : ''}
       </>
     );
   }
@@ -103,8 +105,7 @@ interface AfterPartyCapacityCardProps {
 export function AfterPartyCapacityCard({ stats, generatedAt }: AfterPartyCapacityCardProps) {
   const level = getCapacityLevel(stats);
   const styles = LEVEL_STYLES[level];
-  const fillPercent = Math.min(100, (stats.headcount / stats.capacity) * 100);
-  const mergedTickets = stats.vip_tickets_total - stats.by_source.vip_ticket;
+  const fillPercent = stats.capacity > 0 ? Math.min(100, (stats.headcount / stats.capacity) * 100) : 100;
   const asOf = new Date(generatedAt).toLocaleTimeString('en-CH', { timeZone: 'Europe/Zurich', timeStyle: 'short' });
 
   return (
@@ -174,7 +175,7 @@ export function AfterPartyCapacityCard({ stats, generatedAt }: AfterPartyCapacit
           label="VIP tickets"
           value={stats.by_source.vip_ticket}
           hint={`${stats.vip_tickets_total} confirmed (${stats.vip_tickets_complimentary} comp)${
-            mergedTickets > 0 ? ` · ${mergedTickets} held by people above` : ''
+            stats.vip_tickets_merged > 0 ? ` · ${stats.vip_tickets_merged} held by people above` : ''
           }`}
         />
       </div>

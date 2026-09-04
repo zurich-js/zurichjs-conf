@@ -239,3 +239,150 @@ describe('buildAfterPartyRoster', () => {
     expect(roster.attendees.map((a) => a.last_name)).toEqual(['Alpha', 'Zulu']);
   });
 });
+
+describe('buildAfterPartyRoster — merge edge cases', () => {
+  it('keeps a speaker as a speaker even when declared as another speaker\'s plus one and listed later', () => {
+    const roster = buildAfterPartyRoster(
+      {
+        speakers: [
+          speaker({
+            after_party_plus_one: true,
+            after_party_plus_one_first_name: 'Bob',
+            after_party_plus_one_last_name: 'Builder',
+            after_party_plus_one_email: 'bob@example.com',
+          }),
+          speaker({ id: 'spk-2', first_name: 'Bob', last_name: 'Builder', email: 'bob@example.com' }),
+        ],
+        guests: [],
+        tickets: [],
+      },
+      90
+    );
+
+    expect(roster.stats.headcount).toBe(2);
+    const bob = roster.attendees.find((a) => a.email === 'bob@example.com');
+    expect(bob?.primary_source).toBe('speaker');
+    expect(bob?.sources).toEqual(['speaker', 'speaker_plus_one']);
+    expect(bob?.needs_vip_ticket).toBe(false);
+    expect(roster.stats.by_source).toMatchObject({ speaker: 2, speaker_plus_one: 0 });
+    expect(roster.stats.plus_ones_needing_ticket).toBe(0);
+  });
+
+  it('flags a plus one who declined the after party in their own speaker form', () => {
+    const roster = buildAfterPartyRoster(
+      {
+        speakers: [
+          speaker({ id: 'spk-2', first_name: 'Bob', last_name: 'Builder', email: 'bob@example.com', attending_after_party: false }),
+          speaker({
+            after_party_plus_one: true,
+            after_party_plus_one_first_name: 'Bob',
+            after_party_plus_one_last_name: 'Builder',
+            after_party_plus_one_email: 'bob@example.com',
+          }),
+        ],
+        guests: [],
+        tickets: [],
+      },
+      90
+    );
+
+    expect(roster.stats.headcount).toBe(2);
+    expect(roster.attendees.find((a) => a.email === 'bob@example.com')?.speaker_declined).toBe(true);
+  });
+
+  it('counts two VIP tickets under one email with different names as two people', () => {
+    const roster = buildAfterPartyRoster(
+      {
+        speakers: [],
+        guests: [],
+        tickets: [
+          ticket({ id: 't1', email: 'buyer@example.com', first_name: 'Grace', last_name: 'Hopper' }),
+          ticket({ id: 't2', email: 'buyer@example.com', first_name: 'Howard', last_name: 'Aiken' }),
+        ],
+      },
+      90
+    );
+
+    expect(roster.stats.headcount).toBe(2);
+    expect(roster.stats.by_source.vip_ticket).toBe(2);
+    expect(roster.stats.vip_tickets_total).toBe(2);
+    expect(roster.stats.vip_tickets_merged).toBe(0);
+  });
+
+  it('collapses a duplicate VIP ticket for the same person (same email, same name)', () => {
+    const roster = buildAfterPartyRoster(
+      {
+        speakers: [],
+        guests: [],
+        tickets: [
+          ticket({ id: 't1', email: 'grace@example.com', first_name: 'Grace', last_name: 'Hopper' }),
+          ticket({ id: 't2', email: 'grace@example.com', first_name: ' grace ', last_name: 'HOPPER' }),
+        ],
+      },
+      90
+    );
+
+    expect(roster.stats.headcount).toBe(1);
+    expect(roster.stats.vip_tickets_total).toBe(2);
+    // Duplicates are not "held by people above" — only merges onto non-ticket sources are
+    expect(roster.stats.vip_tickets_merged).toBe(0);
+  });
+
+  it('counts tickets merged onto speakers and plus ones directly', () => {
+    const roster = buildAfterPartyRoster(
+      {
+        speakers: [
+          speaker({
+            after_party_plus_one: true,
+            after_party_plus_one_first_name: 'Charles',
+            after_party_plus_one_last_name: 'Babbage',
+            after_party_plus_one_email: 'charles@example.com',
+          }),
+        ],
+        guests: [guest({ email: 'vera@example.com' })],
+        tickets: [
+          ticket({ id: 't1', email: 'ada@example.com', first_name: 'Ada', last_name: 'Lovelace' }),
+          ticket({ id: 't2', email: 'charles@example.com', first_name: 'Charles', last_name: 'Babbage' }),
+          ticket({ id: 't3', email: 'vera@example.com', first_name: 'Vera', last_name: 'Volunteer' }),
+          ticket({ id: 't4', email: 'grace@example.com', first_name: 'Grace', last_name: 'Hopper' }),
+        ],
+      },
+      90
+    );
+
+    expect(roster.stats.headcount).toBe(4);
+    expect(roster.stats.vip_tickets_total).toBe(4);
+    expect(roster.stats.vip_tickets_merged).toBe(3);
+    expect(roster.stats.by_source.vip_ticket).toBe(1);
+    // Every stat that partitions the headcount must add up to it
+    const sum = Object.values(roster.stats.by_source).reduce((a, b) => a + b, 0);
+    expect(sum).toBe(roster.stats.headcount);
+  });
+
+  it('merges a speaker\'s ticket by email even under a different name, and says so', () => {
+    const roster = buildAfterPartyRoster(
+      {
+        speakers: [speaker()],
+        guests: [],
+        tickets: [ticket({ email: 'ada@example.com', first_name: 'Augusta', last_name: 'King' })],
+      },
+      90
+    );
+
+    expect(roster.stats.headcount).toBe(1);
+    expect(roster.attendees[0].notes).toBe('VIP ticket is under the name Augusta King');
+    expect(roster.stats.vip_tickets_merged).toBe(1);
+  });
+
+  it('handles the capacity boundary exactly', () => {
+    const tickets = Array.from({ length: 3 }, (_, i) =>
+      ticket({ id: `t${i}`, email: `h${i}@example.com`, last_name: `H${i}` })
+    );
+    const roster = buildAfterPartyRoster({ speakers: [], guests: [], tickets }, 3);
+
+    expect(roster.stats.headcount).toBe(3);
+    expect(roster.stats.remaining).toBe(0);
+    expect(roster.stats.over_capacity).toBe(false);
+    expect(roster.stats.over_by).toBe(0);
+  });
+});
