@@ -45,8 +45,9 @@ COMMENT ON COLUMN ticket_stock_config.standard_limit IS 'Total-attendee cap. Rem
 -- RLS: service role only (read server-side, edited via the admin API)
 ALTER TABLE ticket_stock_config ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Service role has full access to ticket_stock_config"
-  ON ticket_stock_config FOR ALL
-  USING (auth.role() = 'service_role');
+-- Reset grants declaratively so the outcome does not depend on prior state.
+REVOKE ALL ON TABLE public.ticket_stock_config FROM anon;
+REVOKE ALL ON TABLE public.ticket_stock_config FROM authenticated;
+GRANT ALL ON TABLE public.ticket_stock_config TO service_role;
 
 COMMIT;
