@@ -14,6 +14,7 @@ const REASON_BADGE_CLASSES: Record<HoodieReason, string> = {
   speaker: 'bg-brand-primary/20 text-gray-900',
   vip_ticket_paid: 'bg-purple-100 text-purple-800',
   vip_upgrade_paid: 'bg-blue-100 text-blue-800',
+  sponsor_comp: 'bg-amber-100 text-amber-800',
 };
 
 export type HoodieListRow =

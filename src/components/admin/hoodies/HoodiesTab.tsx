@@ -3,7 +3,8 @@
  * Who gets a VIP hoodie and what to order. Eligibility is strict: program
  * speakers, people who bought a VIP ticket, and people who paid for a VIP
  * upgrade. Complimentary VIP tickets and complimentary upgrades are shown
- * under "Excluded" so the door team can explain a "no".
+ * under "Excluded" so the door team can explain a "no" — except sponsor
+ * comps, which qualify.
  */
 
 import React, { useMemo, useState } from 'react';
@@ -129,8 +130,9 @@ export function HoodiesTab() {
       <p className="text-xs text-gray-500">
         One hoodie per person: program speakers, anyone who bought a VIP ticket, and anyone who paid for a VIP
         upgrade. Complimentary VIP tickets (e.g. speaker plus ones) and complimentary upgrades do not get one —
-        they are listed under "Excluded VIPs". A speaker who also holds a VIP ticket counts once. Handed-out
-        status comes from the door check-in.
+        they are listed under "Excluded VIPs" — with one exception: comps issued with the reason "Sponsor" (or a
+        comp upgrade whose note mentions a sponsor) do qualify. A speaker who also holds a VIP ticket counts once.
+        Handed-out status comes from the door check-in.
       </p>
     </div>
   );

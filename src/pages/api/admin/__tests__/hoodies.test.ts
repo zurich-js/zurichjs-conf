@@ -58,14 +58,15 @@ beforeEach(() => {
     { id: 't-upg', first_name: 'Uma', last_name: 'Upgrader', email: 'uma@example.com', amount_paid: 29900, metadata: { upgraded_from: 'standard', upgrade_id: 'u-paid' }, hoodie_handed_at: '2026-09-11T09:00:00Z' },
     { id: 't-comp-upg', first_name: 'Carl', last_name: 'Comp', email: 'carl@example.com', amount_paid: 29900, metadata: { upgraded_from: 'standard', upgrade_id: 'u-comp' }, hoodie_handed_at: null },
     { id: 't-comp', first_name: 'Paula', last_name: 'PlusOne', email: 'paula@example.com', amount_paid: 0, metadata: { issuedManually: true, paymentType: 'complimentary' }, hoodie_handed_at: null },
+    { id: 't-sponsor', first_name: 'Sam', last_name: 'Sponsor', email: 'sam@sponsor.example', amount_paid: 0, metadata: { issuedManually: true, paymentType: 'complimentary', complimentaryReason: 'sponsor' }, hoodie_handed_at: null },
   ];
   mocks.tables.ticket_apparel_preferences = [
     { ticket_id: 't-paid', hoodie_size: 'L' },
     { ticket_id: 't-comp', hoodie_size: 'S' },
   ];
   mocks.tables.ticket_upgrades = [
-    { id: 'u-paid', upgrade_mode: 'bank_transfer', status: 'completed' },
-    { id: 'u-comp', upgrade_mode: 'complimentary', status: 'completed' },
+    { id: 'u-paid', upgrade_mode: 'bank_transfer', status: 'completed', admin_note: null },
+    { id: 'u-comp', upgrade_mode: 'complimentary', status: 'completed', admin_note: 'thanks for volunteering' },
   ];
 });
 
@@ -81,12 +82,13 @@ describe('GET /api/admin/hoodies', () => {
     expect((await call('POST')).status).toBe(405);
   });
 
-  it('allocates hoodies to speakers, paid VIP buyers and paid upgraders only', async () => {
+  it('allocates hoodies to speakers, paid VIP buyers, paid upgraders and sponsor comps only', async () => {
     const { status, body } = await call();
 
     expect(status).toBe(200);
-    expect(body.stats.eligible).toBe(3);
-    expect(body.stats.by_reason).toEqual({ speaker: 1, vip_ticket_paid: 1, vip_upgrade_paid: 1 });
+    expect(body.stats.eligible).toBe(4);
+    expect(body.stats.by_reason).toEqual({ speaker: 1, vip_ticket_paid: 1, vip_upgrade_paid: 1, sponsor_comp: 1 });
+    expect(body.eligible.find((e: { email: string }) => e.email === 'sam@sponsor.example').reason).toBe('sponsor_comp');
     expect(body.stats.excluded_by_reason).toEqual({
       complimentary_vip_ticket: 1,
       complimentary_upgrade: 1,

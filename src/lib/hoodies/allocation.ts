@@ -4,19 +4,21 @@
  *   - program speakers
  *   - people who bought a VIP ticket (paid — not complimentary)
  *   - people who paid for a VIP upgrade (complimentary upgrades do not count)
+ *   - the one exception: complimentary VIPs whose comp reason is "sponsor"
  * Nobody else. VIP ticket holders who miss the bar are listed separately with
  * the reason so the door team can explain it.
  */
 
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 
-export const HOODIE_REASONS = ['speaker', 'vip_ticket_paid', 'vip_upgrade_paid'] as const;
+export const HOODIE_REASONS = ['speaker', 'vip_ticket_paid', 'vip_upgrade_paid', 'sponsor_comp'] as const;
 export type HoodieReason = (typeof HOODIE_REASONS)[number];
 
 export const HOODIE_REASON_LABELS: Record<HoodieReason, string> = {
   speaker: 'Speaker',
   vip_ticket_paid: 'Bought VIP ticket',
   vip_upgrade_paid: 'Paid VIP upgrade',
+  sponsor_comp: 'Sponsor (comp VIP)',
 };
 
 export const HOODIE_EXCLUSIONS = [
@@ -48,6 +50,8 @@ export interface HoodieTicketInput {
   amount_paid: number;
   /** metadata.paymentType — 'complimentary' for manually issued comps */
   payment_type: string | null;
+  /** metadata.complimentaryReason — 'sponsor' comps still get a hoodie */
+  complimentary_reason: string | null;
   /** metadata.upgrade_id — set on every ticket that reached VIP via an upgrade */
   upgrade_id: string | null;
   /** metadata.upgraded_from — legacy marker for upgraded tickets */
@@ -60,6 +64,8 @@ export interface HoodieUpgradeInput {
   id: string;
   upgrade_mode: string;
   status: string;
+  /** Free-text note; a complimentary upgrade for a sponsor is recognised from it */
+  admin_note: string | null;
 }
 
 export interface HoodieEntry {
@@ -126,6 +132,15 @@ function sameName(
   return normalizeName(`${a.first_name} ${a.last_name}`) === normalizeName(`${b.first_name} ${b.last_name}`);
 }
 
+/** Sponsor comps are the one exception to "complimentary means no hoodie" */
+export function isSponsorComp(reason: string | null | undefined): boolean {
+  return reason?.trim().toLowerCase() === 'sponsor';
+}
+
+function mentionsSponsor(note: string | null | undefined): boolean {
+  return /sponsor/i.test(note ?? '');
+}
+
 function emptyRecord<K extends string>(keys: readonly K[]): Record<K, number> {
   return Object.fromEntries(keys.map((key) => [key, 0])) as Record<K, number>;
 }
@@ -142,11 +157,15 @@ export function classifyVipTicket(
   if (ticket.upgrade_id || ticket.upgraded_from) {
     const upgrade = ticket.upgrade_id ? upgradesById.get(ticket.upgrade_id) : undefined;
     if (!upgrade) return { eligible: false, exclusion: 'upgrade_record_missing' };
-    if (upgrade.upgrade_mode === 'complimentary') return { eligible: false, exclusion: 'complimentary_upgrade' };
+    if (upgrade.upgrade_mode === 'complimentary') {
+      if (mentionsSponsor(upgrade.admin_note)) return { eligible: true, reason: 'sponsor_comp' };
+      return { eligible: false, exclusion: 'complimentary_upgrade' };
+    }
     return { eligible: true, reason: 'vip_upgrade_paid' };
   }
 
   if (ticket.payment_type === 'complimentary' || ticket.amount_paid <= 0) {
+    if (isSponsorComp(ticket.complimentary_reason)) return { eligible: true, reason: 'sponsor_comp' };
     return { eligible: false, exclusion: 'complimentary_vip_ticket' };
   }
   return { eligible: true, reason: 'vip_ticket_paid' };

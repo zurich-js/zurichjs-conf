@@ -2,7 +2,8 @@
  * Admin Hoodie Allocation API
  * GET /api/admin/hoodies - Who gets a VIP hoodie: program speakers, people who
  * bought a VIP ticket, and people who paid for a VIP upgrade. Complimentary
- * VIP tickets and complimentary upgrades are listed separately as excluded.
+ * VIP tickets and complimentary upgrades are listed separately as excluded,
+ * except sponsor comps, which still qualify.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -61,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('ticket_category', 'vip')
         .eq('status', 'confirmed'),
       supabase.from('ticket_apparel_preferences').select('ticket_id, hoodie_size'),
-      supabase.from('ticket_upgrades').select('id, upgrade_mode, status').eq('to_tier', 'vip'),
+      supabase.from('ticket_upgrades').select('id, upgrade_mode, status, admin_note').eq('to_tier', 'vip'),
     ]);
 
     if (ticketsResult.error) {
@@ -96,6 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email: ticket.email,
       amount_paid: ticket.amount_paid,
       payment_type: readString(ticket.metadata, 'paymentType'),
+      complimentary_reason: readString(ticket.metadata, 'complimentaryReason'),
       upgrade_id: readString(ticket.metadata, 'upgrade_id'),
       upgraded_from: readString(ticket.metadata, 'upgraded_from'),
       hoodie_size: hoodieSizeByTicket.get(ticket.id) ?? null,

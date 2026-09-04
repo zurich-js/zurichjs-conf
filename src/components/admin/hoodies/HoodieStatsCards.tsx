@@ -43,7 +43,9 @@ export function HoodieStatsCards({ stats }: { stats: HoodieStats }) {
         icon={Shirt}
         label="Hoodies to hand out"
         value={stats.eligible}
-        hint={`${stats.by_reason.speaker} speakers · ${stats.by_reason.vip_ticket_paid} bought VIP · ${stats.by_reason.vip_upgrade_paid} paid upgrade`}
+        hint={`${stats.by_reason.speaker} speakers · ${stats.by_reason.vip_ticket_paid} bought VIP · ${stats.by_reason.vip_upgrade_paid} paid upgrade${
+          stats.by_reason.sponsor_comp > 0 ? ` · ${stats.by_reason.sponsor_comp} sponsor` : ''
+        }`}
       />
       <StatCard
         icon={Ruler}

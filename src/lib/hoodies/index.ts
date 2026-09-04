@@ -4,6 +4,7 @@ export {
   HOODIE_EXCLUSIONS,
   HOODIE_EXCLUSION_LABELS,
   classifyVipTicket,
+  isSponsorComp,
   buildHoodieAllocation,
 } from './allocation';
 export type {

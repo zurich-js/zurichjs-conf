@@ -19,6 +19,7 @@ function ticket(overrides: Partial<HoodieTicketInput> = {}): HoodieTicketInput {
     email: 'grace@example.com',
     amount_paid: 45000,
     payment_type: null,
+    complimentary_reason: null,
     upgrade_id: null,
     upgraded_from: null,
     hoodie_size: 'L',
@@ -28,7 +29,7 @@ function ticket(overrides: Partial<HoodieTicketInput> = {}): HoodieTicketInput {
 }
 
 function upgrade(overrides: Partial<HoodieUpgradeInput> = {}): HoodieUpgradeInput {
-  return { id: 'upg-1', upgrade_mode: 'stripe', status: 'completed', ...overrides };
+  return { id: 'upg-1', upgrade_mode: 'stripe', status: 'completed', admin_note: null, ...overrides };
 }
 
 describe('classifyVipTicket', () => {
@@ -74,6 +75,38 @@ describe('classifyVipTicket', () => {
     ).toEqual({ eligible: false, exclusion: 'complimentary_upgrade' });
   });
 
+  it('a complimentary VIP ticket issued for a sponsor is the exception and qualifies', () => {
+    expect(
+      classifyVipTicket(ticket({ amount_paid: 0, payment_type: 'complimentary', complimentary_reason: 'sponsor' }), none)
+    ).toEqual({ eligible: true, reason: 'sponsor_comp' });
+    expect(
+      classifyVipTicket(ticket({ amount_paid: 0, payment_type: 'complimentary', complimentary_reason: ' Sponsor ' }), none)
+    ).toEqual({ eligible: true, reason: 'sponsor_comp' });
+  });
+
+  it('other comp reasons still do not qualify', () => {
+    for (const reason of ['speaker', 'organizer', 'volunteer', 'media', 'partner', 'contest_winner', 'other', '']) {
+      expect(
+        classifyVipTicket(ticket({ amount_paid: 0, payment_type: 'complimentary', complimentary_reason: reason }), none)
+      ).toEqual({ eligible: false, exclusion: 'complimentary_vip_ticket' });
+    }
+  });
+
+  it('a complimentary upgrade whose admin note names a sponsor qualifies; otherwise not', () => {
+    const upgrades = new Map([
+      ['u-sponsor', upgrade({ id: 'u-sponsor', upgrade_mode: 'complimentary', admin_note: 'Sponsor package — Acme' })],
+      ['u-thanks', upgrade({ id: 'u-thanks', upgrade_mode: 'complimentary', admin_note: 'Thank you for the help' })],
+    ]);
+    expect(classifyVipTicket(ticket({ upgrade_id: 'u-sponsor', upgraded_from: 'standard' }), upgrades)).toEqual({
+      eligible: true,
+      reason: 'sponsor_comp',
+    });
+    expect(classifyVipTicket(ticket({ upgrade_id: 'u-thanks', upgraded_from: 'standard' }), upgrades)).toEqual({
+      eligible: false,
+      exclusion: 'complimentary_upgrade',
+    });
+  });
+
   it('an upgraded ticket without an upgrade record is excluded, not guessed at', () => {
     expect(classifyVipTicket(ticket({ upgrade_id: 'gone', upgraded_from: 'standard' }), none)).toEqual({
       eligible: false,
@@ -95,16 +128,17 @@ describe('buildHoodieAllocation', () => {
         ticket({ id: 't-upg', email: 'up@example.com', first_name: 'Uma', last_name: 'Upgrader', upgrade_id: 'u1', upgraded_from: 'standard', hoodie_size: null }),
         ticket({ id: 't-comp-upg', email: 'cu@example.com', first_name: 'Carl', last_name: 'Comp', upgrade_id: 'u2', upgraded_from: 'standard' }),
         ticket({ id: 't-comp', email: 'plusone@example.com', first_name: 'Paula', last_name: 'PlusOne', amount_paid: 0, payment_type: 'complimentary' }),
+        ticket({ id: 't-sponsor', email: 'sam@sponsor.example', first_name: 'Sam', last_name: 'Sponsor', amount_paid: 0, payment_type: 'complimentary', complimentary_reason: 'sponsor', hoodie_size: 'S' }),
       ],
       upgrades: [upgrade({ id: 'u1' }), upgrade({ id: 'u2', upgrade_mode: 'complimentary' })],
     });
 
-    expect(result.eligible.map((e) => e.email)).toEqual(['grace@example.com', 'ada@example.com', 'up@example.com']);
-    expect(result.stats.eligible).toBe(3);
-    expect(result.stats.by_reason).toEqual({ speaker: 1, vip_ticket_paid: 1, vip_upgrade_paid: 1 });
-    expect(result.stats.with_size).toBe(2);
+    expect(result.eligible.map((e) => e.email)).toEqual(['grace@example.com', 'ada@example.com', 'sam@sponsor.example', 'up@example.com']);
+    expect(result.stats.eligible).toBe(4);
+    expect(result.stats.by_reason).toEqual({ speaker: 1, vip_ticket_paid: 1, vip_upgrade_paid: 1, sponsor_comp: 1 });
+    expect(result.stats.with_size).toBe(3);
     expect(result.stats.missing_size).toBe(1);
-    expect(result.stats.size_counts).toMatchObject({ M: 1, L: 1, S: 0 });
+    expect(result.stats.size_counts).toMatchObject({ M: 1, L: 1, S: 1 });
 
     expect(result.stats.excluded).toBe(2);
     expect(result.stats.excluded_by_reason).toEqual({
