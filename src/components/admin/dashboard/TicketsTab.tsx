@@ -14,6 +14,7 @@ import { TicketDetailsModal } from './TicketDetailsModal';
 import { ReassignModal } from './ReassignModal';
 import { ConfirmModal } from './ConfirmModal';
 import { isComplimentaryTicket } from './ticket-utils';
+import { computeTicketStats, type KnownTicketStatus } from './ticket-stats';
 import type { Ticket, ToastMessage, SortField, SortDirection } from './types';
 
 const ITEMS_PER_PAGE = 10;
@@ -268,6 +269,58 @@ function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDismiss: ()
   );
 }
 
+/**
+ * Ticket counts for the header.
+ *
+ * The status badges are mutually exclusive and sum to the total — every value
+ * of the payment_status enum gets a badge whenever it has rows, so the numbers
+ * always reconcile against "X of Y tickets" above. Complimentary is a separate
+ * dimension (how a ticket was paid for, not its status), so it sits after a
+ * divider and is labelled as a subset rather than reading like a fourth bucket
+ * that ought to add up.
+ */
+function TicketStatusBreakdown({ tickets }: { tickets: Ticket[] }) {
+  const stats = useMemo(() => computeTicketStats(tickets), [tickets]);
+
+  // Complimentary overlaps the status badges rather than extending them, so say
+  // so outright — the counts looking like they don't add up is the confusion
+  // this breakdown exists to remove.
+  const complimentaryExplanation =
+    `Complimentary is a payment type, not a status: these ${stats.complimentaryTotal} tickets are already included in the status counts above. ` +
+    `${stats.complimentaryConfirmed} of them are confirmed and occupy a seat.`;
+
+  const statusBadges: { status: KnownTicketStatus | 'unknown'; label: string; count: number; className: string }[] = [
+    { status: 'confirmed', label: 'confirmed', count: stats.byStatus.confirmed, className: 'bg-green-100 text-green-800' },
+    { status: 'pending', label: 'pending', count: stats.byStatus.pending, className: 'bg-yellow-100 text-yellow-800' },
+    { status: 'cancelled', label: 'cancelled', count: stats.byStatus.cancelled, className: 'bg-gray-100 text-gray-800' },
+    { status: 'refunded', label: 'refunded', count: stats.byStatus.refunded, className: 'bg-red-100 text-red-800' },
+    { status: 'unknown', label: 'other status', count: stats.unknownStatus, className: 'bg-orange-100 text-orange-800' },
+  ];
+
+  return (
+    <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
+      <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-black text-white font-medium">{stats.total} total</span>
+      {statusBadges
+        // Confirmed always shows, even at zero, so the primary figure never vanishes
+        .filter(({ status, count }) => count > 0 || status === 'confirmed')
+        .map(({ status, label, count, className }) => (
+          <span key={status} className={`inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full font-medium ${className}`}>
+            {count} {label}
+          </span>
+        ))}
+      <span className="text-gray-300" aria-hidden="true">|</span>
+      <span
+        className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-medium"
+        title={complimentaryExplanation}
+      >
+        {stats.complimentaryConfirmed} of {stats.complimentaryTotal} complimentary confirmed
+      </span>
+      {/* title= is mouse-only, so the same explanation is available to assistive tech */}
+      <span className="sr-only">{complimentaryExplanation}</span>
+    </div>
+  );
+}
+
 function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, filterNonSwiss, setFilterNonSwiss, filterComplimentary, setFilterComplimentary, headerAction }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void; filterNonSwiss: boolean; setFilterNonSwiss: (v: boolean) => void; filterComplimentary: boolean; setFilterComplimentary: (v: boolean) => void; headerAction: ReactNode }) {
   return (
     <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
@@ -276,11 +329,7 @@ function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, fil
           <h2 className="text-lg sm:text-xl font-bold text-black">Ticket Management</h2>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">{filteredCount} of {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}{(searchQuery || filterNonSwiss || filterComplimentary) && ' (filtered)'}</p>
         </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
-          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-green-100 text-green-800 font-medium">{tickets.filter(t => t.status === 'confirmed').length} confirmed</span>
-          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-gray-100 text-gray-800 font-medium">{tickets.filter(t => t.status === 'cancelled').length} cancelled</span>
-          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-medium">{tickets.filter(isComplimentaryTicket).length} complimentary</span>
-        </div>
+        <TicketStatusBreakdown tickets={tickets} />
       </div>
       <div className="mt-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">

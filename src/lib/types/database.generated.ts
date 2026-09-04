@@ -2963,6 +2963,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_stock_config: {
+        Row: {
+          id: string
+          singleton: boolean
+          standard_limit: number | null
+          student_unemployed_limit: number
+          updated_at: string
+          vip_limit: number
+        }
+        Insert: {
+          id?: string
+          singleton?: boolean
+          standard_limit?: number | null
+          student_unemployed_limit?: number
+          updated_at?: string
+          vip_limit?: number
+        }
+        Update: {
+          id?: string
+          singleton?: boolean
+          standard_limit?: number | null
+          student_unemployed_limit?: number
+          updated_at?: string
+          vip_limit?: number
+        }
+        Relationships: []
+      }
       ticket_upgrades: {
         Row: {
           admin_note: string | null

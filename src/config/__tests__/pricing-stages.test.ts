@@ -7,14 +7,19 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
+  GLOBAL_STOCK_LIMITS,
   PRICING_STAGES,
+  emptyStockCounts,
   getCurrentStage,
   getEffectiveStageForCategory,
   getFinalStage,
   getNextStage,
   getStageConfig,
   getStagesAfter,
+  getStockInfo,
+  getTotalTicketsSold,
   isStageStockExhausted,
+  type GlobalStockLimits,
   type StageStockCounts,
 } from '../pricing-stages';
 
@@ -161,5 +166,163 @@ describe('isStageStockExhausted', () => {
     counts.byStage.blind_bird = getStageConfig('blind_bird')!.stockLimits!.stageLimit!;
 
     expect(isStageStockExhausted('blind_bird', counts)).toBe(true);
+  });
+});
+
+describe('emptyStockCounts', () => {
+  it('zeroes every stage and category', () => {
+    const counts = emptyStockCounts();
+    expect(Object.values(counts.byStage).every((n) => n === 0)).toBe(true);
+    expect(Object.values(counts.byCategory).every((n) => n === 0)).toBe(true);
+  });
+
+  it('returns a fresh object each call (no shared mutable state)', () => {
+    const first = emptyStockCounts();
+    first.byCategory.vip = 5;
+    expect(emptyStockCounts().byCategory.vip).toBe(0);
+  });
+});
+
+describe('getTotalTicketsSold', () => {
+  it('sums every category', () => {
+    const counts = emptyStockCounts();
+    counts.byCategory.vip = 10;
+    counts.byCategory.standard_student_unemployed = 7;
+    counts.byCategory.standard = 100;
+    expect(getTotalTicketsSold(counts)).toBe(117);
+  });
+
+  it('treats missing category counts as zero', () => {
+    const counts = { byStage: {}, byCategory: {} } as unknown as StageStockCounts;
+    expect(getTotalTicketsSold(counts)).toBe(0);
+  });
+});
+
+describe('getStockInfo', () => {
+  const limits: GlobalStockLimits = {
+    vip: 52,
+    student_unemployed: 35,
+    standard_total: 300,
+  };
+
+  const countsWith = (byCategory: Partial<StageStockCounts['byCategory']>, stage?: Partial<StageStockCounts['byStage']>): StageStockCounts => {
+    const counts = emptyStockCounts();
+    Object.assign(counts.byCategory, byCategory);
+    if (stage) Object.assign(counts.byStage, stage);
+    return counts;
+  };
+
+  describe('VIP', () => {
+    it('measures the VIP limit against VIP sales only', () => {
+      const counts = countsWith({ vip: 12, standard: 200, standard_student_unemployed: 30 });
+      expect(getStockInfo('vip', 'early_bird', counts, limits)).toEqual({
+        remaining: 40,
+        total: 52,
+        soldOut: false,
+      });
+    });
+
+    it('is sold out once the limit is reached', () => {
+      const counts = countsWith({ vip: 52 });
+      expect(getStockInfo('vip', 'early_bird', counts, limits)).toEqual({
+        remaining: 0,
+        total: 52,
+        soldOut: true,
+      });
+    });
+
+    it('never reports negative remaining when oversold', () => {
+      const counts = countsWith({ vip: 60 });
+      const stock = getStockInfo('vip', 'early_bird', counts, limits);
+      expect(stock.remaining).toBe(0);
+      expect(stock.soldOut).toBe(true);
+    });
+  });
+
+  describe('student / unemployed', () => {
+    it('measures its own limit against its own sales', () => {
+      const counts = countsWith({ standard_student_unemployed: 30, standard: 200 });
+      expect(getStockInfo('standard_student_unemployed', 'early_bird', counts, limits)).toEqual({
+        remaining: 5,
+        total: 35,
+        soldOut: false,
+      });
+    });
+  });
+
+  describe('standard (total-attendee cap)', () => {
+    it('subtracts every confirmed ticket, not just standard sales', () => {
+      // 100 standard + 12 VIP + 30 student = 142 of the 300-seat venue used
+      const counts = countsWith({ standard: 100, vip: 12, standard_student_unemployed: 30 });
+      expect(getStockInfo('standard', 'early_bird', counts, limits)).toEqual({
+        remaining: 158,
+        total: 300,
+        soldOut: false,
+      });
+    });
+
+    it('sells out when the other categories fill the venue', () => {
+      // Standard itself has sold nothing, but VIP + student fill all 300 seats
+      const counts = countsWith({ standard: 0, vip: 52, standard_student_unemployed: 248 });
+      expect(getStockInfo('standard', 'early_bird', counts, limits)).toEqual({
+        remaining: 0,
+        total: 300,
+        soldOut: true,
+      });
+    });
+
+    it('is uncapped when standard_total is null', () => {
+      const counts = countsWith({ standard: 1000, vip: 52 });
+      expect(
+        getStockInfo('standard', 'early_bird', counts, { ...limits, standard_total: null })
+      ).toEqual({
+        remaining: null,
+        total: null,
+        soldOut: false,
+      });
+    });
+
+    it('takes the tighter of the total cap and the stage batch limit', () => {
+      // Blind bird caps its own batch at 30. 25 sold in that batch leaves 5,
+      // while the 300-seat venue still has plenty — the batch is what gates.
+      const counts = countsWith(
+        { standard: 25, vip: 0, standard_student_unemployed: 0 },
+        { blind_bird: 25 }
+      );
+      expect(getStockInfo('standard', 'blind_bird', counts, limits)).toEqual({
+        remaining: 5,
+        total: 30,
+        soldOut: false,
+      });
+    });
+
+    it('lets the total cap win when it is tighter than the stage batch', () => {
+      // 298 of 300 seats gone leaves 2, tighter than the blind-bird batch's 25
+      const counts = countsWith(
+        { standard: 5, vip: 52, standard_student_unemployed: 241 },
+        { blind_bird: 5 }
+      );
+      expect(getStockInfo('standard', 'blind_bird', counts, limits)).toEqual({
+        remaining: 2,
+        total: 300,
+        soldOut: false,
+      });
+    });
+  });
+
+  it('defaults to the hardcoded fallback limits when none are passed', () => {
+    const counts = countsWith({ vip: 2 });
+    expect(getStockInfo('vip', 'early_bird', counts)).toEqual({
+      remaining: GLOBAL_STOCK_LIMITS.vip - 2,
+      total: GLOBAL_STOCK_LIMITS.vip,
+      soldOut: false,
+    });
+  });
+
+  it('reports every limit as fully available when nothing is sold', () => {
+    const counts = emptyStockCounts();
+    expect(getStockInfo('vip', 'early_bird', counts, limits).remaining).toBe(52);
+    expect(getStockInfo('standard_student_unemployed', 'early_bird', counts, limits).remaining).toBe(35);
+    expect(getStockInfo('standard', 'early_bird', counts, limits).remaining).toBe(300);
   });
 });

@@ -19,10 +19,11 @@ import { VipPerksTab } from '@/components/admin/vip-perks';
 import { ApparelTab } from '@/components/admin/apparel';
 import { DiscountConfigTab } from '@/components/admin/discount';
 import { CartBuilderTab } from '@/components/admin/cart-builder';
+import { TicketStockTab } from '@/components/admin/ticket-stock';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 type Tab = 'tickets' | 'workshops' | 'issue' | 'commerce' | 'fulfillment';
-type CommerceSubTab = 'financials' | 'discount' | 'cart-builder';
+type CommerceSubTab = 'financials' | 'stock' | 'discount' | 'cart-builder';
 type FulfillmentSubTab = 'vip-perks' | 'apparel';
 
 const TABS: AdminTab<Tab>[] = [
@@ -35,6 +36,7 @@ const TABS: AdminTab<Tab>[] = [
 
 const COMMERCE_SUBTABS: { id: CommerceSubTab; label: string }[] = [
   { id: 'financials', label: 'Financials' },
+  { id: 'stock', label: 'Ticket Stock' },
   { id: 'discount', label: 'Discounts' },
   { id: 'cart-builder', label: 'Cart Builder' },
 ];
@@ -84,12 +86,13 @@ function CommerceSection() {
               <DollarSign className="w-5 h-5" />
               Commerce
             </h2>
-            <p className="text-sm text-gray-500">Revenue, discounts, and sales tools</p>
+            <p className="text-sm text-gray-500">Revenue, ticket stock, discounts, and sales tools</p>
           </div>
           <SubTabBar tabs={COMMERCE_SUBTABS} activeTab={subTab} onTabChange={setSubTab} />
         </div>
       </div>
       {subTab === 'financials' && <FinancialsTab />}
+      {subTab === 'stock' && <TicketStockTab />}
       {subTab === 'discount' && <DiscountConfigTab />}
       {subTab === 'cart-builder' && <CartBuilderTab />}
     </div>
