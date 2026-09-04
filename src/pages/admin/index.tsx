@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, GraduationCap, Package } from 'lucide-react';
+import { Ticket, PlusCircle, DollarSign, GraduationCap, Package, PartyPopper } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -19,9 +19,10 @@ import { VipPerksTab } from '@/components/admin/vip-perks';
 import { ApparelTab } from '@/components/admin/apparel';
 import { DiscountConfigTab } from '@/components/admin/discount';
 import { CartBuilderTab } from '@/components/admin/cart-builder';
+import { AfterPartyTab } from '@/components/admin/after-party';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
-type Tab = 'tickets' | 'workshops' | 'issue' | 'commerce' | 'fulfillment';
+type Tab = 'tickets' | 'workshops' | 'issue' | 'commerce' | 'fulfillment' | 'afterparty';
 type CommerceSubTab = 'financials' | 'discount' | 'cart-builder';
 type FulfillmentSubTab = 'vip-perks' | 'apparel';
 
@@ -31,6 +32,7 @@ const TABS: AdminTab<Tab>[] = [
   { id: 'issue', label: 'Issue', icon: PlusCircle },
   { id: 'commerce', label: 'Commerce', icon: DollarSign },
   { id: 'fulfillment', label: 'Fulfillment', icon: Package },
+  { id: 'afterparty', label: 'After Party', icon: PartyPopper },
 ];
 
 const COMMERCE_SUBTABS: { id: CommerceSubTab; label: string }[] = [
@@ -139,6 +141,7 @@ export default function AdminDashboard() {
             {activeTab === 'issue' && <IssueTab />}
             {activeTab === 'commerce' && <CommerceSection />}
             {activeTab === 'fulfillment' && <FulfillmentSection />}
+            {activeTab === 'afterparty' && <AfterPartyTab />}
           </div>
         </div>
       </div>
