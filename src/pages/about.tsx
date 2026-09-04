@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Clock, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, ExternalLink, MapPin, TrainFront } from "lucide-react";
 import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import { aboutPageData } from "@/data/about-us";
 import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
 import {Button, Heading, Kicker} from "@/components/atoms";
-import {AnchorHeading, StickyTicketCta} from "@/components/molecules";
+import {AnchorHeading, Infotip, StickyTicketCta} from "@/components/molecules";
 import {TeamMemberCard} from "@/components/molecules/TeamMemberCard";
 import {ValueCard} from "@/components/molecules/ValueCard";
 import { useCart } from "@/contexts/CartContext";
@@ -212,6 +212,18 @@ export default function AboutUs() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             <div className="space-y-4">
+              <p className="text-white leading-relaxed text-base">
+                <Infotip
+                  label={aboutPageData.venue.title}
+                  copyText={`${aboutPageData.venue.title}, ${aboutPageData.venue.address.street}, ${aboutPageData.venue.address.city}`}
+                  mapHref={aboutPageData.venue.locationUrl}
+                  align="start"
+                  variant="dark"
+                >
+                  <span dangerouslySetInnerHTML={{ __html: aboutPageData.venue.infoTipContent }} />
+                </Infotip>{" "}
+                {aboutPageData.venue.introduction}
+              </p>
               {aboutPageData.venue.description.map((text, index) => (
                 <p
                   key={index}
@@ -220,7 +232,7 @@ export default function AboutUs() {
                 />
               ))}
             </div>
-            <div>
+            <div className="@container">
               <div className="mb-6 w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
                 <iframe
                   src={aboutPageData.venue.mapUrl}
@@ -234,24 +246,37 @@ export default function AboutUs() {
                 />
               </div>
               <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  asChild
-                  href={aboutPageData.venue.directionsUrl}
-                >
-                  Get Directions
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  asChild
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 @max-[400px]:basis-full"
+                    asChild
+                    href={aboutPageData.venue.directionsUrl}
+                  >
+                    <TrainFront size={14} aria-hidden="true" />
+                    Get Directions
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 @max-[400px]:basis-full"
+                    asChild
+                    href={aboutPageData.venue.locationUrl}
+                  >
+                    <MapPin size={14} aria-hidden="true" />
+                    See Location
+                  </Button>
+                </div>
+                <a
                   href={aboutPageData.venue.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mx-auto flex w-fit items-center gap-1.5 text-sm text-white underline decoration-white/60 underline-offset-4 transition-colors hover:text-brand-yellow-main focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
-                  Visit Website
-                </Button>
+                  Visit website
+                  <ExternalLink size={13} aria-hidden="true" />
+                </a>
               </div>
             </div>
           </div>

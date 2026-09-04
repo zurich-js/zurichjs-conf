@@ -36,6 +36,8 @@ export interface AboutTeamData {
 export interface AboutVenueData {
   kicker: string;
   title: string;
+  introduction: string;
+  infoTipContent: string;
   description: string[];
   mapUrl: string;
   address: {
@@ -44,6 +46,7 @@ export interface AboutVenueData {
     country: string;
   };
   directionsUrl: string;
+  locationUrl: string;
   websiteUrl: string;
 }
 
@@ -192,21 +195,26 @@ export const aboutPageData: AboutPageData = {
   venue: {
     kicker: "the venue",
     title: "Technopark Zürich",
+    introduction:
+      "is Switzerland's largest technology center, located in the heart of Zurich's innovation district. This modern facility provides the perfect backdrop for our conference.",
+    infoTipContent:
+      "<strong>Technopark Zürich</strong><br />Technoparkstrasse 1<br />8005 Zürich<br /><br />10 minutes away from Zurich main station by public transport.<br /><a href='https://www.sbb.ch/en?stops=Z%C3%BCrich+HB_I8503000~8005+Z%C3%BCrich,+Technoparkstrasse+1_IA=2@O=8005+Z%C3%BCrich,+Technoparkstrasse+1@H=1@X=8516201@Y=47389782@U=103@L=990014618@p=1785751573@&day=2026-09-11&time=07_30&moment=arr' target='_blank' rel='noopener noreferrer'>Plan your journey from Zürich HB with SBB</a>",
     description: [
-      "Technopark Zürich is Switzerland's largest technology center, located in the heart of Zurich's innovation district. This modern facility provides the perfect backdrop for our conference.",
       "With state-of-the-art facilities and excellent transportation connections, Technopark offers an inspiring environment for learning, networking, and collaboration.",
 
       "<strong> Getting there </strong> <br>Easily accessible by public transport. Tram lines 4 and 13 stop directly at Technopark.",
       "Planning your budget? <a href='/trip-cost' style='color: #268BCC; text-decoration: underline;'>Estimate your trip cost</a>.",
     ],
     mapUrl:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2701.234567890123!2d8.5167!3d47.3833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDfCsDIyJzU5LjkiTiA4wrAzMScwMC4xIkU!5e0!3m2!1sen!2sch!4v1234567890123",
+      "https://maps.google.com/maps?q=47.3897551%2C8.5163116&z=17&output=embed",
     address: {
       street: "Technoparkstrasse 1",
       city: "8005 Zürich",
       country: "Switzerland",
     },
-    directionsUrl: "https://maps.google.com",
+    directionsUrl:
+      "https://www.sbb.ch/en?stops=+Current+location_C8.52276264934935,47.38696510126239~8005+Z%C3%BCrich,+Technoparkstrasse+1_IA=2@O=8005+Z%C3%BCrich,+Technoparkstrasse+1@H=1@X=8516201@Y=47389782@U=103@L=990014618@p=1785751573@&day=2026-09-11&time=07_30&moment=arr",
+    locationUrl: "https://maps.app.goo.gl/uEe8u7TTL5DjFdjS9",
     websiteUrl: "https://technopark.ch",
   },
   afterParty: {
