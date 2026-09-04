@@ -9,17 +9,18 @@ import Stripe from 'stripe';
 import { logger } from '@/lib/logger';
 
 import {
+  emptyStockCounts,
   getCurrentStage,
   getEffectiveStageForCategory,
   getStagesAfter,
   getStockInfo,
-  GLOBAL_STOCK_LIMITS,
   type PriceStage,
   type TicketCategory,
   type StockInfo,
 } from '@/config/pricing-stages';
 import { parseCurrencyParam, type SupportedCurrency } from '@/config/currency';
 import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
+import { getTicketStockLimits } from '@/lib/tickets/stock-config';
 import { serverAnalytics } from '@/lib/analytics/server';
 
 const log = logger.scope('Ticket Pricing API');
@@ -131,10 +132,18 @@ export default async function handler(
     // Parse currency from query parameter (defaults to CHF)
     const currency = parseCurrencyParam(req.query.currency);
 
-    // Get ticket counts for stock-aware stage determination
-    const { counts } = await getTicketCounts();
+    // Get ticket counts for stock-aware stage determination, plus the
+    // admin-configured limits those counts are measured against.
+    const [{ counts }, stockLimits] = await Promise.all([
+      getTicketCounts(),
+      getTicketStockLimits(),
+    ]);
     const currentStageConfig = getCurrentStage(counts);
     const currentStage = currentStageConfig.stage;
+
+    // A failed counts query must not invent a sell-out: zeroed counts report
+    // every limit's full allowance as still available.
+    const resolvedCounts = counts ?? emptyStockCounts();
 
     // Helper to fetch plans for a given currency
     const fetchPlansForCurrency = async (targetCurrency: SupportedCurrency): Promise<TicketPlanResponse[]> => {
@@ -176,31 +185,15 @@ export default async function handler(
           }
         }
 
-        // Calculate stock info
-        const stock = counts
-          ? getStockInfo(category, currentStage, counts)
-          : { remaining: null, total: null, soldOut: false };
-
-        // For VIP and Student/Unemployed, always show global stock limit
-        let finalStock: StockInfo = stock;
-        if (category === 'vip') {
-          finalStock = {
-            remaining: counts
-              ? Math.max(0, GLOBAL_STOCK_LIMITS.vip - (counts.byCategory.vip || 0))
-              : GLOBAL_STOCK_LIMITS.vip,
-            total: GLOBAL_STOCK_LIMITS.vip,
-            soldOut: counts ? (counts.byCategory.vip || 0) >= GLOBAL_STOCK_LIMITS.vip : false,
-          };
-        } else if (category === 'standard_student_unemployed') {
-          const sold = counts?.byCategory.standard_student_unemployed || 0;
-          finalStock = {
-            remaining: counts
-              ? Math.max(0, GLOBAL_STOCK_LIMITS.student_unemployed - sold)
-              : GLOBAL_STOCK_LIMITS.student_unemployed,
-            total: GLOBAL_STOCK_LIMITS.student_unemployed,
-            soldOut: counts ? sold >= GLOBAL_STOCK_LIMITS.student_unemployed : false,
-          };
-        }
+        // Stock info. getStockInfo owns every limit (VIP, student/unemployed,
+        // the total-attendee cap bounding standard, and per-stage batches), so
+        // there is one place where remaining stock is decided.
+        const finalStock: StockInfo = getStockInfo(
+          category,
+          currentStage,
+          resolvedCounts,
+          stockLimits
+        );
 
         return {
           id: category,

@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   mockGetCurrentStage: vi.fn(),
   mockBuildOfferingSummaries: vi.fn(),
   mockWorkshopsQueryResult: vi.fn(),
+  mockGetTicketStockLimits: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -26,6 +27,10 @@ vi.mock('@/lib/admin/auth', () => ({
 
 vi.mock('@/lib/tickets/getTicketCounts', () => ({
   getTicketCounts: mocks.mockGetTicketCounts,
+}));
+
+vi.mock('@/lib/tickets/stock-config', () => ({
+  getTicketStockLimits: mocks.mockGetTicketStockLimits,
 }));
 
 vi.mock('@/config/pricing-stages', async (importOriginal) => {
@@ -138,6 +143,7 @@ describe('Admin Cart Builder Catalog API', () => {
 
     mocks.mockVerifyAdminAccess.mockReturnValue({ authorized: true, isBot: false, botClient: null });
     mocks.mockGetTicketCounts.mockResolvedValue({ success: true, counts: SOLD_OUT_VIP_COUNTS });
+    mocks.mockGetTicketStockLimits.mockResolvedValue(GLOBAL_STOCK_LIMITS);
     mocks.mockGetCurrentStage.mockReturnValue({
       stage: 'standard',
       displayName: 'General Admission',

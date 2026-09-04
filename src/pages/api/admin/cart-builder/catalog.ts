@@ -11,6 +11,7 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 import { parseCurrencyParam, type SupportedCurrency } from '@/config/currency';
 import {
+  emptyStockCounts,
   getCurrentStage,
   getEffectiveStageForCategory,
   getStockInfo,
@@ -19,6 +20,7 @@ import {
   type StockInfo,
 } from '@/config/pricing-stages';
 import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
+import { getTicketStockLimits } from '@/lib/tickets/stock-config';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
 import {
@@ -116,8 +118,14 @@ export default async function handler(
     const currency = parseCurrencyParam(req.query.currency);
     const stripe = getStripeClient();
 
-    const { counts } = await getTicketCounts();
+    const [{ counts }, stockLimits] = await Promise.all([
+      getTicketCounts(),
+      getTicketStockLimits(),
+    ]);
     const currentStageConfig = getCurrentStage(counts);
+    // A failed counts query must not invent a sell-out — zeroed counts report
+    // every limit's full allowance as still available.
+    const resolvedCounts = counts ?? emptyStockCounts();
     const currentStage = currentStageConfig.stage;
 
     // Tickets: one Stripe price per category for the current stage.
@@ -150,9 +158,7 @@ export default async function handler(
           category === 'standard_student_unemployed'
             ? 'standard'
             : getEffectiveStageForCategory(category, currentStage),
-        stock: counts
-          ? getStockInfo(category, currentStage, counts)
-          : { remaining: null, total: null, soldOut: false },
+        stock: getStockInfo(category, currentStage, resolvedCounts, stockLimits),
       });
     }
 
