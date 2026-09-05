@@ -62,6 +62,15 @@ COMMENT ON COLUMN public.door_events.event_type IS 'checked_in | check_in_undone
 -- workshop day 2026-09-10, conference day 2026-09-11. Anything on or before the
 -- community day resolves to community_day so a rehearsal the week before lands
 -- on the harmless badge-only occasion.
+--
+-- REHEARSING A CHECK-IN BEFORE 10 SEP
+-- Because community_day is the fallback AND door_check_in refuses it, any
+-- check-in that does not carry an explicit occasion is denied
+-- `community_day_badge_only` until 2026-09-10. That is deliberate — a stray
+-- write must never consume a real arrival — but it means a dry run through the
+-- API or a script has to pass p_occasion explicitly to exercise the check-in
+-- path at all. The station UI is unaffected: useDoorMutationQueue.submit stamps
+-- the occasion on every write at enqueue time.
 CREATE OR REPLACE FUNCTION public.door_current_occasion()
 RETURNS TEXT
 LANGUAGE sql
@@ -496,6 +505,25 @@ BEGIN
     v_reg_id := v_reg.id;
   END IF;
 
+  -- A badge goes with a conference ticket. A workshop seat alone does not
+  -- include one: workshop attendees are checked in on the day of their
+  -- workshop, and the warm-up desk hands badges only to conference ticket
+  -- holders. The panel has never offered the button for a registration subject
+  -- on any day, and the community-day dashboard counts only confirmed tickets
+  -- as expected — refusing here is what keeps those two true, so neither a
+  -- direct call nor a queued replay can hand out a badge nobody is owed or
+  -- push `arrived` past `expected`.
+  IF v_kind = 'workshop_registration' THEN
+    INSERT INTO public.door_events (event_type, occasion, outcome,
+      workshop_registration_id, staff_id, staff_email, staff_role, station,
+      occurred_at, failure_reason)
+    VALUES ('denied', v_occasion, 'denied', v_reg_id, v_staff.id,
+      v_staff.email, v_staff.role, p_station, v_occurred,
+      'badge_requires_conference_ticket');
+    RETURN jsonb_build_object('outcome', 'denied',
+      'failureReason', 'badge_requires_conference_ticket');
+  END IF;
+
   IF v_status <> 'confirmed' THEN
     INSERT INTO public.door_events (event_type, occasion, outcome, ticket_id,
       workshop_registration_id, staff_id, staff_email, staff_role, station,
@@ -533,7 +561,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.door_badge_pickup(UUID, UUID, TEXT, TIMESTAMPTZ, TEXT) IS 'Record a badge handover, e.g. early pickup on the community day. Moves no check-in state; the latest applied badge event IS the pickup state, so an undone pickup can be handed again.';
+COMMENT ON FUNCTION public.door_badge_pickup(UUID, UUID, TEXT, TIMESTAMPTZ, TEXT) IS 'Record a badge handover, e.g. early pickup on the community day. Conference tickets only — a workshop registration is refused (badge_requires_conference_ticket). Moves no check-in state; the latest applied badge event IS the pickup state, so an undone pickup can be handed again.';
 
 -- ============================================
 -- Badge pickup undo
@@ -644,6 +672,8 @@ DECLARE
   v_ticket         public.tickets;
   v_tshirt_undone  BOOLEAN := FALSE;
   v_hoodie_undone  BOOLEAN := FALSE;
+  v_legacy_undone  BOOLEAN := FALSE;
+  v_applied        BOOLEAN := FALSE;
   v_rows           INT := 0;
 BEGIN
   IF v_occurred < '2026-09-01'::TIMESTAMPTZ THEN v_occurred := NOW(); END IF;
@@ -693,18 +723,18 @@ BEGIN
      AND v_ticket.goodie_handed_at IS NOT NULL
      AND v_ticket.tshirt_handed_at IS NULL
      AND v_ticket.hoodie_handed_at IS NULL THEN
-    -- Clear the legacy full-handover stamp and report undo based on whether
-    -- the row was actually updated.
+    -- Clear the legacy full-handover stamp. The per-item flags stay FALSE on
+    -- purpose: this row never carried item timestamps, so reporting that a
+    -- t-shirt or a hoodie came back would put a detail in the audit trail the
+    -- row cannot support — and the caller decides which items to name, which is
+    -- not evidence of what was ever handed. v_legacy_undone carries the fact.
     UPDATE public.tickets SET
       goodie_handed_at = NULL,
       goodie_handed_by = NULL,
       updated_at = NOW()
     WHERE id = v_ticket.id AND goodie_handed_at IS NOT NULL;
     GET DIAGNOSTICS v_rows = ROW_COUNT;
-    IF v_rows > 0 THEN
-      v_tshirt_undone := p_undo_tshirt;
-      v_hoodie_undone := p_undo_hoodie;
-    END IF;
+    v_legacy_undone := v_rows > 0;
   ELSIF v_tshirt_undone OR v_hoodie_undone THEN
     -- The full-entitlement stamp cannot stand while an item is back on the
     -- table; door_goodie_handover re-stamps it when the follow-up completes.
@@ -715,26 +745,46 @@ BEGIN
     WHERE id = v_ticket.id AND goodie_handed_at IS NOT NULL;
   END IF;
 
+  v_applied := v_tshirt_undone OR v_hoodie_undone OR v_legacy_undone;
+
+  -- goodie_note is composed by door_goodie_handover as a summary of what was
+  -- handed over. Once nothing is handed any more, that summary describes a
+  -- handover that no longer exists — and leaving it means the next handover
+  -- appends to it, so an undo-then-redo doubles the note. A partial undo keeps
+  -- it: part of what it describes still stands.
+  IF v_applied THEN
+    UPDATE public.tickets SET
+      goodie_note = NULL,
+      updated_at = NOW()
+    WHERE id = v_ticket.id
+      AND goodie_note IS NOT NULL
+      AND goodie_handed_at IS NULL
+      AND tshirt_handed_at IS NULL
+      AND hoodie_handed_at IS NULL;
+  END IF;
+
   INSERT INTO public.door_events (event_type, occasion, outcome, ticket_id,
     staff_id, staff_email, staff_role, station, occurred_at, notes, metadata)
   VALUES ('goodie_undone', v_occasion,
-    CASE WHEN v_tshirt_undone OR v_hoodie_undone THEN 'applied' ELSE 'duplicate' END,
+    CASE WHEN v_applied THEN 'applied' ELSE 'duplicate' END,
     v_ticket.id, v_staff.id, v_staff.email, v_staff.role, p_station,
     v_occurred, p_reason,
     jsonb_build_object(
       'tshirtUndone', v_tshirt_undone,
-      'hoodieUndone', v_hoodie_undone
+      'hoodieUndone', v_hoodie_undone,
+      'legacyStampUndone', v_legacy_undone
     ));
 
   RETURN jsonb_build_object(
-    'outcome', CASE WHEN v_tshirt_undone OR v_hoodie_undone THEN 'applied' ELSE 'duplicate' END,
+    'outcome', CASE WHEN v_applied THEN 'applied' ELSE 'duplicate' END,
     'tshirtUndone', v_tshirt_undone,
-    'hoodieUndone', v_hoodie_undone
+    'hoodieUndone', v_hoodie_undone,
+    'legacyStampUndone', v_legacy_undone
   );
 END;
 $$;
 
-COMMENT ON FUNCTION public.door_goodie_undo(UUID, UUID, TEXT, TIMESTAMPTZ, TEXT, TEXT, BOOLEAN, BOOLEAN) IS 'Take back a mistaken goodie handover, per item. Clears the item columns and the full-entitlement stamp and appends a goodie_undone audit row. duplicate means nothing was handed, so replays are safe.';
+COMMENT ON FUNCTION public.door_goodie_undo(UUID, UUID, TEXT, TIMESTAMPTZ, TEXT, TEXT, BOOLEAN, BOOLEAN) IS 'Take back a mistaken goodie handover, per item. Clears the item columns and the full-entitlement stamp, drops the composed goodie_note once nothing is handed any more, and appends a goodie_undone audit row. A pre-per-item row reports legacyStampUndone rather than inventing item detail it never had. duplicate means nothing was handed, so replays are safe.';
 
 -- ============================================
 -- Resolve and roster prefetch: undo-aware badge state
@@ -915,20 +965,18 @@ BEGIN
   ) latest WHERE latest.event_type = 'badge_pickup';
 
   -- Everyone who could turn up for this occasion.
-  --   community_day: anyone who may collect a badge early — both conference
-  --                  ticket holders AND workshop-only attendees (who get a
-  --                  badge via their registration). "arrived" is badges handed.
+  --   community_day: confirmed conference tickets — the only people who may
+  --                  collect a badge early. A workshop seat alone does not
+  --                  come with a badge (door_badge_pickup refuses one), so
+  --                  workshop-only attendees are NOT expected at this desk;
+  --                  they are checked in on the day of their workshop.
+  --                  "arrived" is badges handed.
   --   workshop_day: confirmed workshop seats, INCLUDING attendees with no
   --                 conference ticket at all.
   --   conference_day: confirmed conference tickets.
   IF v_occasion = 'community_day' THEN
-    -- Count confirmed tickets + workshop registrations without a ticket
-    SELECT (
-      (SELECT count(*) FROM public.tickets WHERE status = 'confirmed') +
-      (SELECT count(*) FROM public.workshop_registrations wr
-       WHERE wr.status = 'confirmed'
-         AND NOT EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = wr.ticket_id))
-    ) INTO v_expected;
+    SELECT count(*) INTO v_expected
+      FROM public.tickets WHERE status = 'confirmed';
     v_arrived := v_badges;
   ELSIF v_occasion = 'workshop_day' THEN
     SELECT count(*) INTO v_expected
@@ -958,17 +1006,28 @@ BEGIN
 
     'badgesPickedUp', v_badges,
 
+    -- The rate tiles must count the same thing `arrived` does, or the two
+    -- disagree. Only community_day counts badges as arrivals; on the other days
+    -- a badge pickup is a second transaction with someone who already walked
+    -- through, and counting it here would inflate the rate an organiser reads
+    -- to decide whether to open another lane.
     'arrivalsLast15Min', (
       SELECT count(*) FROM public.door_events
       WHERE occasion = v_occasion
-        AND event_type IN ('checked_in', 'manual_admit', 'badge_pickup')
+        AND (
+          event_type IN ('checked_in', 'manual_admit')
+          OR (v_occasion = 'community_day' AND event_type = 'badge_pickup')
+        )
         AND outcome = 'applied'
         AND recorded_at > NOW() - INTERVAL '15 minutes'
     ),
     'arrivalsLast5Min', (
       SELECT count(*) FROM public.door_events
       WHERE occasion = v_occasion
-        AND event_type IN ('checked_in', 'manual_admit', 'badge_pickup')
+        AND (
+          event_type IN ('checked_in', 'manual_admit')
+          OR (v_occasion = 'community_day' AND event_type = 'badge_pickup')
+        )
         AND outcome = 'applied'
         AND recorded_at > NOW() - INTERVAL '5 minutes'
     ),

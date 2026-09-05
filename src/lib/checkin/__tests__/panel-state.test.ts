@@ -150,6 +150,10 @@ describe('community day (warm-up meetup)', () => {
 
   it('tells the desk a workshop-only attendee has nothing to record', () => {
     // No conference ticket means no badge — a legitimate visitor, not an error.
+    // The database enforces the same rule: door_badge_pickup refuses a workshop
+    // registration (`badge_requires_conference_ticket`) and the community-day
+    // dashboard counts only confirmed tickets as expected, so this panel state
+    // and the numbers an organiser reads describe the same population.
     expect(resolveDoorPanelState(hit({ ticket: null }), 'community_day')).toBe('nothing_today');
   });
 

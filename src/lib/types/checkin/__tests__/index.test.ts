@@ -112,6 +112,9 @@ describe('doorFailureMessage', () => {
       'registration_pending',
       'registration_cancelled',
       'registration_refunded',
+      'community_day_badge_only',
+      'workshop_registration_wrong_day',
+      'badge_requires_conference_ticket',
     ];
     for (const reason of fromSql) {
       expect(DOOR_FAILURE_MESSAGES[reason]).toBeTruthy();
@@ -132,6 +135,16 @@ describe('doorFailureMessage', () => {
     expect(DOOR_FAILURE_MESSAGES.subject_not_found).toMatch(/lookup|desk/i);
     expect(DOOR_FAILURE_MESSAGES.staff_not_active).toMatch(/lead/i);
   });
+
+  it('explains a badge refusal in terms of the ticket, not an enum', () => {
+    // door_badge_pickup refuses a workshop registration on every day. The panel
+    // never offers the button for one, so this only surfaces on a queued replay
+    // or a direct call — which is exactly when a raw enum would be unreadable.
+    expect(DOOR_FAILURE_MESSAGES.badge_requires_conference_ticket).toMatch(
+      /conference ticket/i
+    );
+    expect(DOOR_FAILURE_MESSAGES.badge_requires_conference_ticket).toMatch(/workshop/i);
+  });
 });
 
 describe('occasions', () => {
@@ -142,12 +155,14 @@ describe('occasions', () => {
   it('explains what each day does on the start screen', () => {
     // The warm-up meetup hands badges and never checks anyone in — the one
     // rule a volunteer must not learn by mis-tapping.
-    expect(DOOR_OCCASION_TASKS.community_day).toMatch(/badge/i);
-    // Community day must state badge pickup ONLY. The phrase should not
-    // instruct volunteers to check anyone in — "Check people in" or similar
-    // would mislead them. (The current wording "nobody is checked in" is fine.)
-    expect(DOOR_OCCASION_TASKS.community_day).toMatch(/only/i);
-    expect(DOOR_OCCASION_TASKS.community_day).not.toMatch(/^Check people in/i);
+    // Community day must state badge pickup ONLY, and the two words have to be
+    // adjacent: "badge" and "only" anywhere in the sentence also passes for
+    // "Hand badges and check people in, VIPs only", which instructs the exact
+    // thing this assertion exists to forbid.
+    expect(DOOR_OCCASION_TASKS.community_day).toMatch(/badge.*only|only.*badge/i);
+    // And it must not tell a volunteer to check anyone in, wherever the phrase
+    // sits in the sentence.
+    expect(DOOR_OCCASION_TASKS.community_day).not.toMatch(/check\s+(people|them|anyone)\s+in/i);
     expect(DOOR_OCCASION_TASKS.workshop_day).toMatch(/workshop/i);
     expect(DOOR_OCCASION_TASKS.conference_day).toMatch(/check/i);
   });

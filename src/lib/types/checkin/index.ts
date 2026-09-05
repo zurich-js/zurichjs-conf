@@ -352,6 +352,12 @@ export interface DoorGoodieUndoResult {
   outcome: DoorOutcome;
   tshirtUndone?: boolean;
   hoodieUndone?: boolean;
+  /**
+   * A row from before per-item tracking carried only the full-entitlement
+   * stamp. Undoing one reports this instead of per-item flags, which that row
+   * has no evidence for.
+   */
+  legacyStampUndone?: boolean;
   failureReason?: string;
 }
 
@@ -377,6 +383,8 @@ export const DOOR_FAILURE_MESSAGES: Record<string, string> = {
     'Workshop badges cannot be checked in on conference day. Scan their conference ticket instead.',
   community_day_badge_only:
     'The warm-up meetup has no check-ins — hand over their badge instead.',
+  badge_requires_conference_ticket:
+    'A badge goes with a conference ticket. A workshop seat alone does not include one.',
 };
 
 export function doorFailureMessage(reason: string | undefined): string {
