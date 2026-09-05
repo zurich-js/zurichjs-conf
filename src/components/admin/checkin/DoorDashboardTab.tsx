@@ -6,7 +6,7 @@ import {
   DOOR_DASHBOARD_POLL_MS,
   useDoorDashboard,
 } from '@/hooks/checkin/useDoorDashboard';
-import { DOOR_OCCASION_LABELS, type DoorOccasion } from '@/lib/types/checkin';
+import { DOOR_OCCASIONS, DOOR_OCCASION_LABELS, type DoorOccasion } from '@/lib/types/checkin';
 import { DoorStatTile } from './DoorStatTile';
 import { DoorStationList } from './DoorStationList';
 
@@ -60,9 +60,14 @@ export const DoorDashboardTab: React.FC<DoorDashboardTabProps> = ({ className = 
             onChange={(e) => setOccasion((e.target.value || undefined) as DoorOccasion | undefined)}
             className="cursor-pointer rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
           >
+            {/* Every known day, so the warm-up desk stays reviewable after the
+                server clock has moved on to the workshop day. */}
             <option value="">Today (server)</option>
-            <option value="workshop_day">{DOOR_OCCASION_LABELS.workshop_day}</option>
-            <option value="conference_day">{DOOR_OCCASION_LABELS.conference_day}</option>
+            {DOOR_OCCASIONS.map((value) => (
+              <option key={value} value={value}>
+                {DOOR_OCCASION_LABELS[value]}
+              </option>
+            ))}
           </select>
         </div>
 

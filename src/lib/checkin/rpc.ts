@@ -25,10 +25,12 @@ import type { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { DoorRpcError } from './errors';
 import type { DoorBadgePickupRow, DoorDatabase, DoorRpcName } from './door-database';
+import { DOOR_OCCASIONS } from '@/lib/types/checkin';
 import type {
   DoorBadgePickupResult,
   DoorCheckInResult,
   DoorGoodieResult,
+  DoorGoodieUndoResult,
   DoorOccasion,
   DoorResolveResult,
 } from '@/lib/types/checkin';
@@ -182,6 +184,62 @@ export async function doorBadgePickup(
   );
 }
 
+export interface DoorBadgePickupUndoArgs {
+  scannedId: string;
+  staffId: string;
+  station?: string;
+  occurredAt?: string;
+  occasion?: DoorOccasion;
+  reason?: string;
+}
+
+/** Take back a mistaken badge handover. `duplicate` means there was no pickup to undo. */
+export async function doorBadgePickupUndo(
+  args: DoorBadgePickupUndoArgs
+): Promise<DoorBadgePickupResult> {
+  const supabase = createDoorClient();
+  return unwrap(
+    'door_badge_pickup_undo',
+    await supabase.rpc('door_badge_pickup_undo', {
+      p_scanned_id: args.scannedId,
+      p_staff_id: args.staffId,
+      p_station: args.station,
+      p_occurred_at: args.occurredAt,
+      p_occasion: args.occasion,
+      p_reason: args.reason,
+    })
+  );
+}
+
+export interface DoorGoodieUndoArgs {
+  ticketId: string;
+  staffId: string;
+  station?: string;
+  occurredAt?: string;
+  occasion?: DoorOccasion;
+  reason?: string;
+  undoTshirt?: boolean;
+  undoHoodie?: boolean;
+}
+
+/** Take back a mistaken goodie handover, per item. `duplicate` means nothing was handed. */
+export async function doorGoodieUndo(args: DoorGoodieUndoArgs): Promise<DoorGoodieUndoResult> {
+  const supabase = createDoorClient();
+  return unwrap(
+    'door_goodie_undo',
+    await supabase.rpc('door_goodie_undo', {
+      p_ticket_id: args.ticketId,
+      p_staff_id: args.staffId,
+      p_station: args.station,
+      p_occurred_at: args.occurredAt,
+      p_occasion: args.occasion,
+      p_reason: args.reason,
+      p_undo_tshirt: args.undoTshirt ?? false,
+      p_undo_hoodie: args.undoHoodie ?? false,
+    })
+  );
+}
+
 /** Every badge already picked up, for the roster prefetch. */
 export async function doorBadgePickups(): Promise<DoorBadgePickupRow[]> {
   const supabase = createDoorClient();
@@ -206,12 +264,12 @@ export async function doorCurrentOccasion(): Promise<DoorOccasion> {
   const data = unwrap('door_current_occasion', await supabase.rpc('door_current_occasion'));
 
   // The function RETURNS TEXT; this is the runtime narrowing to the contract.
-  if (data !== 'workshop_day' && data !== 'conference_day') {
+  if (!(DOOR_OCCASIONS as readonly string[]).includes(data)) {
     throw new DoorRpcError(
       'door_current_occasion',
       `returned an unknown occasion: ${String(data)}`
     );
   }
 
-  return data;
+  return data as DoorOccasion;
 }

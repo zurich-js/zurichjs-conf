@@ -36,20 +36,25 @@ import {
   patchRosterBadgePickup,
   patchRosterCheckIn,
   patchRosterGoodie,
+  patchRosterGoodieUndo,
   patchRosterUndo,
   revertRosterCheckIn,
-  revertRosterGoodie,
 } from './useDoorRoster';
 import type {
   DoorBadgePickupResult,
   DoorCheckInResult,
   DoorGoodieResult,
+  DoorGoodieUndoResult,
   DoorOccasion,
   DoorOutcome,
 } from '@/lib/types/checkin';
 
 /** What the server said about one write. `outcome` is always present. */
-export type DoorMutationResult = DoorCheckInResult | DoorGoodieResult | DoorBadgePickupResult;
+export type DoorMutationResult =
+  | DoorCheckInResult
+  | DoorGoodieResult
+  | DoorGoodieUndoResult
+  | DoorBadgePickupResult;
 
 /**
  * Retry cadence while writes are stuck. Slow on purpose: the flush stops at the
@@ -120,20 +125,20 @@ export function useDoorMutationQueue({
     (payload: DoorMutationPayload, currentOccasion: DoorOccasion) => {
       const occasionOf = payload.occasion ?? currentOccasion;
       switch (payload.kind) {
-        case 'goodie':
-          revertRosterGoodie(queryClient, occasionOf, payload.ticketId);
-          break;
         case 'badge_pickup':
           patchRosterBadgePickup(queryClient, occasionOf, payload.scannedId, null);
           break;
+        case 'goodie':
+        case 'undo_goodie':
         case 'undo_check_in':
-          // A refused undo (deactivated volunteer) needs to restore the roster
-          // from the server because patchRosterUndo already cleared the cached
-          // arrival time. Invalidate without immediate refetch since the roster
-          // is expensive; the next mutation or visibility change will refetch.
+        case 'undo_badge_pickup':
+          // A refused undo or partial-goodie write cannot be reversed locally
+          // without knowing the prior server state, so restore the roster from
+          // the server instead. Actively refetch rather than just marking stale,
+          // so the optimistic patch is rolled back immediately.
           void queryClient.invalidateQueries({
             queryKey: ['checkin', 'roster', { occasion: occasionOf }],
-            refetchType: 'none',
+            refetchType: 'active',
           });
           break;
         default:
@@ -251,8 +256,18 @@ export function useDoorMutationQueue({
             currentOccasion,
             entry.payload.ticketId,
             entry.occurredAt,
-            entry.payload.note ?? null
+            entry.payload.note ?? null,
+            {
+              tshirt: entry.payload.tshirtSize !== undefined,
+              hoodie: entry.payload.hoodieSize !== undefined,
+            }
           );
+          break;
+        case 'undo_goodie':
+          patchRosterGoodieUndo(queryClient, currentOccasion, entry.payload.ticketId, {
+            tshirt: entry.payload.undoTshirt ?? false,
+            hoodie: entry.payload.undoHoodie ?? false,
+          });
           break;
         case 'undo_check_in':
           patchRosterUndo(queryClient, currentOccasion, entry.payload.scannedId);
@@ -264,6 +279,9 @@ export function useDoorMutationQueue({
             entry.payload.scannedId,
             entry.occurredAt
           );
+          break;
+        case 'undo_badge_pickup':
+          patchRosterBadgePickup(queryClient, currentOccasion, entry.payload.scannedId, null);
           break;
         default:
           patchRosterCheckIn(

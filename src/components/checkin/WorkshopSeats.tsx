@@ -93,11 +93,14 @@ export const WorkshopSeats: React.FC<WorkshopSeatsProps> = ({
                 {!workshop.checkedInAt && onCheckInSeat ? (
                   <Button
                     variant="primary"
-                    size="sm"
-                    className="mt-2 w-full"
+                    size="md"
+                    // Just "Check in": the card above already names the workshop,
+                    // and repeating the title made the button wrap to three lines.
+                    className="mt-2 w-full whitespace-nowrap"
+                    aria-label={`Check in for ${workshop.title}`}
                     onClick={() => onCheckInSeat(workshop.registrationId)}
                   >
-                    Check in — {workshop.title}
+                    Check in
                   </Button>
                 ) : null}
 
@@ -105,10 +108,11 @@ export const WorkshopSeats: React.FC<WorkshopSeatsProps> = ({
                   <Button
                     variant="dark"
                     size="sm"
-                    className="mt-2"
+                    className="mt-2 whitespace-nowrap"
+                    aria-label={`Undo the check-in for ${workshop.title}`}
                     onClick={() => onUndoSeat(workshop.registrationId)}
                   >
-                    Undo this check-in
+                    Undo check-in
                   </Button>
                 ) : null}
               </li>

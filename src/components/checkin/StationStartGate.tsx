@@ -6,6 +6,7 @@ import {
   DOOR_OCCASIONS,
   DOOR_OCCASION_DATES,
   DOOR_OCCASION_LABELS,
+  DOOR_OCCASION_TASKS,
   DOOR_ROLE_LABELS,
   type DoorOccasion,
   type DoorRole,
@@ -32,19 +33,32 @@ export interface StationStartGateProps {
   className?: string;
 }
 
-/** "Wed 10 Sep" from the occasion's fixed calendar date. Static data, so SSR-safe. */
-function occasionDate(occasion: DoorOccasion): string {
-  try {
-    return new Intl.DateTimeFormat('en-GB', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      timeZone: 'Europe/Zurich',
-    }).format(new Date(`${DOOR_OCCASION_DATES[occasion]}T12:00:00Z`));
-  } catch {
-    return DOOR_OCCASION_DATES[occasion];
-  }
-}
+/**
+ * "Wed 10 Sep" from the occasion's fixed calendar date.
+ *
+ * Precomputed at module scope to avoid constructing Date objects during render,
+ * which would cause hydration mismatches. The underlying dates are static
+ * constants, so this is safe.
+ */
+const DOOR_OCCASION_DATE_LABELS: Record<DoorOccasion, string> = (() => {
+  const format = (occasion: DoorOccasion): string => {
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'Europe/Zurich',
+      }).format(new Date(`${DOOR_OCCASION_DATES[occasion]}T12:00:00Z`));
+    } catch {
+      return DOOR_OCCASION_DATES[occasion];
+    }
+  };
+  return {
+    community_day: format('community_day'),
+    workshop_day: format('workshop_day'),
+    conference_day: format('conference_day'),
+  };
+})();
 
 /**
  * The one deliberate tap that starts a shift.
@@ -55,10 +69,15 @@ function occasionDate(occasion: DoorOccasion): string {
  * suspended. Putting both behind a single tap means the volunteer is asked once,
  * before anyone is queueing, rather than mid-scan with a person waiting.
  *
- * It also collects the DAY being worked. The server's clock preselects it, but
- * badges are picked up and workshops rehearsed on other days, so the choice is
- * explicit and loud — writing the wrong day into the audit trail is the one
- * mistake this screen exists to prevent.
+ * It also collects the DAY being worked, and each choice says what the station
+ * will do on it — the warm-up meetup hands badges and never checks anyone in,
+ * so the label alone is not enough. The server's clock preselects; the
+ * volunteer's explicit choice wins. Writing the wrong day into the audit trail
+ * is the one mistake this screen exists to prevent.
+ *
+ * ORDER OF NOTICES: anything that stops the shift (no https, no camera) sits
+ * above the button; the built-in decoder note is a "nothing is wrong" footnote
+ * and lives at the bottom so it never delays the start tap.
  */
 export const StationStartGate: React.FC<StationStartGateProps> = ({
   occasion,
@@ -72,13 +91,13 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
   pendingWrites = 0,
   className = '',
 }) => (
-  <div className={`mx-auto w-full max-w-md space-y-5 ${className}`}>
-    <div className="rounded-2xl bg-surface-card p-6 text-center">
-      <ScanLine className="mx-auto mb-4 h-10 w-10 text-brand-primary" aria-hidden="true" />
-      <Heading level="h1" className="mb-1 text-2xl font-bold">
+  <div className={`mx-auto w-full max-w-md space-y-4 ${className}`}>
+    <div className="rounded-2xl bg-surface-card p-4 text-center">
+      <ScanLine className="mx-auto mb-2 h-8 w-8 text-brand-primary" aria-hidden="true" />
+      <Heading level="h1" className="mb-0.5 text-lg font-semibold">
         Door check-in
       </Heading>
-      <p className="text-text-secondary">
+      <p className="text-sm text-text-secondary">
         {staffName ? `${staffName} · ` : ''}
         {DOOR_ROLE_LABELS[role]}
       </p>
@@ -115,24 +134,10 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
       </div>
     ) : null}
 
-    {support?.camera && !support.nativeDetector ? (
-      <div className="flex items-start gap-3 rounded-xl border border-info/40 bg-info/10 px-4 py-3">
-        <Cpu className="mt-0.5 h-5 w-5 shrink-0 text-info" aria-hidden="true" />
-        <p className="text-sm text-text-secondary">
-          {/* Safari has no BarcodeDetector, so this is every iPhone. Saying so
-              once beats a volunteer wondering why the first scan took a beat. */}
-          This phone uses the built-in decoder. The first scan takes a moment longer while it
-          loads; everything after is the same speed.
-        </p>
-      </div>
-    ) : null}
-
-    <fieldset className="rounded-2xl bg-surface-card p-6">
-      <legend className="sr-only">Which day are you checking people in for?</legend>
-      <p className="mb-3 text-sm font-semibold text-text-primary">
-        Checking people in for
-      </p>
-      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Day">
+    <fieldset className="rounded-2xl bg-surface-card p-5">
+      <legend className="sr-only">Which day are you working?</legend>
+      <p className="mb-3 text-sm font-semibold text-text-primary">Which day are you working?</p>
+      <div className="space-y-2" role="radiogroup" aria-label="Day">
         {DOOR_OCCASIONS.map((option, index) => {
           const selected = option === occasion;
           const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -160,34 +165,36 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
               tabIndex={selected ? 0 : -1}
               onClick={() => onOccasionChange(option)}
               onKeyDown={handleKeyDown}
-              className={`min-h-16 rounded-xl border-2 px-3 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary ${
+              className={`block w-full min-h-16 rounded-xl border-2 px-4 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary ${
                 selected
                   ? 'border-brand-primary bg-brand-primary/10'
                   : 'border-divider bg-surface-elevated hover:border-text-muted'
               }`}
             >
-              <span className="block text-sm font-semibold text-text-primary">
-                {DOOR_OCCASION_LABELS[option]}
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="text-base font-semibold text-text-primary">
+                  {DOOR_OCCASION_LABELS[option]}
+                </span>
+                <span className="shrink-0 text-xs text-text-muted">{DOOR_OCCASION_DATE_LABELS[option]}</span>
               </span>
-              <span className="block text-xs text-text-muted">{occasionDate(option)}</span>
+              {/* What the station DOES on this day — the label alone does not say
+                  that the warm-up meetup never checks anyone in. */}
+              <span className="mt-0.5 block text-sm text-text-tertiary">
+                {DOOR_OCCASION_TASKS[option]}
+              </span>
             </button>
           );
         })}
       </div>
-      <p className="mt-3 flex items-start gap-2 text-xs text-text-muted">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        {occasion === serverOccasion ? (
-          <span>
-            Every check-in and badge pickup is recorded against this day. You can change it
-            later from the bar at the top.
-          </span>
-        ) : (
+      {occasion !== serverOccasion ? (
+        <p className="mt-3 flex items-start gap-2 text-xs">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" />
           <span className="font-medium text-warning">
             This is not the day the server thinks it is — pick it only if you really are
             processing {DOOR_OCCASION_LABELS[occasion]} arrivals.
           </span>
-        )}
-      </p>
+        </p>
+      ) : null}
     </fieldset>
 
     <Button
@@ -202,7 +209,22 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
 
     <p className="text-center text-xs text-text-muted">
       Your phone will ask for camera access. Allow it once and the camera stays open for the
-      whole shift.
+      whole shift. Everything you record is filed under the day picked above — you can change
+      it later from the bar at the top.
     </p>
+
+    {/* A footnote, not a warning: nothing is wrong, so it must not sit between
+        the volunteer and the start button. */}
+    {support?.camera && !support.nativeDetector ? (
+      <div className="flex items-start gap-3 rounded-xl border border-info/40 bg-info/10 px-4 py-3">
+        <Cpu className="mt-0.5 h-5 w-5 shrink-0 text-info" aria-hidden="true" />
+        <p className="text-sm text-text-secondary">
+          {/* Safari has no BarcodeDetector, so this is every iPhone. Saying so
+              once beats a volunteer wondering why the first scan took a beat. */}
+          Good to know: this phone uses the built-in decoder, so the first scan takes a moment
+          longer while it loads. Everything after is the same speed.
+        </p>
+      </div>
+    ) : null}
   </div>
 );

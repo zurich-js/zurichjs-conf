@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   doorBadgePickupSchema,
+  doorBadgePickupUndoSchema,
   doorCheckInSchema,
   doorCheckInUndoSchema,
   doorEventQuerySchema,
   doorGoodieHandoverSchema,
+  doorGoodieUndoSchema,
   doorManualAdmitSchema,
   doorScanSchema,
   doorStaffInviteSchema,
@@ -40,9 +42,16 @@ describe('doorCheckInSchema', () => {
     expect(result.success && result.data.occasion).toBe('workshop_day');
   });
 
-  it('rejects an occasion outside the two known days', () => {
+  it('accepts the warm-up meetup as a badge-only occasion', () => {
+    // The check-in refusal for community_day is the database's job — the
+    // schema's job is only to keep unknown values out of the audit trail.
+    const result = doorCheckInSchema.safeParse({ scannedId: UUID, occasion: 'community_day' });
+    expect(result.success && result.data.occasion).toBe('community_day');
+  });
+
+  it('rejects an occasion outside the three known days', () => {
     expect(
-      doorCheckInSchema.safeParse({ scannedId: UUID, occasion: 'community_day' }).success,
+      doorCheckInSchema.safeParse({ scannedId: UUID, occasion: 'gala_day' }).success,
     ).toBe(false);
   });
 
@@ -103,6 +112,24 @@ describe('doorManualAdmitSchema', () => {
       reason: 'Blank badge, phone dead, found by name',
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('doorGoodieUndoSchema', () => {
+  it('accepts taking one item back', () => {
+    const result = doorGoodieUndoSchema.safeParse({ ticketId: UUID, undoTshirt: true });
+    expect(result.success && result.data.undoTshirt).toBe(true);
+    expect(result.success && result.data.undoHoodie).toBe(false);
+  });
+
+  it('rejects an undo that names no item — it would read as a broken button', () => {
+    expect(doorGoodieUndoSchema.safeParse({ ticketId: UUID }).success).toBe(false);
+  });
+});
+
+describe('doorBadgePickupUndoSchema', () => {
+  it('accepts a bare scanned id, with the reason optional', () => {
+    expect(doorBadgePickupUndoSchema.safeParse({ scannedId: UUID }).success).toBe(true);
   });
 });
 

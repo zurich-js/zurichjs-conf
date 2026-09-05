@@ -123,6 +123,50 @@ describe('workshopSeatProgress', () => {
   });
 });
 
+describe('community day (warm-up meetup)', () => {
+  it('never reports a check-in — the day has none', () => {
+    const attendee = hit({
+      checkIn: {
+        workshopDayAt: '2026-09-10T08:00:00.000Z',
+        conferenceDayAt: '2026-09-11T08:00:00.000Z',
+      },
+    });
+    expect(checkedInAtFor(attendee, 'community_day')).toBeNull();
+  });
+
+  it('never offers the check-in button', () => {
+    expect(canOfferCheckIn(hit(), 'community_day', true)).toBe(false);
+  });
+
+  it('reads the badge as the verdict: pickup, then picked up', () => {
+    expect(resolveDoorPanelState(hit(), 'community_day')).toBe('pickup');
+    expect(
+      resolveDoorPanelState(
+        hit({ badge: { pickedUpAt: '2026-09-09T18:02:00.000Z' } }),
+        'community_day'
+      )
+    ).toBe('picked_up');
+  });
+
+  it('tells the desk a workshop-only attendee has nothing to record', () => {
+    // No conference ticket means no badge — a legitimate visitor, not an error.
+    // The database enforces the same rule: door_badge_pickup refuses a workshop
+    // registration (`badge_requires_conference_ticket`) and the community-day
+    // dashboard counts only confirmed tickets as expected, so this panel state
+    // and the numbers an organiser reads describe the same population.
+    expect(resolveDoorPanelState(hit({ ticket: null }), 'community_day')).toBe('nothing_today');
+  });
+
+  it('still refuses a refunded ticket before offering a badge', () => {
+    expect(
+      resolveDoorPanelState(
+        hit({ admissible: false, refusalReason: 'ticket_refunded' }),
+        'community_day'
+      )
+    ).toBe('refused');
+  });
+});
+
 describe('resolveDoorPanelState', () => {
   it('offers admission for a clean confirmed ticket', () => {
     expect(resolveDoorPanelState(hit(), 'conference_day')).toBe('admit');

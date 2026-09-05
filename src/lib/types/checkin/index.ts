@@ -14,22 +14,38 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * The two check-in occasions. The event also has a community day (9 Sep) and a
- * post-conference day (12 Sep), but neither has sessions and neither is checked
- * in — see src/data/public-program.ts.
+ * The three door occasions, in calendar order. The warm-up meetup (9 Sep) is
+ * the early badge pickup desk — it has no sessions and therefore NO check-ins:
+ * `door_check_in` refuses the occasion outright. The post-conference day
+ * (12 Sep) has no door at all — see src/data/public-program.ts.
  */
-export const DOOR_OCCASIONS = ['workshop_day', 'conference_day'] as const;
+export const DOOR_OCCASIONS = ['community_day', 'workshop_day', 'conference_day'] as const;
 export type DoorOccasion = (typeof DOOR_OCCASIONS)[number];
 
 export const DOOR_OCCASION_LABELS: Record<DoorOccasion, string> = {
+  community_day: 'Warm-up meetup',
   workshop_day: 'Workshop day',
   conference_day: 'Conference day',
 };
 
 /** Calendar date of each occasion, for display only. */
 export const DOOR_OCCASION_DATES: Record<DoorOccasion, string> = {
+  community_day: '2026-09-09',
   workshop_day: '2026-09-10',
   conference_day: '2026-09-11',
+};
+
+/**
+ * What a volunteer actually DOES on each occasion, for the start screen. One
+ * plain sentence each: the day choice is the highest-stakes tap of the shift,
+ * and a label alone ("Workshop day") does not say what the station will and
+ * will not offer.
+ */
+export const DOOR_OCCASION_TASKS: Record<DoorOccasion, string> = {
+  community_day: 'Early badge pickup only — nobody is checked in on this day.',
+  workshop_day:
+    'Check people into their workshop. Conference ticket holders can also collect their badge.',
+  conference_day: 'Check people in and hand over badges and goodies.',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -331,6 +347,20 @@ export interface DoorBadgePickupResult {
   failureReason?: string;
 }
 
+/** `duplicate` means nothing was handed, so there was nothing to take back. */
+export interface DoorGoodieUndoResult {
+  outcome: DoorOutcome;
+  tshirtUndone?: boolean;
+  hoodieUndone?: boolean;
+  /**
+   * A row from before per-item tracking carried only the full-entitlement
+   * stamp. Undoing one reports this instead of per-item flags, which that row
+   * has no evidence for.
+   */
+  legacyStampUndone?: boolean;
+  failureReason?: string;
+}
+
 /**
  * Human-facing text for every refusal the functions can return. Keyed on the
  * machine reason so a volunteer never sees a raw enum, and so an unmapped
@@ -351,6 +381,10 @@ export const DOOR_FAILURE_MESSAGES: Record<string, string> = {
   registration_refunded: 'This workshop seat was refunded. Send them to the desk.',
   workshop_registration_wrong_day:
     'Workshop badges cannot be checked in on conference day. Scan their conference ticket instead.',
+  community_day_badge_only:
+    'The warm-up meetup has no check-ins — hand over their badge instead.',
+  badge_requires_conference_ticket:
+    'A badge goes with a conference ticket. A workshop seat alone does not include one.',
 };
 
 export function doorFailureMessage(reason: string | undefined): string {
