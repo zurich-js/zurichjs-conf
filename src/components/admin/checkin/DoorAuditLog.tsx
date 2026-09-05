@@ -3,7 +3,7 @@ import { RefreshCw, Trash2 } from 'lucide-react';
 import { AdminErrorState } from '@/components/admin/AdminErrorState';
 import { useDeleteDoorEvents, useDoorEvents } from '@/hooks/checkin/useDoorEvents';
 import { useToast } from '@/contexts/ToastContext';
-import { DOOR_OCCASION_LABELS, DOOR_ROLE_LABELS } from '@/lib/types/checkin';
+import { DOOR_OCCASIONS, DOOR_OCCASION_LABELS, DOOR_ROLE_LABELS } from '@/lib/types/checkin';
 import type { DoorOccasion, DoorRole } from '@/lib/types/checkin';
 import type { DoorEventRecord } from '@/lib/checkin/events';
 
@@ -16,7 +16,9 @@ const EVENT_LABELS: Record<string, string> = {
   manual_admit: 'Manual admission',
   check_in_undone: 'Check-in undone',
   goodie_handed: 'Goodies handed',
+  goodie_undone: 'Goodie handover undone',
   badge_pickup: 'Badge pickup',
+  badge_pickup_undone: 'Badge handover undone',
   denied: 'Refused',
 };
 
@@ -104,9 +106,15 @@ export const DoorAuditLog: React.FC<DoorAuditLogProps> = ({ className = '' }) =>
             }}
             className="cursor-pointer rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
           >
-            <option value="">Both days</option>
-            <option value="workshop_day">{DOOR_OCCASION_LABELS.workshop_day}</option>
-            <option value="conference_day">{DOOR_OCCASION_LABELS.conference_day}</option>
+            {/* Driven off DOOR_OCCASIONS so a new day reaches the audit log the
+                moment it exists — a hardcoded list is how community_day became
+                unfilterable here while the station already offered it. */}
+            <option value="">All days</option>
+            {DOOR_OCCASIONS.map((value) => (
+              <option key={value} value={value}>
+                {DOOR_OCCASION_LABELS[value]}
+              </option>
+            ))}
           </select>
 
           <label htmlFor="audit-type" className="ml-2 text-sm font-medium text-black">
