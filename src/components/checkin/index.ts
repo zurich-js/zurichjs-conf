@@ -1,6 +1,3 @@
-export { ApparelSizes } from './ApparelSizes';
-export type { ApparelSizesProps } from './ApparelSizes';
-
 export { AttendeeIdentity } from './AttendeeIdentity';
 export type { AttendeeIdentityProps } from './AttendeeIdentity';
 
