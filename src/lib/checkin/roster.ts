@@ -22,12 +22,14 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import { getAdminSpeakersWithSubmissions } from '@/lib/cfp/admin';
-import { classifyTicketHoodie } from '@/lib/hoodies';
+import {
+  hoodieVerdictForTicketRow,
+  loadHoodieEligibilityInputs,
+} from '@/lib/hoodies/door-eligibility';
 import { doorBadgePickups } from './rpc';
 import type { Database } from '@/lib/types/database.generated';
 import type { DoorOccasion, DoorTicketStatus } from '@/lib/types/checkin';
-import type { HoodieExclusion, HoodieUpgradeInput } from '@/lib/types/hoodies';
+import type { HoodieExclusion } from '@/lib/types/hoodies';
 
 const log = logger.scope('Door Roster');
 
@@ -180,45 +182,6 @@ interface RegistrationRow {
   checked_in_at: string | null;
 }
 
-/** One metadata field, or null — tickets.metadata is untyped JSON. */
-function readMetadataString(metadata: unknown, field: string): string | null {
-  if (typeof metadata !== 'object' || metadata === null) return null;
-  const value = (metadata as Record<string, unknown>)[field];
-  return typeof value === 'string' && value ? value : null;
-}
-
-/**
- * The two inputs the hoodie rule needs beyond the ticket row itself.
- *
- * Loaded best-effort: if either fails, the roster still ships and every VIP
- * reads as eligible (the pre-eligibility behaviour), because a door with no
- * roster is a far worse outcome than a hoodie handed to a comp VIP. The failure
- * is logged so it does not pass silently.
- */
-async function loadHoodieInputs(
-  supabase: ReturnType<typeof createServiceRoleClient>
-): Promise<{ upgradesById: Map<string, HoodieUpgradeInput>; speakerEmails: Set<string> } | null> {
-  try {
-    const [speakers, upgrades] = await Promise.all([
-      getAdminSpeakersWithSubmissions('program'),
-      supabase
-        .from('ticket_upgrades')
-        .select('id, upgrade_mode, status, admin_note')
-        .eq('to_tier', 'vip'),
-    ]);
-    if (upgrades.error) throw new Error(upgrades.error.message);
-    return {
-      upgradesById: new Map(
-        ((upgrades.data ?? []) as HoodieUpgradeInput[]).map((upgrade) => [upgrade.id, upgrade])
-      ),
-      speakerEmails: new Set(speakers.map((speaker) => speaker.email.trim().toLowerCase())),
-    };
-  } catch (error) {
-    log.error('Hoodie eligibility inputs unavailable; treating every VIP as eligible', error);
-    return null;
-  }
-}
-
 interface WorkshopRow {
   id: string;
   title: string;
@@ -283,7 +246,10 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
     // Badge pickup state lives in door_events, not on the subject rows, so it
     // ships as one (subjectId, pickedUpAt) aggregate and is merged here.
     doorBadgePickups(),
-    loadHoodieInputs(supabase),
+    // Speaker list and upgrade records for the hoodie verdict. Null when they
+    // could not be loaded: the roster still ships and every VIP reads as
+    // eligible, which is what the door did before eligibility existed.
+    loadHoodieEligibilityInputs(supabase),
   ]);
 
   const apparelByTicket = new Map(apparel.map((a) => [a.ticket_id, a]));
@@ -296,19 +262,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
       const sizes = apparelByTicket.get(t.id);
       const isVip = t.ticket_category === 'vip';
       const hoodie = hoodieInputs
-        ? classifyTicketHoodie(
-            {
-              email: t.email,
-              is_vip: isVip,
-              amount_paid: t.amount_paid,
-              payment_type: readMetadataString(t.metadata, 'paymentType'),
-              complimentary_reason: readMetadataString(t.metadata, 'complimentaryReason'),
-              upgrade_id: readMetadataString(t.metadata, 'upgrade_id'),
-              upgraded_from: readMetadataString(t.metadata, 'upgraded_from'),
-            },
-            hoodieInputs.upgradesById,
-            hoodieInputs.speakerEmails
-          )
+        ? hoodieVerdictForTicketRow(t, hoodieInputs)
         : ({ eligible: isVip, exclusion: null } as const);
       return {
         id: t.id,

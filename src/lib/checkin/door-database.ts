@@ -82,6 +82,8 @@ type DoorFunctions = {
       p_occasion?: DoorOccasion;
       p_tshirt_size?: string;
       p_hoodie_size?: string;
+      /** The application's eligibility verdict. Omitted = owed iff VIP (legacy). */
+      p_hoodie_owed?: boolean;
     };
     Returns: DoorGoodieResult;
   };

@@ -16,6 +16,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { requireDoorStaff } from '@/lib/checkin/guard';
 import { doorGoodieHandover } from '@/lib/checkin/rpc';
+import { isHoodieOwed } from '@/lib/hoodies/door-eligibility';
 import { doorGoodieHandoverSchema } from '@/lib/validations/checkin';
 import { logger } from '@/lib/logger';
 import type { DoorGoodieResult } from '@/lib/types/checkin';
@@ -43,6 +44,12 @@ export default async function handler(
   const { ticketId, station, occurredAt, occasion, note, tshirtSize, hoodieSize } = parsed.data;
 
   try {
+    // Whether a hoodie is owed decides when the full-entitlement stamp lands.
+    // Decided HERE from payment metadata, upgrades and the speaker list — the
+    // station's opinion is never asked. Null (inputs unavailable) lets the
+    // function fall back to its tier-based default rather than block the table.
+    const hoodieOwed = await isHoodieOwed(ticketId);
+
     const result = await doorGoodieHandover({
       ticketId,
       staffId: guard.staff.id,
@@ -54,9 +61,14 @@ export default async function handler(
       // recorded on the audit row so missing items can be followed up.
       tshirtSize,
       hoodieSize,
+      hoodieOwed,
     });
 
-    log.info('Goodie handover', { staffId: guard.staff.id, outcome: result.outcome });
+    log.info('Goodie handover', {
+      staffId: guard.staff.id,
+      outcome: result.outcome,
+      hoodieOwed,
+    });
 
     return res.status(200).json(result);
   } catch (error) {

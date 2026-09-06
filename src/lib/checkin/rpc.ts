@@ -140,6 +140,12 @@ export interface DoorGoodieArgs {
   /** Size actually handed over. Absent = that item was NOT handed. */
   tshirtSize?: string;
   hoodieSize?: string;
+  /**
+   * Whether a hoodie is OWED, per the fulfilment rules — decides when the
+   * full-entitlement stamp lands. Computed server-side, never from the station.
+   * Null/undefined leaves the database to its tier-based default.
+   */
+  hoodieOwed?: boolean | null;
 }
 
 export async function doorGoodieHandover(args: DoorGoodieArgs): Promise<DoorGoodieResult> {
@@ -155,6 +161,7 @@ export async function doorGoodieHandover(args: DoorGoodieArgs): Promise<DoorGood
       p_occasion: args.occasion,
       p_tshirt_size: args.tshirtSize,
       p_hoodie_size: args.hoodieSize,
+      p_hoodie_owed: args.hoodieOwed ?? undefined,
     })
   );
 }
