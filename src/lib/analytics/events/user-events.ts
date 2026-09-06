@@ -103,6 +103,19 @@ export interface ScheduleTabChangedEvent {
   };
 }
 
+export interface SessionFeedbackSubmittedEvent {
+  event: 'session_feedback_submitted';
+  properties: BaseEventProperties & {
+    schedule_item_id: string;
+    session_id: string | null;
+    session_kind: 'talk' | 'workshop' | 'panel' | null;
+    rating: number;
+    has_comment: boolean;
+    /** Whether the session was still running or already over when rated */
+    session_status: 'live' | 'past';
+  };
+}
+
 export interface FaqOpenedEvent {
   event: 'faq_opened';
   properties: BaseEventProperties & {

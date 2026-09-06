@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ScheduleItemLiveStatus } from '@/lib/feedback/types';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 import { BreakCard } from './BreakCard';
@@ -21,6 +22,10 @@ export interface ProgramScheduleItemCardProps {
   eventActions?: ReactNode;
   /** Quiet external link rendered on event cards' trailing edge. */
   eventLink?: EventCardLink;
+  /** Live/past/upcoming against the venue clock — session cards show a "Live now" badge. */
+  liveStatus?: ScheduleItemLiveStatus;
+  /** Feedback form for session cards; omitted for items that can't be rated. */
+  feedback?: ReactNode;
 }
 
 export function ProgramScheduleItemCard({
@@ -32,6 +37,8 @@ export function ProgramScheduleItemCard({
   offeringsBySubmissionId,
   eventActions,
   eventLink,
+  liveStatus,
+  feedback,
 }: ProgramScheduleItemCardProps) {
   if (item.type === 'session') {
     if (item.session) {
@@ -51,6 +58,8 @@ export function ProgramScheduleItemCard({
           href={isWorkshop ? `/workshops/${item.session.slug}` : item.session.type === 'panel' ? undefined : `/talks/${item.session.slug}`}
           showDuration={showDuration}
           offering={offering}
+          liveStatus={liveStatus}
+          feedback={feedback}
         />
       );
     }

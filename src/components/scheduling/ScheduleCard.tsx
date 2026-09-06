@@ -15,6 +15,12 @@ export interface ScheduleCardProps {
   panel?: ReactNode;
   footer?: ReactNode;
   trailing?: ReactNode;
+  /**
+   * Always-visible content between the header row and the (collapsible)
+   * panel — e.g. the feedback form. Rendered outside the disclosure button so
+   * it can hold its own interactive controls.
+   */
+  inline?: ReactNode;
 }
 
 export function ScheduleCard({
@@ -26,6 +32,7 @@ export function ScheduleCard({
   panel,
   footer,
   trailing,
+  inline,
 }: ScheduleCardProps) {
   if (!expandable) {
     return (
@@ -34,6 +41,7 @@ export function ScheduleCard({
           <div className="min-w-0 flex-1">{header}</div>
           {trailing ? <div className="mt-1 shrink-0">{trailing}</div> : null}
         </div>
+        {inline ? <div className="pt-5">{inline}</div> : null}
         {panel ? <div className="pt-5">{panel}</div> : null}
         {footer ? <div className="pt-5">{footer}</div> : null}
       </article>
@@ -56,6 +64,8 @@ export function ScheduleCard({
               </DisclosureButton>
             </div>
           </div>
+
+          {inline ? <div className="pt-5">{inline}</div> : null}
 
           <AnimatePresence initial={false}>
             {open && panel ? (

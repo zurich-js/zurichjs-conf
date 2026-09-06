@@ -8,19 +8,40 @@ import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
-import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
+import { PlaceholderCard, ProgramScheduleItemCard, SessionFeedbackForm, type FeedbackSubject } from '@/components/scheduling';
 import { communityDayMeetup, publicProgramTabs, warmupChillRun, warmupChillRunScheduleItem } from '@/data';
+import { useSessionFeedback } from '@/hooks/useSessionFeedback';
+import { useZurichClock } from '@/hooks/useZurichClock';
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
+import {
+  getScheduleItemStatus,
+  getZurichClock,
+  isEventDay,
+  isFeedbackOpen,
+  resolveDefaultScheduleDay,
+} from '@/lib/feedback/schedule-status';
+import type { ScheduleDayParam } from '@/lib/feedback/types';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
 interface SchedulePageProps {
   items: PublicProgramScheduleItem[];
+  /**
+   * Tab to open when the URL has no `?day=`. Decided server-side from the
+   * venue clock so the conference day is the landing tab on the day itself.
+   */
+  initialDay: ScheduleDayParam;
 }
 
-const DAY_PARAMS = ['community', 'workshop', 'conf'] as const;
+const DAY_PARAMS = ['community', 'workshop', 'conf'] as const satisfies readonly ScheduleDayParam[];
+
+const FEEDBACK_SUBJECTS: Record<'talk' | 'workshop' | 'panel', FeedbackSubject> = {
+  talk: 'talk',
+  workshop: 'workshop',
+  panel: 'panel',
+};
 
 const scheduleDayParamToTab: Record<(typeof DAY_PARAMS)[number], (typeof publicProgramTabs)[number]['id']> = {
   community: 'community',
@@ -34,13 +55,18 @@ const scheduleTabToDayParam: Record<(typeof publicProgramTabs)[number]['id'], (t
   conference: 'conf',
 };
 
-export default function SchedulePage({ items }: SchedulePageProps) {
+export default function SchedulePage({ items, initialDay }: SchedulePageProps) {
   // URL-driven via nuqs so tab flips don't emit router events (and phantom
   // $pageview captures), matching the workshops page pattern.
   const [dayParam, setDayParam] = useQueryState(
     'day',
-    parseAsStringLiteral(DAY_PARAMS).withDefault('community').withOptions({ shallow: true, clearOnDefault: true })
+    parseAsStringLiteral(DAY_PARAMS).withDefault(initialDay).withOptions({ shallow: true, clearOnDefault: true })
   );
+  // Venue clock drives feedback mode: null until mounted (hydration-safe), so
+  // the server-rendered schedule is time-neutral and the live badge + forms
+  // appear on the client. Ticks every 30s so "Live now" moves with the day.
+  const clock = useZurichClock();
+  const { submitted, submit, pendingItemId, errors } = useSessionFeedback();
   const activeTab = scheduleDayParamToTab[dayParam];
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
   // Workshop offerings so workshop rows show their price + add-to-cart chip
@@ -69,6 +95,35 @@ export default function SchedulePage({ items }: SchedulePageProps) {
     }
 
     return undefined;
+  };
+
+  const getFeedbackProps = (item: PublicProgramScheduleItem) => {
+    if (!clock || item.type !== 'session' || !item.session || !item.session_kind) return {};
+    const liveStatus = getScheduleItemStatus(item, clock);
+    if (!isFeedbackOpen(item, clock) || liveStatus === 'upcoming') return { liveStatus };
+    const session = item.session;
+    const sessionKind = item.session_kind;
+    return {
+      liveStatus,
+      feedback: (
+        <SessionFeedbackForm
+          subject={FEEDBACK_SUBJECTS[sessionKind]}
+          submitted={submitted[item.id] ?? null}
+          isSubmitting={pendingItemId === item.id}
+          errorMessage={errors[item.id] ?? null}
+          onSubmit={({ rating, comment }) =>
+            submit({
+              scheduleItemId: item.id,
+              sessionId: session.id,
+              sessionKind,
+              sessionStatus: liveStatus,
+              rating,
+              comment,
+            })
+          }
+        />
+      ),
+    };
   };
 
   return (
@@ -131,6 +186,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
                       ? { label: 'Info and RSVP', href: warmupChillRun.rsvpUrl }
                       : undefined}
                     offeringsBySubmissionId={workshopsData?.offeringsBySubmissionId}
+                    {...getFeedbackProps(item)}
                   />
                 ))
               ) : activeTab === 'community' ? null : (
@@ -212,7 +268,15 @@ export default function SchedulePage({ items }: SchedulePageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async (ctx) => {
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+  const clock = getZurichClock(new Date());
+  // The default tab flips with the calendar, so around the event the CDN copy
+  // must not outlive the day it was rendered on.
+  ctx.res.setHeader(
+    'Cache-Control',
+    isEventDay(clock)
+      ? 'public, s-maxage=300, stale-while-revalidate=600'
+      : 'public, s-maxage=86400, stale-while-revalidate=604800'
+  );
 
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
@@ -221,6 +285,7 @@ export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async (
   return {
     props: {
       items,
+      initialDay: resolveDefaultScheduleDay(clock),
     },
   };
 };
