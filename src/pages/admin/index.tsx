@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, GraduationCap, Package } from 'lucide-react';
+import { Ticket, PlusCircle, DollarSign, GraduationCap, Package, PartyPopper } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -19,12 +19,14 @@ import { VipPerksTab } from '@/components/admin/vip-perks';
 import { ApparelTab } from '@/components/admin/apparel';
 import { DiscountConfigTab } from '@/components/admin/discount';
 import { CartBuilderTab } from '@/components/admin/cart-builder';
+import { AfterPartyTab } from '@/components/admin/after-party';
+import { HoodiesTab } from '@/components/admin/hoodies';
 import { TicketStockTab } from '@/components/admin/ticket-stock';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
-type Tab = 'tickets' | 'workshops' | 'issue' | 'commerce' | 'fulfillment';
+type Tab = 'tickets' | 'workshops' | 'issue' | 'commerce' | 'fulfillment' | 'afterparty';
 type CommerceSubTab = 'financials' | 'stock' | 'discount' | 'cart-builder';
-type FulfillmentSubTab = 'vip-perks' | 'apparel';
+type FulfillmentSubTab = 'vip-perks' | 'apparel' | 'hoodies';
 
 const TABS: AdminTab<Tab>[] = [
   { id: 'tickets', label: 'Tickets', icon: Ticket },
@@ -32,6 +34,7 @@ const TABS: AdminTab<Tab>[] = [
   { id: 'issue', label: 'Issue', icon: PlusCircle },
   { id: 'commerce', label: 'Commerce', icon: DollarSign },
   { id: 'fulfillment', label: 'Fulfillment', icon: Package },
+  { id: 'afterparty', label: 'VIP & After Party', icon: PartyPopper },
 ];
 
 const COMMERCE_SUBTABS: { id: CommerceSubTab; label: string }[] = [
@@ -44,6 +47,7 @@ const COMMERCE_SUBTABS: { id: CommerceSubTab; label: string }[] = [
 const FULFILLMENT_SUBTABS: { id: FulfillmentSubTab; label: string }[] = [
   { id: 'vip-perks', label: 'VIP Perks' },
   { id: 'apparel', label: 'Apparel' },
+  { id: 'hoodies', label: 'Hoodies' },
 ];
 
 function SubTabBar<T extends string>({
@@ -111,13 +115,14 @@ function FulfillmentSection() {
               <Package className="w-5 h-5" />
               Fulfillment
             </h2>
-            <p className="text-sm text-gray-500">VIP perks and apparel management</p>
+            <p className="text-sm text-gray-500">VIP perks, apparel sizes, and hoodie allocation</p>
           </div>
           <SubTabBar tabs={FULFILLMENT_SUBTABS} activeTab={subTab} onTabChange={setSubTab} />
         </div>
       </div>
       {subTab === 'vip-perks' && <VipPerksTab />}
       {subTab === 'apparel' && <ApparelTab />}
+      {subTab === 'hoodies' && <HoodiesTab />}
     </div>
   );
 }
@@ -142,6 +147,7 @@ export default function AdminDashboard() {
             {activeTab === 'issue' && <IssueTab />}
             {activeTab === 'commerce' && <CommerceSection />}
             {activeTab === 'fulfillment' && <FulfillmentSection />}
+            {activeTab === 'afterparty' && <AfterPartyTab />}
           </div>
         </div>
       </div>
