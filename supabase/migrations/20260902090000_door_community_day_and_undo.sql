@@ -1012,23 +1012,47 @@ BEGIN
     -- through, and counting it here would inflate the rate an organiser reads
     -- to decide whether to open another lane.
     'arrivalsLast15Min', (
-      SELECT count(*) FROM public.door_events
+      SELECT count(*) FROM (
+        SELECT occasion, recorded_at
+        FROM public.door_events
+        WHERE event_type IN ('checked_in', 'manual_admit')
+          AND outcome = 'applied'
+        UNION ALL
+        SELECT occasion, recorded_at FROM (
+          SELECT DISTINCT ON (COALESCE(ticket_id, workshop_registration_id))
+            occasion, event_type, recorded_at
+          FROM public.door_events
+          WHERE event_type IN ('badge_pickup', 'badge_pickup_undone')
+            AND outcome = 'applied'
+            AND (ticket_id IS NOT NULL OR workshop_registration_id IS NOT NULL)
+          ORDER BY COALESCE(ticket_id, workshop_registration_id), recorded_at DESC, id DESC
+        ) latest_badge
+        WHERE v_occasion = 'community_day'
+          AND event_type = 'badge_pickup'
+      ) arrivals
       WHERE occasion = v_occasion
-        AND (
-          event_type IN ('checked_in', 'manual_admit')
-          OR (v_occasion = 'community_day' AND event_type = 'badge_pickup')
-        )
-        AND outcome = 'applied'
         AND recorded_at > NOW() - INTERVAL '15 minutes'
     ),
     'arrivalsLast5Min', (
-      SELECT count(*) FROM public.door_events
+      SELECT count(*) FROM (
+        SELECT occasion, recorded_at
+        FROM public.door_events
+        WHERE event_type IN ('checked_in', 'manual_admit')
+          AND outcome = 'applied'
+        UNION ALL
+        SELECT occasion, recorded_at FROM (
+          SELECT DISTINCT ON (COALESCE(ticket_id, workshop_registration_id))
+            occasion, event_type, recorded_at
+          FROM public.door_events
+          WHERE event_type IN ('badge_pickup', 'badge_pickup_undone')
+            AND outcome = 'applied'
+            AND (ticket_id IS NOT NULL OR workshop_registration_id IS NOT NULL)
+          ORDER BY COALESCE(ticket_id, workshop_registration_id), recorded_at DESC, id DESC
+        ) latest_badge
+        WHERE v_occasion = 'community_day'
+          AND event_type = 'badge_pickup'
+      ) arrivals
       WHERE occasion = v_occasion
-        AND (
-          event_type IN ('checked_in', 'manual_admit')
-          OR (v_occasion = 'community_day' AND event_type = 'badge_pickup')
-        )
-        AND outcome = 'applied'
         AND recorded_at > NOW() - INTERVAL '5 minutes'
     ),
 
