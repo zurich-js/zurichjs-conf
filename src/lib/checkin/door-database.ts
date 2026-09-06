@@ -23,6 +23,7 @@ import type {
   DoorBadgePickupResult,
   DoorCheckInResult,
   DoorGoodieResult,
+  DoorGoodieUndoResult,
   DoorOccasion,
   DoorResolveResult,
 } from '@/lib/types/checkin';
@@ -93,6 +94,30 @@ type DoorFunctions = {
       p_occasion?: DoorOccasion;
     };
     Returns: DoorBadgePickupResult;
+  };
+  door_badge_pickup_undo: {
+    Args: {
+      p_scanned_id: string;
+      p_staff_id: string;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_occasion?: DoorOccasion;
+      p_reason?: string;
+    };
+    Returns: DoorBadgePickupResult;
+  };
+  door_goodie_undo: {
+    Args: {
+      p_ticket_id: string;
+      p_staff_id: string;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_occasion?: DoorOccasion;
+      p_reason?: string;
+      p_undo_tshirt?: boolean;
+      p_undo_hoodie?: boolean;
+    };
+    Returns: DoorGoodieUndoResult;
   };
   door_badge_pickups: {
     Args: never;

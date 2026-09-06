@@ -31,12 +31,26 @@ export interface StockLimits {
 
 /**
  * Global stock limits (independent of stage)
+ *
+ * These are the fallback defaults. The live values are admin-editable and
+ * stored in the `ticket_stock_config` singleton table — resolve them with
+ * `getTicketStockLimits()` from `@/lib/tickets/stock-config` (server-only) and
+ * pass them to `getStockInfo`.
  */
 export interface GlobalStockLimits {
   /** VIP tickets are limited globally across all stages */
   vip: number;
   /** Student/Unemployed tickets are limited globally across all stages */
   student_unemployed: number;
+  /**
+   * Total-attendee cap that bounds standard tickets.
+   *
+   * Standard tickets are whatever is left of the venue once the other
+   * categories are accounted for, so remaining standard stock is this cap
+   * minus every confirmed ticket across VIP, student/unemployed AND standard —
+   * not a standard-only allowance. `null` leaves standard uncapped.
+   */
+  standard_total: number | null;
 }
 
 /**
@@ -65,6 +79,9 @@ export interface StageConfig {
 export const GLOBAL_STOCK_LIMITS: GlobalStockLimits = {
   vip: 52,
   student_unemployed: 35,
+  // Uncapped by default: the cap only bites once an admin sets a number in
+  // `ticket_stock_config`, so a DB read failure can never invent a sell-out.
+  standard_total: null,
 };
 
 /**
@@ -279,55 +296,101 @@ export const getCurrentStageEndDate = (stockCounts?: StageStockCounts): Date => 
 };
 
 /**
- * Calculate remaining stock for a category in the current stage
+ * An all-zero set of stock counts.
+ *
+ * Used as the stand-in when the sold-ticket query fails: every limit then
+ * reports its full allowance as remaining rather than a spurious sell-out.
+ */
+export const emptyStockCounts = (): StageStockCounts => ({
+  byStage: {
+    blind_bird: 0,
+    early_bird: 0,
+    standard: 0,
+    late_bird: 0,
+    last_minute: 0,
+  },
+  byCategory: {
+    standard_student_unemployed: 0,
+    standard: 0,
+    vip: 0,
+  },
+});
+
+/**
+ * Total confirmed tickets across every category.
+ *
+ * This is the figure the total-attendee cap is measured against — a VIP or
+ * student seat consumes venue capacity exactly like a standard one does.
+ */
+export const getTotalTicketsSold = (stockCounts: StageStockCounts): number =>
+  (stockCounts.byCategory.vip || 0) +
+  (stockCounts.byCategory.standard_student_unemployed || 0) +
+  (stockCounts.byCategory.standard || 0);
+
+/** Build a StockInfo from a limit and the number already sold against it. */
+const stockFromLimit = (limit: number, sold: number): StockInfo => ({
+  remaining: Math.max(0, limit - sold),
+  total: limit,
+  soldOut: sold >= limit,
+});
+
+/**
+ * Calculate remaining stock for a category in the current stage.
+ *
+ * A category can be bounded by more than one limit at once — standard tickets
+ * during blind bird are capped both by the 30-ticket blind-bird batch and by
+ * the total-attendee cap. The tightest limit wins, since that is the one that
+ * actually stops the sale.
+ *
+ * @param limits - Resolved stock limits. Defaults to the hardcoded fallbacks;
+ *   server callers should pass the admin-configured values from
+ *   `getTicketStockLimits()`.
  */
 export const getStockInfo = (
   category: TicketCategory,
   currentStage: PriceStage,
-  stockCounts: StageStockCounts
+  stockCounts: StageStockCounts,
+  limits: GlobalStockLimits = GLOBAL_STOCK_LIMITS
 ): StockInfo => {
-  const stageConfig = getStageConfig(currentStage);
-
-  // Check VIP global limit
+  // VIP global limit
   if (category === 'vip') {
-    const vipSold = stockCounts.byCategory.vip || 0;
-    const vipTotal = GLOBAL_STOCK_LIMITS.vip;
-    return {
-      remaining: Math.max(0, vipTotal - vipSold),
-      total: vipTotal,
-      soldOut: vipSold >= vipTotal,
-    };
+    return stockFromLimit(limits.vip, stockCounts.byCategory.vip || 0);
   }
 
-  // Check Student/Unemployed global limit
+  // Student/Unemployed global limit
   if (category === 'standard_student_unemployed') {
-    const studentSold = stockCounts.byCategory.standard_student_unemployed || 0;
-    const studentTotal = GLOBAL_STOCK_LIMITS.student_unemployed;
+    return stockFromLimit(
+      limits.student_unemployed,
+      stockCounts.byCategory.standard_student_unemployed || 0
+    );
+  }
+
+  const constraints: StockInfo[] = [];
+
+  // Standard is bounded by the total-attendee cap, measured against every
+  // confirmed ticket rather than standard sales alone.
+  if (category === 'standard' && limits.standard_total !== null) {
+    constraints.push(stockFromLimit(limits.standard_total, getTotalTicketsSold(stockCounts)));
+  }
+
+  // Stage-specific batch limits (e.g. the 30-ticket blind-bird batch)
+  const stageConfig = getStageConfig(currentStage);
+  const stageLimit = stageConfig?.stockLimits?.stageLimit;
+  if (stageLimit && (stageConfig?.stockLimits?.limitedCategories || []).includes(category)) {
+    constraints.push(stockFromLimit(stageLimit, stockCounts.byStage[currentStage] || 0));
+  }
+
+  // No limit applies to this category/stage
+  if (constraints.length === 0) {
     return {
-      remaining: Math.max(0, studentTotal - studentSold),
-      total: studentTotal,
-      soldOut: studentSold >= studentTotal,
+      remaining: null,
+      total: null,
+      soldOut: false,
     };
   }
 
-  // Check stage-specific stock limits
-  if (stageConfig?.stockLimits?.stageLimit) {
-    const limitedCategories = stageConfig.stockLimits.limitedCategories || [];
-    if (limitedCategories.includes(category)) {
-      const soldInStage = stockCounts.byStage[currentStage] || 0;
-      const stageLimit = stageConfig.stockLimits.stageLimit;
-      return {
-        remaining: Math.max(0, stageLimit - soldInStage),
-        total: stageLimit,
-        soldOut: soldInStage >= stageLimit,
-      };
-    }
-  }
-
-  // No limit for this category/stage
-  return {
-    remaining: null,
-    total: null,
-    soldOut: false,
-  };
+  // Tightest constraint wins — it is the one that gates the sale
+  return constraints.reduce((tightest, candidate) =>
+    (candidate.remaining ?? 0) < (tightest.remaining ?? 0) ? candidate : tightest
+  );
 };

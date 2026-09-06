@@ -22,7 +22,9 @@ const EVENT_LABELS: Record<string, string> = {
   manual_admit: 'Admitted without a code',
   check_in_undone: 'Check-in undone',
   goodie_handed: 'Goodies handed',
+  goodie_undone: 'Goodie handover undone',
   badge_pickup: 'Badge handed over',
+  badge_pickup_undone: 'Badge handover undone',
   denied: 'Refused',
 };
 
@@ -31,7 +33,9 @@ const EVENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   manual_admit: ShieldAlert,
   check_in_undone: RotateCcw,
   goodie_handed: ListChecks,
+  goodie_undone: RotateCcw,
   badge_pickup: IdCard,
+  badge_pickup_undone: RotateCcw,
   denied: CircleSlash,
 };
 

@@ -83,7 +83,7 @@ describe('occasion', () => {
   // this is a polled endpoint and a lead should never see the dashboard break
   // because of a stale query string.
   it('ignores an unrecognised occasion instead of failing', async () => {
-    const { req, res, statusOf } = mockReqRes('GET', { occasion: 'community_day' });
+    const { req, res, statusOf } = mockReqRes('GET', { occasion: 'gala_day' });
     await handler(req, res);
     expect(statusOf()).toBe(200);
     expect(mocks.doorDashboard).toHaveBeenCalledWith(undefined);

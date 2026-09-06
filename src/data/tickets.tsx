@@ -74,7 +74,7 @@ export const TICKET_METADATA: Record<
   { blurb: string; variant: 'standard' | 'vip' | 'member' }
 > = {
   standard_student_unemployed: {
-    blurb: `Building the future, one ticket at a time. Limited to ${GLOBAL_STOCK_LIMITS.student_unemployed}.`,
+    blurb: 'Building the future, one ticket at a time.',
     variant: 'member',
   },
   standard: {
@@ -82,10 +82,21 @@ export const TICKET_METADATA: Record<
     variant: 'standard',
   },
   vip: {
-    blurb: `For those who go all in. Limited to ${GLOBAL_STOCK_LIMITS.vip}.`,
+    blurb: 'For those who go all in.',
     variant: 'vip',
   },
 };
+
+/**
+ * Append the live limit to a blurb.
+ *
+ * The limits are admin-configurable (`ticket_stock_config`), so the number has
+ * to come from the pricing API's stock payload rather than being baked into the
+ * copy — a hardcoded "Limited to 52" goes stale the moment an organiser edits
+ * the cap. Falls back to the bare blurb when the category has no limit.
+ */
+const withLimitCopy = (blurb: string, total: number | null | undefined): string =>
+  total ? `${blurb} Limited to ${total}.` : blurb;
 
 /**
  * Stage-specific copy for heading, subcopy, and countdown messaging
@@ -260,7 +271,9 @@ const buildStudentBlurb = (
 ): React.ReactNode => {
   const isSoldOut = stock?.soldOut ?? false;
   const remaining = stock?.remaining ?? null;
-  const total = GLOBAL_STOCK_LIMITS.student_unemployed;
+  // Live limit from the pricing API — the cap is admin-configurable, so the
+  // constant is only a fallback for when stock data hasn't loaded.
+  const total = stock?.total ?? GLOBAL_STOCK_LIMITS.student_unemployed;
 
   const infoButton = onInfoClick ? (
     <button
@@ -333,10 +346,10 @@ export const mapStripePlanToTicketPlan = (
   // Determine if sold out
   const isSoldOut = stripePlan.stock?.soldOut ?? false;
 
-  // Build blurb - dynamic for student/unemployed, static for others
+  // Build blurb - dynamic for student/unemployed, limit-aware for the rest
   const blurb = isStudentUnemployed
     ? buildStudentBlurb(stripePlan.stock, onStudentInfoClick)
-    : metadata.blurb;
+    : withLimitCopy(metadata.blurb, stripePlan.stock?.total);
 
   // For student/VIP tickets that are sold out, replace CTA with a waitlist "Get notified"
   const studentSoldOutCta = isStudentUnemployed && isSoldOut;

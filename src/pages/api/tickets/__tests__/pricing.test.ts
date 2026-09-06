@@ -45,6 +45,11 @@ const mocks = vi.hoisted(() => ({
     soldOut: false,
   }),
   mockServerAnalyticsError: vi.fn().mockResolvedValue(undefined),
+  mockGetTicketStockLimits: vi.fn().mockResolvedValue({
+    vip: 50,
+    student_unemployed: 40,
+    standard_total: 500,
+  }),
 }));
 
 // Mock Stripe - use a class to avoid the vi.fn() warning
@@ -63,6 +68,10 @@ vi.mock('@/lib/tickets/getTicketCounts', () => ({
   getTicketCounts: mocks.mockGetTicketCounts,
 }));
 
+vi.mock('@/lib/tickets/stock-config', () => ({
+  getTicketStockLimits: mocks.mockGetTicketStockLimits,
+}));
+
 vi.mock('@/config/pricing-stages', () => ({
   getCurrentStage: mocks.mockGetCurrentStage,
   getFinalStage: () => ({ stage: 'last_minute', displayName: 'Last Minute' }),
@@ -74,10 +83,14 @@ vi.mock('@/config/pricing-stages', () => ({
   getEffectiveStageForCategory: (category: string, stage: string) =>
     category === 'vip' && stage === 'last_minute' ? 'late_bird' : stage,
   getStockInfo: mocks.mockGetStockInfo,
+  emptyStockCounts: () => ({
+    byStage: { blind_bird: 0, early_bird: 0, standard: 0, late_bird: 0, last_minute: 0 },
+    byCategory: { standard_student_unemployed: 0, standard: 0, vip: 0 },
+  }),
   GLOBAL_STOCK_LIMITS: {
     vip: 50,
-    standard: 500,
     student_unemployed: 40,
+    standard_total: null,
   },
 }));
 
@@ -267,6 +280,20 @@ describe('Ticket Pricing API Handler', () => {
         byCategory: { standard: 50, vip: 10 },
         byStage: { early_bird: 60 },
       },
+    });
+
+    // Reset stock mocks too — a test that swaps in its own getStockInfo
+    // implementation must not leak it into the next one.
+    mocks.mockGetStockInfo.mockReset().mockReturnValue({
+      remaining: 50,
+      total: 100,
+      soldOut: false,
+    });
+
+    mocks.mockGetTicketStockLimits.mockResolvedValue({
+      vip: 50,
+      student_unemployed: 40,
+      standard_total: 500,
     });
   });
 
@@ -863,14 +890,15 @@ describe('Ticket Pricing API Handler', () => {
       expect(json.plans.every((p) => typeof p.stock.soldOut === 'boolean')).toBe(true);
     });
 
-    it('should use GLOBAL_STOCK_LIMITS for VIP tickets', async () => {
-      mocks.mockGetTicketCounts.mockResolvedValue({
-        counts: {
-          total: 100,
-          byCategory: { vip: 10 },
-          byStage: {},
-        },
-      });
+    it('reports the stock getStockInfo computes, for every category', async () => {
+      // getStockInfo is the single source of truth for stock: the handler used
+      // to recompute VIP and student/unemployed limits itself, which let the
+      // two drift apart.
+      mocks.mockGetStockInfo.mockImplementation((category: string) => ({
+        remaining: category === 'vip' ? 7 : 21,
+        total: category === 'vip' ? 50 : 40,
+        soldOut: false,
+      }));
 
       const req = createMockRequest();
       const res = createMockResponse();
@@ -880,34 +908,58 @@ describe('Ticket Pricing API Handler', () => {
       const json = res._json as {
         plans: Array<{ id: string; stock: { remaining: number; total: number } }>;
       };
-      const vipPlan = json.plans.find((p) => p.id === 'vip');
 
-      expect(vipPlan?.stock.total).toBe(50); // GLOBAL_STOCK_LIMITS.vip
-      expect(vipPlan?.stock.remaining).toBe(40); // 50 - 10 sold
+      expect(json.plans.find((p) => p.id === 'vip')?.stock).toEqual({
+        remaining: 7,
+        total: 50,
+        soldOut: false,
+      });
+      expect(json.plans.find((p) => p.id === 'standard_student_unemployed')?.stock).toEqual({
+        remaining: 21,
+        total: 40,
+        soldOut: false,
+      });
     });
 
-    it('should use GLOBAL_STOCK_LIMITS for student/unemployed tickets', async () => {
-      mocks.mockGetTicketCounts.mockResolvedValue({
-        counts: {
-          total: 100,
-          byCategory: { standard_student_unemployed: 15 },
-          byStage: {},
-        },
-      });
+    it('passes the admin-configured limits and the live counts to getStockInfo', async () => {
+      const counts = {
+        total: 100,
+        byCategory: { standard_student_unemployed: 15, standard: 40, vip: 10 },
+        byStage: {},
+      };
+      mocks.mockGetTicketCounts.mockResolvedValue({ counts });
 
       const req = createMockRequest();
       const res = createMockResponse();
 
       await callHandler(req, res);
 
-      const json = res._json as {
-        plans: Array<{ id: string; stock: { remaining: number; total: number; soldOut: boolean } }>;
-      };
-      const studentPlan = json.plans.find((p) => p.id === 'standard_student_unemployed');
+      expect(mocks.mockGetStockInfo).toHaveBeenCalledWith('vip', 'early_bird', counts, {
+        vip: 50,
+        student_unemployed: 40,
+        standard_total: 500,
+      });
+    });
 
-      expect(studentPlan?.stock.total).toBe(40); // GLOBAL_STOCK_LIMITS.student_unemployed
-      expect(studentPlan?.stock.remaining).toBe(25); // 40 - 15 sold
-      expect(studentPlan?.stock.soldOut).toBe(false);
+    it('falls back to zeroed counts when the sold-ticket query fails', async () => {
+      // A failed count must never invent a sell-out — zeroed counts report each
+      // limit's full allowance as still available.
+      mocks.mockGetTicketCounts.mockResolvedValue({ success: false, error: 'db down' });
+
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(mocks.mockGetStockInfo).toHaveBeenCalledWith(
+        'vip',
+        'early_bird',
+        {
+          byStage: { blind_bird: 0, early_bird: 0, standard: 0, late_bird: 0, last_minute: 0 },
+          byCategory: { standard_student_unemployed: 0, standard: 0, vip: 0 },
+        },
+        { vip: 50, student_unemployed: 40, standard_total: 500 }
+      );
     });
   });
 

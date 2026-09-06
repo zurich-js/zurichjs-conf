@@ -3,14 +3,39 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 type QueryResult = { data: unknown; error: unknown };
 
 const tableResults = new Map<string, QueryResult>();
+/** Tables whose query resolves only after a delay, to exercise the abort path. */
+const tableDelays = new Map<string, number>();
 const fromCalls: string[] = [];
 const selectCalls: Array<{ table: string; columns: string }> = [];
+const abortSignals: AbortSignal[] = [];
 
+vi.mock('@/lib/url', () => ({ getBaseUrl: () => 'http://localhost:3000' }));
 vi.mock('@/lib/supabase', () => ({
   createServiceRoleClient: () => ({
     from: (table: string) => {
       fromCalls.push(table);
       const result = (): QueryResult => tableResults.get(table) ?? { data: null, error: null };
+      let signal: AbortSignal | undefined;
+
+      // Mirrors PostgREST: an aborted query resolves with an error rather
+      // than rejecting.
+      const settle = (): Promise<QueryResult> => {
+        const delay = tableDelays.get(table);
+        if (delay === undefined) return Promise.resolve(result());
+
+        return new Promise((resolve) => {
+          const id = setTimeout(() => resolve(result()), delay);
+          signal?.addEventListener(
+            'abort',
+            () => {
+              clearTimeout(id);
+              resolve({ data: null, error: { message: 'AbortError: The user aborted a request.' } });
+            },
+            { once: true }
+          );
+        });
+      };
+
       const builder = {
         select: (columns: string) => {
           selectCalls.push({ table, columns });
@@ -20,17 +45,25 @@ vi.mock('@/lib/supabase', () => ({
         in: () => builder,
         order: () => builder,
         limit: () => builder,
-        single: () => Promise.resolve(result()),
-        maybeSingle: () => Promise.resolve(result()),
+        abortSignal: (value: AbortSignal) => {
+          signal = value;
+          abortSignals.push(value);
+          return builder;
+        },
+        single: settle,
+        maybeSingle: settle,
       };
       return builder;
     },
   }),
 }));
 
-import { getOrderDetails } from '../order-details';
+import { generateOrderToken } from '@/lib/auth/orderToken';
+import { getOrderDetails, getOrderDetailsForToken } from '../order-details';
 
 const TICKET_ID = 'fdd332be-86c9-4842-912c-e5c1c0968606';
+const CURRENT_NONCE = '9dc7c037-ef40-4ac5-b24c-66ee9e9ee0f9';
+const ROTATED_NONCE = 'ec639162-d93b-49fb-b70d-62b47a5b41be';
 
 function makeTicket(overrides: Record<string, unknown> = {}) {
   return {
@@ -55,8 +88,10 @@ function makeTicket(overrides: Record<string, unknown> = {}) {
 describe('getOrderDetails', () => {
   beforeEach(() => {
     tableResults.clear();
+    tableDelays.clear();
     fromCalls.length = 0;
     selectCalls.length = 0;
+    abortSignals.length = 0;
     tableResults.set('tickets', { data: makeTicket(), error: null });
   });
 
@@ -104,6 +139,14 @@ describe('getOrderDetails', () => {
     expect(fromCalls).toHaveLength(5);
 
     await pending;
+  });
+
+  it('skips the tickets query when the caller already has the row', async () => {
+    const details = await getOrderDetails(TICKET_ID, { ticket: makeTicket() as never });
+
+    expect(fromCalls).not.toContain('tickets');
+    expect(fromCalls).toHaveLength(4);
+    expect(details?.ticket.id).toBe(TICKET_ID);
   });
 
   it('includes transfer info when the ticket was transferred', async () => {
@@ -277,5 +320,92 @@ describe('getOrderDetails', () => {
     const details = await getOrderDetails(TICKET_ID);
 
     expect(details?.networking).toBeUndefined();
+  });
+});
+
+describe('getOrderDetailsForToken', () => {
+  beforeEach(() => {
+    vi.stubEnv('ORDER_TOKEN_SECRET', 'current-secret');
+    tableResults.clear();
+    tableDelays.clear();
+    fromCalls.length = 0;
+    selectCalls.length = 0;
+    abortSignals.length = 0;
+    tableResults.set('tickets', {
+      data: {
+        ...makeTicket(),
+        manage_token_nonce: CURRENT_NONCE,
+        legacy_manage_token_valid: false,
+      },
+      error: null,
+    });
+  });
+
+  function validToken() {
+    return generateOrderToken(TICKET_ID, CURRENT_NONCE);
+  }
+
+  it('reads tickets once for both the access check and the response', async () => {
+    const result = await getOrderDetailsForToken(validToken());
+
+    expect(result.status).toBe('ok');
+    expect(fromCalls.filter((table) => table === 'tickets')).toHaveLength(1);
+    // One read of tickets plus the four satellite lookups
+    expect(fromCalls).toHaveLength(5);
+  });
+
+  it('keeps the token nonce out of the response', async () => {
+    const result = await getOrderDetailsForToken(validToken());
+
+    expect(result.status).toBe('ok');
+    if (result.status !== 'ok') return;
+    expect(result.details.ticket).not.toHaveProperty('manage_token_nonce');
+    expect(result.details.ticket).not.toHaveProperty('legacy_manage_token_valid');
+    expect(JSON.stringify(result.details)).not.toContain(CURRENT_NONCE);
+  });
+
+  it('rejects a token whose nonce has been rotated', async () => {
+    const staleToken = generateOrderToken(TICKET_ID, ROTATED_NONCE);
+
+    await expect(getOrderDetailsForToken(staleToken)).resolves.toEqual({ status: 'unauthorized' });
+  });
+
+  it('does not query at all for a malformed token', async () => {
+    await expect(getOrderDetailsForToken('not-a-uuid.nonce.signature')).resolves.toEqual({
+      status: 'unauthorized',
+    });
+    expect(fromCalls).toHaveLength(0);
+  });
+
+  it('treats a missing ticket as unauthorized', async () => {
+    tableResults.set('tickets', { data: null, error: null });
+
+    await expect(getOrderDetailsForToken(validToken())).resolves.toEqual({ status: 'unauthorized' });
+  });
+
+  it('reports a lookup failure separately from a rejected token', async () => {
+    tableResults.set('tickets', { data: null, error: { message: 'database unavailable' } });
+
+    await expect(getOrderDetailsForToken(validToken())).resolves.toEqual({ status: 'error' });
+  });
+
+  it('times out and cancels the in-flight queries once the budget expires', async () => {
+    tableDelays.set('tickets', 1000);
+
+    const result = await getOrderDetailsForToken(validToken(), { timeoutMs: 10 });
+
+    expect(result).toEqual({ status: 'timed-out' });
+    expect(abortSignals).not.toHaveLength(0);
+    // The queries are cancelled, not left running against a struggling database
+    expect(abortSignals.every((signal) => signal.aborted)).toBe(true);
+  });
+
+  it('clears the budget timer on the fast path', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+    await getOrderDetailsForToken(validToken(), { timeoutMs: 5000 });
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
   });
 });

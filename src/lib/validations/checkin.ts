@@ -97,6 +97,21 @@ export const doorBadgePickupSchema = z.object({
 export type DoorBadgePickupInput = z.infer<typeof doorBadgePickupSchema>;
 
 /**
+ * Taking a mistaken badge handover back. Same shape as the pickup plus an
+ * optional reason — the common case (tapped the wrong row) is obvious from the
+ * adjacent audit rows, but a reason is stored when given.
+ */
+export const doorBadgePickupUndoSchema = z.object({
+  scannedId: z.string().uuid('Not a valid code'),
+  station: stationSchema,
+  occurredAt: occurredAtSchema,
+  occasion: occasionSchema,
+  reason: z.string().trim().max(500, 'Reason is too long').optional(),
+});
+
+export type DoorBadgePickupUndoInput = z.infer<typeof doorBadgePickupUndoSchema>;
+
+/**
  * A manual admission always carries a reason. One without a reason is
  * indistinguishable from a mistake when the log is read weeks later, so the
  * database refuses it too — this is the friendlier of the two rejections.
@@ -132,6 +147,27 @@ export const doorGoodieHandoverSchema = z.object({
 });
 
 export type DoorGoodieHandoverInput = z.infer<typeof doorGoodieHandoverSchema>;
+
+/**
+ * Taking a mistaken goodie handover back, per item — undoing the t-shirt
+ * leaves the hoodie handed. At least one item must be named, or the call is a
+ * no-op the volunteer would read as a broken button.
+ */
+export const doorGoodieUndoSchema = z
+  .object({
+    ticketId: z.string().uuid('Not a valid ticket'),
+    station: stationSchema,
+    occurredAt: occurredAtSchema,
+    occasion: occasionSchema,
+    reason: z.string().trim().max(500, 'Reason is too long').optional(),
+    undoTshirt: z.boolean().optional().default(false),
+    undoHoodie: z.boolean().optional().default(false),
+  })
+  .refine((value) => value.undoTshirt || value.undoHoodie, {
+    message: 'Name at least one item to take back',
+  });
+
+export type DoorGoodieUndoInput = z.infer<typeof doorGoodieUndoSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Staff management (admin panel)
@@ -174,8 +210,10 @@ export const doorEventQuerySchema = z.object({
       'checked_in',
       'check_in_undone',
       'goodie_handed',
+      'goodie_undone',
       'manual_admit',
       'badge_pickup',
+      'badge_pickup_undone',
       'denied',
     ])
     .optional(),

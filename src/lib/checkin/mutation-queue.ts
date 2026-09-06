@@ -40,7 +40,9 @@ export type DoorMutationKind =
   | 'manual_admit'
   | 'undo_check_in'
   | 'goodie'
-  | 'badge_pickup';
+  | 'undo_goodie'
+  | 'badge_pickup'
+  | 'undo_badge_pickup';
 
 /**
  * The writes a station can make, as a discriminated union so a payload cannot
@@ -77,7 +79,24 @@ export type DoorMutationPayload =
       occasion?: DoorOccasion;
       station?: string;
     }
-  | { kind: 'badge_pickup'; scannedId: string; occasion?: DoorOccasion; station?: string };
+  | {
+      kind: 'undo_goodie';
+      ticketId: string;
+      /** Which items go back on the table. At least one must be true. */
+      undoTshirt?: boolean;
+      undoHoodie?: boolean;
+      reason?: string;
+      occasion?: DoorOccasion;
+      station?: string;
+    }
+  | { kind: 'badge_pickup'; scannedId: string; occasion?: DoorOccasion; station?: string }
+  | {
+      kind: 'undo_badge_pickup';
+      scannedId: string;
+      reason?: string;
+      occasion?: DoorOccasion;
+      station?: string;
+    };
 
 export interface DoorQueuedMutation {
   /** Client-generated, so a log line can be followed across retries. */
@@ -102,7 +121,9 @@ const ENDPOINTS: Record<DoorMutationKind, string> = {
   manual_admit: '/api/checkin/manual-admit',
   undo_check_in: '/api/checkin/undo',
   goodie: '/api/checkin/goodie',
+  undo_goodie: '/api/checkin/goodie-undo',
   badge_pickup: '/api/checkin/badge-pickup',
+  undo_badge_pickup: '/api/checkin/badge-pickup-undo',
 };
 
 /**

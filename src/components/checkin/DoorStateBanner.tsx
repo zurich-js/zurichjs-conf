@@ -1,9 +1,30 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Check, CircleSlash, Clock, HelpCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CalendarClock,
+  Check,
+  CircleSlash,
+  Clock,
+  HelpCircle,
+  IdCard,
+} from 'lucide-react';
 import { useMotion } from '@/contexts/MotionContext';
 
-export type DoorState = 'admit' | 'admitted' | 'already' | 'refused' | 'unknown';
+/**
+ * `pickup` / `picked_up` are the warm-up meetup's pair — that day has no
+ * check-ins, so the badge is the verdict. `nothing_today` is the workshop-only
+ * attendee on badge day: legitimate, but nothing to record for them.
+ */
+export type DoorState =
+  | 'admit'
+  | 'admitted'
+  | 'already'
+  | 'pickup'
+  | 'picked_up'
+  | 'nothing_today'
+  | 'refused'
+  | 'unknown';
 
 export interface DoorStateBannerProps {
   state: DoorState;
@@ -34,14 +55,20 @@ const STATE_STYLES: Record<DoorState, string> = {
   admit: 'bg-success text-brand-black',
   admitted: 'bg-success text-brand-black',
   already: 'bg-warning text-brand-black',
+  pickup: 'bg-success text-brand-black',
+  picked_up: 'bg-warning text-brand-black',
+  nothing_today: 'bg-surface-elevated text-text-primary',
   refused: 'bg-error text-brand-white',
   unknown: 'bg-surface-elevated text-text-primary',
 };
 
 const STATE_LABELS: Record<DoorState, string> = {
-  admit: 'Ready to admit',
+  admit: 'Verified — tap to check in',
   admitted: 'Checked in',
   already: 'Already checked in',
+  pickup: 'Verified — hand over badge',
+  picked_up: 'Badge already picked up',
+  nothing_today: 'Nothing to record today',
   refused: 'Do not admit',
   unknown: 'Not in the roster',
 };
@@ -50,6 +77,9 @@ const STATE_ICONS: Record<DoorState, React.ComponentType<{ className?: string }>
   admit: Check,
   admitted: Check,
   already: Clock,
+  pickup: IdCard,
+  picked_up: Clock,
+  nothing_today: CalendarClock,
   refused: CircleSlash,
   unknown: HelpCircle,
 };

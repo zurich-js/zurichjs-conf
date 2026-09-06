@@ -21,6 +21,17 @@ import { env, clientEnv } from '@/config/env';
 let browserClientInstance: ReturnType<typeof createSSRBrowserClient<Database>> | null = null;
 
 /**
+ * Service role client, memoized for the lifetime of the process.
+ *
+ * Building a fresh client per call meant every server request created its own
+ * fetch stack, so nothing reused the connection to Supabase — a request making
+ * several lookups paid a new TLS handshake for each one. The client carries no
+ * per-request state (no session persistence, no token refresh), so a single
+ * instance per process is safe to share.
+ */
+let serviceRoleClientInstance: unknown = null;
+
+/**
  * Create a Supabase client with service role privileges
  * This bypasses RLS policies and should only be used on the server
  *
@@ -30,31 +41,30 @@ let browserClientInstance: ReturnType<typeof createSSRBrowserClient<Database>> |
  * calls stay fully typed without casts.
  */
 export function createServiceRoleClient<Schema extends Database = Database>() {
-  console.log('[Supabase] Creating service role client');
-  console.log('[Supabase] URL:', env.supabase.url);
-  console.log('[Supabase] Secret key:', env.supabase.secretKey ? '(present)' : '❌ MISSING');
-
-  if (!env.supabase.url) {
-    throw new Error('[Supabase] ❌ SUPABASE_URL is missing');
-  }
-
-  if (!env.supabase.secretKey) {
-    throw new Error('[Supabase] ❌ SUPABASE_SECRET_KEY is missing');
-  }
-
-  const client = createClient<Schema>(
-    env.supabase.url,
-    env.supabase.secretKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+  if (serviceRoleClientInstance === null) {
+    if (!env.supabase.url) {
+      throw new Error('[Supabase] ❌ SUPABASE_URL is missing');
     }
-  );
 
-  console.log('[Supabase] ✅ Service role client created successfully');
-  return client;
+    if (!env.supabase.secretKey) {
+      throw new Error('[Supabase] ❌ SUPABASE_SECRET_KEY is missing');
+    }
+
+    serviceRoleClientInstance = createClient<Database>(
+      env.supabase.url,
+      env.supabase.secretKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+  }
+
+  // `Schema` only refines the compile-time shape of the same runtime client,
+  // so every caller shares the one instance regardless of the type it asks for.
+  return serviceRoleClientInstance as ReturnType<typeof createClient<Schema>>;
 }
 
 /**

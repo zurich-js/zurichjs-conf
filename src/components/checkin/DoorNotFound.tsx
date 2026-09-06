@@ -41,15 +41,26 @@ export const DoorNotFound: React.FC<DoorNotFoundProps> = ({
       </div>
     </div>
 
-    <div className="flex gap-3">
+    <div className="flex items-stretch gap-3">
       {canLookUp ? (
-        <Button variant="primary" size="lg" className="flex-1" onClick={onOpenLookup}>
+        <Button
+          variant="primary"
+          size="lg"
+          className="flex-1 whitespace-nowrap"
+          onClick={onOpenLookup}
+        >
           Look up by name
         </Button>
       ) : null}
       {onEscalate ? (
-        <Button variant="dark" size="lg" className={canLookUp ? '' : 'flex-1'} onClick={onEscalate}>
-          Call a door lead
+        <Button
+          variant="dark"
+          size={canLookUp ? 'md' : 'lg'}
+          className={canLookUp ? 'shrink-0 whitespace-nowrap' : 'flex-1 whitespace-nowrap'}
+          aria-label="Get help from a door lead"
+          onClick={onEscalate}
+        >
+          Help
         </Button>
       ) : null}
     </div>

@@ -161,19 +161,62 @@ export function patchRosterCheckIn(
   }));
 }
 
-/** Record a goodie handover locally. Always keyed on a ticket. */
+/** Which items moved in a goodie write, so the patch mirrors the per-item columns. */
+export interface GoodiePatchItems {
+  tshirt: boolean;
+  hoodie: boolean;
+}
+
+/**
+ * Record a goodie handover locally, per item. The full-entitlement stamp
+ * (`goodieHandedAt`) is set only when everything the ticket is owed has now
+ * been handed — the same rule `door_goodie_handover` applies.
+ */
 export function patchRosterGoodie(
   queryClient: QueryClient,
   occasion: DoorOccasion,
   ticketId: string,
   handedAt: string,
-  note?: string | null
+  note: string | null,
+  items: GoodiePatchItems
+): void {
+  patchRoster(queryClient, occasion, (roster) => ({
+    ...roster,
+    tickets: roster.tickets.map((ticket) => {
+      if (ticket.id !== ticketId) return ticket;
+      const tshirtHandedAt = items.tshirt ? handedAt : ticket.tshirtHandedAt;
+      const hoodieHandedAt = items.hoodie ? handedAt : ticket.hoodieHandedAt;
+      const fullyHanded =
+        tshirtHandedAt !== null && (!ticket.isVip || hoodieHandedAt !== null);
+      return {
+        ...ticket,
+        tshirtHandedAt,
+        hoodieHandedAt,
+        goodieHandedAt: fullyHanded ? (ticket.goodieHandedAt ?? handedAt) : ticket.goodieHandedAt,
+        goodieNote: note ?? ticket.goodieNote,
+      };
+    }),
+  }));
+}
+
+/** Record a goodie undo locally: the named items go back on the table. */
+export function patchRosterGoodieUndo(
+  queryClient: QueryClient,
+  occasion: DoorOccasion,
+  ticketId: string,
+  items: GoodiePatchItems
 ): void {
   patchRoster(queryClient, occasion, (roster) => ({
     ...roster,
     tickets: roster.tickets.map((ticket) =>
       ticket.id === ticketId
-        ? { ...ticket, goodieHandedAt: handedAt, goodieNote: note ?? ticket.goodieNote }
+        ? {
+            ...ticket,
+            tshirtHandedAt: items.tshirt ? null : ticket.tshirtHandedAt,
+            hoodieHandedAt: items.hoodie ? null : ticket.hoodieHandedAt,
+            // The entitlement is no longer fully satisfied — mirror the SQL.
+            goodieHandedAt: null,
+          }
         : ticket
     ),
   }));
@@ -206,19 +249,6 @@ export function revertRosterCheckIn(
     ),
     registrations: roster.registrations.map((seat) =>
       seat.id === subjectId ? { ...seat, checkedInAt: null } : seat
-    ),
-  }));
-}
-
-export function revertRosterGoodie(
-  queryClient: QueryClient,
-  occasion: DoorOccasion,
-  ticketId: string
-): void {
-  patchRoster(queryClient, occasion, (roster) => ({
-    ...roster,
-    tickets: roster.tickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, goodieHandedAt: null } : ticket
     ),
   }));
 }
