@@ -27,7 +27,6 @@ const mocks = vi.hoisted(() => ({
   buildDoorRoster: vi.fn(),
   verifyAdminAccess: vi.fn(),
   notifyDoorHelpRequested: vi.fn(),
-  isHoodieOwed: vi.fn(),
 }));
 
 vi.mock('@/lib/cfp/auth', () => ({
@@ -47,7 +46,6 @@ vi.mock('@/lib/admin/auth', () => ({ verifyAdminAccess: mocks.verifyAdminAccess 
 vi.mock('@/lib/platform-notifications', () => ({
   notifyDoorHelpRequested: mocks.notifyDoorHelpRequested,
 }));
-vi.mock('@/lib/hoodies/door-eligibility', () => ({ isHoodieOwed: mocks.isHoodieOwed }));
 vi.mock('@/lib/logger', () => ({
   logger: {
     scope: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
@@ -94,7 +92,6 @@ beforeEach(() => {
   mocks.getStaffByUserId.mockResolvedValue(staff('scanner'));
   mocks.doorCurrentOccasion.mockResolvedValue('conference_day');
   mocks.verifyAdminAccess.mockReturnValue({ authorized: false, isBot: false, botClient: null });
-  mocks.isHoodieOwed.mockResolvedValue(null);
 });
 
 describe('method guards', () => {
@@ -316,28 +313,6 @@ describe('goodie handover items', () => {
     expect(mocks.doorGoodieHandover).toHaveBeenCalledWith(
       expect.objectContaining({ tshirtSize: 'M', hoodieSize: 'L' }),
     );
-  });
-
-  // The full-entitlement stamp follows eligibility, and eligibility is the
-  // server's call: whatever the station believes, the verdict comes from here.
-  it.each([
-    ['owed', true],
-    ['not owed (comp VIP)', false],
-    ['unknown — inputs unavailable', null],
-  ])('passes the server-side hoodie verdict through: %s', async (_label, verdict) => {
-    mocks.getStaffByUserId.mockResolvedValue(staff('goodie'));
-    mocks.isHoodieOwed.mockResolvedValue(verdict);
-    mocks.doorGoodieHandover.mockResolvedValue({ outcome: 'applied' });
-    const { req, res, statusOf } = mockReqRes('POST', {
-      ticketId: UUID,
-      tshirtSize: 'M',
-      // A client claiming eligibility is ignored — the schema has no such field.
-      hoodieOwed: !verdict,
-    });
-    await goodieHandler(req, res);
-    expect(statusOf()).toBe(200);
-    expect(mocks.isHoodieOwed).toHaveBeenCalledWith(UUID);
-    expect(mocks.doorGoodieHandover.mock.calls[0][0].hoodieOwed).toBe(verdict);
   });
 });
 

@@ -20,10 +20,8 @@ import {
   type HoodieReason,
   type HoodieSpeakerInput,
   type HoodieStats,
-  type HoodieTicketClassifyInput,
   type HoodieTicketInput,
   type HoodieUpgradeInput,
-  type HoodieVerdict,
 } from '@/lib/types/hoodies';
 
 function normalizeEmail(email: string): string {
@@ -67,8 +65,8 @@ function emptyRecord<K extends string>(keys: readonly K[]): Record<K, number> {
  * ticket's own amount_paid (that is what they paid for the original tier).
  */
 export function classifyVipTicket(
-  ticket: HoodieTicketClassifyInput,
-  upgradesById: ReadonlyMap<string, HoodieUpgradeInput>
+  ticket: HoodieTicketInput,
+  upgradesById: Map<string, HoodieUpgradeInput>
 ): { eligible: true; reason: HoodieReason } | { eligible: false; exclusion: HoodieExclusion } {
   // The sponsor exception wins however the ticket became VIP: issued as a
   // comp VIP directly, or issued as a comp lower tier and upgraded later.
@@ -88,28 +86,6 @@ export function classifyVipTicket(
     return { eligible: false, exclusion: 'complimentary_vip_ticket' };
   }
   return { eligible: true, reason: 'vip_ticket_paid' };
-}
-
-/**
- * Hoodie eligibility for ONE ticket, as the door needs it.
- *
- * The same rules as buildHoodieAllocation, answered per ticket instead of as a
- * list: speakers first (a speaker gets a hoodie whatever ticket they hold),
- * then the VIP rules, and a non-VIP ticket is simply not in the running. The
- * door shows the exclusion so a volunteer can explain a "no" to a VIP whose
- * upgrade was complimentary, instead of handing over a hoodie the allocation
- * never counted.
- */
-export function classifyTicketHoodie(
-  ticket: HoodieTicketClassifyInput & { email: string; is_vip: boolean },
-  upgradesById: ReadonlyMap<string, HoodieUpgradeInput>,
-  speakerEmails: ReadonlySet<string>
-): HoodieVerdict {
-  if (speakerEmails.has(normalizeEmail(ticket.email))) {
-    return { eligible: true, reason: 'speaker' };
-  }
-  if (!ticket.is_vip) return { eligible: false, exclusion: null };
-  return classifyVipTicket(ticket, upgradesById);
 }
 
 export function buildHoodieAllocation(input: {

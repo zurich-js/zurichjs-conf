@@ -12,8 +12,6 @@
  * onto a volunteer's personal phone — measured at 1132 KB raw versus 249 KB for
  * this projection, and `tickets.metadata` alone is 29% of the difference. Hiding
  * a field in the UI would not help: the payload is what leaves the server.
- * (`amount_paid` and `metadata` ARE read here — for the hoodie verdict — but
- * only the boolean verdict is projected; the fields themselves stay server-side.)
  *
  * The four queries run concurrently because they are independent, and they are
  * separate keys on the client so a workshop sale can invalidate seats without
@@ -22,11 +20,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import {
-  hoodieVerdictForTicketRow,
-  loadHoodieEligibilityInputs,
-} from '@/lib/hoodies/door-eligibility';
-import { doorBadgePickups } from './rpc';
+import { doorBadgePickups, doorHoodieVerdicts } from './rpc';
 import type { Database } from '@/lib/types/database.generated';
 import type { DoorOccasion, DoorTicketStatus } from '@/lib/types/checkin';
 import type { HoodieExclusion } from '@/lib/types/hoodies';
@@ -70,11 +64,10 @@ export interface RosterTicket {
   /** When the hoodie was physically handed over (null = not yet). */
   hoodieHandedAt: string | null;
   /**
-   * Whether a hoodie is owed at all. Decided here, on the server, by the same
-   * rules as the fulfilment allocation (src/lib/hoodies): a complimentary VIP
-   * ticket or a free upgrade earns none, a speaker earns one on any ticket.
-   * The inputs (payment metadata, upgrade records, the speaker list) never
-   * leave the server — only the verdict does.
+   * Whether a hoodie is owed at all. Decided in the database
+   * (door_hoodie_exclusion) by the same rules as the fulfilment allocation:
+   * a complimentary VIP ticket or a free upgrade earns none, a speaker earns
+   * one on any ticket. Only the verdict reaches the station.
    */
   hoodieEligible: boolean;
   /** Why a VIP gets no hoodie, for the volunteer to explain. Null otherwise. */
@@ -159,9 +152,6 @@ interface TicketRow {
   tshirt_handed_at: string | null;
   hoodie_handed_at: string | null;
   door_note: string | null;
-  /** Read server-side for the hoodie verdict only; never projected to the station. */
-  amount_paid: number;
-  metadata: unknown;
 }
 
 interface ApparelRow {
@@ -202,13 +192,13 @@ interface WorkshopRow {
 export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoster> {
   const supabase = createServiceRoleClient();
 
-  const [tickets, apparel, registrations, workshops, badgePickups, hoodieInputs] = await Promise.all([
+  const [tickets, apparel, registrations, workshops, badgePickups, hoodieVerdicts] = await Promise.all([
     fetchAllPages<TicketRow>(
       (from, to) =>
         supabase
           .from('tickets')
           .select(
-            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, tshirt_handed_at, hoodie_handed_at, door_note, amount_paid, metadata'
+            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, tshirt_handed_at, hoodie_handed_at, door_note'
           )
           .order('created_at', { ascending: true })
           .range(from, to),
@@ -246,24 +236,22 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
     // Badge pickup state lives in door_events, not on the subject rows, so it
     // ships as one (subjectId, pickedUpAt) aggregate and is merged here.
     doorBadgePickups(),
-    // Speaker list and upgrade records for the hoodie verdict. Null when they
-    // could not be loaded: the roster still ships and every VIP reads as
-    // eligible, which is what the door did before eligibility existed.
-    loadHoodieEligibilityInputs(supabase),
+    // Hoodie verdicts are decided in SQL, where the handover decides them too,
+    // and arrive as one small (ticketId, exclusion) set. A ticket with no row
+    // was never in the running: no hoodie, nothing to explain.
+    doorHoodieVerdicts(),
   ]);
 
   const apparelByTicket = new Map(apparel.map((a) => [a.ticket_id, a]));
   const badgeBySubject = new Map(badgePickups.map((b) => [b.subjectId, b.pickedUpAt]));
+  const hoodieByTicket = new Map(hoodieVerdicts.map((v) => [v.ticketId, v.exclusion]));
 
   return {
     occasion,
     generatedAt: new Date().toISOString(),
     tickets: tickets.map((t) => {
       const sizes = apparelByTicket.get(t.id);
-      const isVip = t.ticket_category === 'vip';
-      const hoodie = hoodieInputs
-        ? hoodieVerdictForTicketRow(t, hoodieInputs)
-        : ({ eligible: isVip, exclusion: null } as const);
+      const hoodie = hoodieByTicket.get(t.id);
       return {
         id: t.id,
         firstName: t.first_name,
@@ -275,7 +263,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         ticketCategory: t.ticket_category,
         ticketStage: t.ticket_stage,
         status: t.status,
-        isVip,
+        isVip: t.ticket_category === 'vip',
         transferredFromName: t.transferred_from_name,
         transferredFromEmail: t.transferred_from_email,
         checkedInWorkshopDayAt: t.checked_in_workshop_day_at,
@@ -284,8 +272,8 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         goodieNote: t.goodie_note,
         tshirtHandedAt: t.tshirt_handed_at,
         hoodieHandedAt: t.hoodie_handed_at,
-        hoodieEligible: hoodie.eligible,
-        hoodieExclusion: hoodie.eligible ? null : hoodie.exclusion,
+        hoodieEligible: hoodie === null,
+        hoodieExclusion: hoodie ?? null,
         badgePickedUpAt: badgeBySubject.get(t.id) ?? null,
         doorNote: t.door_note,
         tshirtSize: sizes?.tshirt_size ?? null,

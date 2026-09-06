@@ -24,7 +24,12 @@
 import type { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { DoorRpcError } from './errors';
-import type { DoorBadgePickupRow, DoorDatabase, DoorRpcName } from './door-database';
+import type {
+  DoorBadgePickupRow,
+  DoorDatabase,
+  DoorHoodieVerdictRow,
+  DoorRpcName,
+} from './door-database';
 import { DOOR_OCCASIONS } from '@/lib/types/checkin';
 import type {
   DoorBadgePickupResult,
@@ -140,12 +145,6 @@ export interface DoorGoodieArgs {
   /** Size actually handed over. Absent = that item was NOT handed. */
   tshirtSize?: string;
   hoodieSize?: string;
-  /**
-   * Whether a hoodie is OWED, per the fulfilment rules — decides when the
-   * full-entitlement stamp lands. Computed server-side, never from the station.
-   * Null/undefined leaves the database to its tier-based default.
-   */
-  hoodieOwed?: boolean | null;
 }
 
 export async function doorGoodieHandover(args: DoorGoodieArgs): Promise<DoorGoodieResult> {
@@ -161,7 +160,6 @@ export async function doorGoodieHandover(args: DoorGoodieArgs): Promise<DoorGood
       p_occasion: args.occasion,
       p_tshirt_size: args.tshirtSize,
       p_hoodie_size: args.hoodieSize,
-      p_hoodie_owed: args.hoodieOwed ?? undefined,
     })
   );
 }
@@ -251,6 +249,12 @@ export async function doorGoodieUndo(args: DoorGoodieUndoArgs): Promise<DoorGood
 export async function doorBadgePickups(): Promise<DoorBadgePickupRow[]> {
   const supabase = createDoorClient();
   return unwrap('door_badge_pickups', await supabase.rpc('door_badge_pickups'));
+}
+
+/** Hoodie verdict per confirmed ticket. Decided in SQL, same rule as the handover. */
+export async function doorHoodieVerdicts(): Promise<DoorHoodieVerdictRow[]> {
+  const supabase = createDoorClient();
+  return unwrap('door_hoodie_verdicts', await supabase.rpc('door_hoodie_verdicts'));
 }
 
 /** Admin-only removal of audit rows (rehearsal and test data). */

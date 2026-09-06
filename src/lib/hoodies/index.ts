@@ -1,9 +1,4 @@
-export {
-  classifyVipTicket,
-  classifyTicketHoodie,
-  isSponsorComp,
-  buildHoodieAllocation,
-} from './allocation';
+export { classifyVipTicket, isSponsorComp, buildHoodieAllocation } from './allocation';
 export {
   HOODIE_REASONS,
   HOODIE_REASON_LABELS,
@@ -14,10 +9,8 @@ export type {
   HoodieReason,
   HoodieExclusion,
   HoodieSpeakerInput,
-  HoodieTicketClassifyInput,
   HoodieTicketInput,
   HoodieUpgradeInput,
-  HoodieVerdict,
   HoodieEntry,
   HoodieExcludedEntry,
   HoodieStats,

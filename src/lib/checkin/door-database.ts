@@ -19,6 +19,7 @@
  */
 
 import type { Database } from '@/lib/types/database';
+import type { HoodieExclusion } from '@/lib/types/hoodies';
 import type {
   DoorBadgePickupResult,
   DoorCheckInResult,
@@ -34,6 +35,13 @@ export interface DoorBadgePickupRow {
   /** Ticket id or workshop registration id — the same id space a scan resolves. */
   subjectId: string;
   pickedUpAt: string;
+}
+
+/** One ticket's hoodie verdict, from door_hoodie_verdicts(). */
+export interface DoorHoodieVerdictRow {
+  ticketId: string;
+  /** Null = a hoodie is owed. Otherwise why not (see HOODIE_EXCLUSIONS). */
+  exclusion: HoodieExclusion | null;
 }
 
 // A `type`, not an `interface`: interfaces have no implicit index signature, so
@@ -82,8 +90,6 @@ type DoorFunctions = {
       p_occasion?: DoorOccasion;
       p_tshirt_size?: string;
       p_hoodie_size?: string;
-      /** The application's eligibility verdict. Omitted = owed iff VIP (legacy). */
-      p_hoodie_owed?: boolean;
     };
     Returns: DoorGoodieResult;
   };
@@ -124,6 +130,10 @@ type DoorFunctions = {
   door_badge_pickups: {
     Args: never;
     Returns: DoorBadgePickupRow[];
+  };
+  door_hoodie_verdicts: {
+    Args: never;
+    Returns: DoorHoodieVerdictRow[];
   };
   door_events_delete: {
     Args: { p_ids: string[] };

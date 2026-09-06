@@ -53,20 +53,6 @@ export interface HoodieTicketInput {
   hoodie_handed_at: string | null;
 }
 
-/** The ticket fields the eligibility rule actually reads — enough for one ticket at the door. */
-export type HoodieTicketClassifyInput = Pick<
-  HoodieTicketInput,
-  'amount_paid' | 'payment_type' | 'complimentary_reason' | 'upgrade_id' | 'upgraded_from'
->;
-
-/**
- * Whether one ticket earns a hoodie, and why or why not. `exclusion` is null for
- * the unremarkable case — a non-VIP ticket that was never in the running.
- */
-export type HoodieVerdict =
-  | { eligible: true; reason: HoodieReason }
-  | { eligible: false; exclusion: HoodieExclusion | null };
-
 export interface HoodieUpgradeInput {
   id: string;
   upgrade_mode: string;
