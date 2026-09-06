@@ -1,6 +1,3 @@
-export { ApparelSizes } from './ApparelSizes';
-export type { ApparelSizesProps } from './ApparelSizes';
-
 export { AttendeeIdentity } from './AttendeeIdentity';
 export type { AttendeeIdentityProps } from './AttendeeIdentity';
 
@@ -26,7 +23,11 @@ export { ManualAdmit } from './ManualAdmit';
 export type { ManualAdmitProps } from './ManualAdmit';
 
 export { GoodieStatus } from './GoodieStatus';
-export type { GoodieHandoverPayload, GoodieStatusProps } from './GoodieStatus';
+export type {
+  GoodieHandoverPayload,
+  GoodieStatusProps,
+  GoodieUndoPayload,
+} from './GoodieStatus';
 
 export { MyCheckIns } from './MyCheckIns';
 export type { MyCheckInsProps } from './MyCheckIns';

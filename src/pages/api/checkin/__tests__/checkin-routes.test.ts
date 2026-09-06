@@ -212,14 +212,28 @@ describe('the occasion is a validated staff choice', () => {
 
   // Free text can never reach the audit table: anything outside the enum is a
   // schema failure, not a fallback.
-  it('rejects an occasion outside the two known days with 400', async () => {
+  it('rejects an occasion outside the three known days with 400', async () => {
+    const { req, res, statusOf } = mockReqRes('POST', {
+      scannedId: UUID,
+      occasion: 'gala_day',
+    });
+    await checkInHandler(req, res);
+    expect(statusOf()).toBe(400);
+    expect(mocks.doorCheckIn).not.toHaveBeenCalled();
+  });
+
+  it('passes the warm-up meetup through — refusing it is the database function, not the API', async () => {
+    mocks.doorCheckIn.mockResolvedValue({
+      outcome: 'denied',
+      failureReason: 'community_day_badge_only',
+    });
     const { req, res, statusOf } = mockReqRes('POST', {
       scannedId: UUID,
       occasion: 'community_day',
     });
     await checkInHandler(req, res);
-    expect(statusOf()).toBe(400);
-    expect(mocks.doorCheckIn).not.toHaveBeenCalled();
+    expect(statusOf()).toBe(200);
+    expect(mocks.doorCheckIn.mock.calls[0][0].occasion).toBe('community_day');
   });
 
   it('omits the occasion when the client sends none, so the server clock decides', async () => {
@@ -390,7 +404,7 @@ describe('roster', () => {
       workshops: [],
       generatedAt: '2026-09-11T06:00:00.000Z',
     });
-    const { req, res } = mockReqRes('GET', {}, { occasion: 'community_day' });
+    const { req, res } = mockReqRes('GET', {}, { occasion: 'gala_day' });
     await rosterHandler(req, res);
     expect(mocks.buildDoorRoster).toHaveBeenCalledWith('conference_day');
   });

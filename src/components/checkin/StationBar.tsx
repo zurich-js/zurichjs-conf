@@ -1,5 +1,5 @@
 import React from 'react';
-import { CloudOff, LogOut, RefreshCw, Users } from 'lucide-react';
+import { ArrowLeft, CloudOff, LogOut, RefreshCw, Users } from 'lucide-react';
 import { DOOR_OCCASIONS, DOOR_OCCASION_LABELS, DOOR_ROLE_LABELS } from '@/lib/types/checkin';
 import type { DoorOccasion, DoorRole } from '@/lib/types/checkin';
 import { formatDoorTime } from '@/lib/checkin/panel-state';
@@ -17,6 +17,8 @@ export interface StationBarProps {
   pendingWrites: number;
   onRefreshRoster?: () => void;
   refreshing?: boolean;
+  /** Back to the start screen — ends scanning WITHOUT signing out. */
+  onExit?: () => void;
   onSignOut?: () => void;
   className?: string;
 }
@@ -47,12 +49,26 @@ export const StationBar: React.FC<StationBarProps> = ({
   pendingWrites,
   onRefreshRoster,
   refreshing = false,
+  onExit,
   onSignOut,
   className = '',
 }) => (
   <header
-    className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl bg-surface-card px-4 py-3 ${className}`}
+    className={`flex flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl bg-surface-card px-3 py-3 ${className}`}
   >
+    {onExit ? (
+      <button
+        type="button"
+        onClick={onExit}
+        // The way OUT of the scanner that is not sign-out: back to the start
+        // screen, keeping the session and any queued writes.
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-text-muted transition-colors hover:bg-surface-elevated hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+      >
+        <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+        <span className="sr-only">Back to the start screen</span>
+      </button>
+    ) : null}
+
     <div className="min-w-0 flex-1">
       {onOccasionChange ? (
         <label className="block">
