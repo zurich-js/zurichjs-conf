@@ -9,6 +9,8 @@
  * TypeScript counterpart to update.
  */
 
+import type { HoodieExclusion } from '@/lib/types/hoodies';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Occasions
 // ─────────────────────────────────────────────────────────────────────────────
@@ -224,8 +226,20 @@ export interface DoorGoodieState {
   note: string | null;
   /** When the t-shirt was physically handed over (null = not yet). */
   tshirtHandedAt: string | null;
-  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  /** When the hoodie was physically handed over (null = not yet). */
   hoodieHandedAt: string | null;
+  /**
+   * Whether a hoodie is actually owed. NOT the same as holding a VIP ticket: a
+   * complimentary VIP ticket or a free upgrade earns none, while a speaker on a
+   * standard ticket does. Mirrors the fulfilment allocation (src/lib/hoodies),
+   * so the door and the hoodie count can never disagree about one person.
+   */
+  hoodieEligible: boolean;
+  /**
+   * Why a VIP is NOT getting a hoodie, for the volunteer to explain. Null when
+   * eligible, and null for a non-VIP who was never in the running.
+   */
+  hoodieExclusion: HoodieExclusion | null;
 }
 
 export interface DoorApparel {

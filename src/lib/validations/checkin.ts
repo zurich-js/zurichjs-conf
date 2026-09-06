@@ -169,6 +169,27 @@ export const doorGoodieUndoSchema = z
 
 export type DoorGoodieUndoInput = z.infer<typeof doorGoodieUndoSchema>;
 
+/**
+ * A volunteer asking the core team for help, from the station.
+ *
+ * Both halves are optional because both cases are real: a known attendee (the
+ * server re-resolves `scannedId` itself, so the client's view of them is never
+ * trusted) and a code that matched nothing, where the raw payload is the only
+ * lead anyone has. `rawCode` is capped because a QR can carry kilobytes.
+ */
+export const doorHelpRequestSchema = z.object({
+  scannedId: z.string().uuid('Not a valid code').nullable().optional(),
+  rawCode: z.string().trim().max(300, 'Code is too long').nullable().optional(),
+  occasion: occasionSchema,
+  station: stationSchema,
+  /** Why the lookup path was taken, or anything the volunteer wants to add. */
+  note: z.string().trim().max(500, 'Note is too long').optional(),
+  /** Whether the attendee on screen was found by name rather than scanned. */
+  fromLookup: z.boolean().optional().default(false),
+});
+
+export type DoorHelpRequestInput = z.infer<typeof doorHelpRequestSchema>;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Staff management (admin panel)
 // ─────────────────────────────────────────────────────────────────────────────

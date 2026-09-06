@@ -98,6 +98,24 @@ export function useDoorScanner({ onScan, repeatMs = SCAN_REPEAT_MS }: UseDoorSca
     setActiveCameraId(null);
   }, []);
 
+  /** Pump frames from the live video into the detector, gated against repeats. */
+  const startLoop = useCallback(
+    (video: HTMLVideoElement, detector: DoorDetector) => {
+      loopRef.current?.stop();
+      loopRef.current = runScanLoop({
+        video,
+        detector,
+        intervalMs: SCAN_INTERVAL_MS,
+        onValue: (value) => {
+          if (gateRef.current.accept(value, performance.now())) {
+            onScanRef.current(value);
+          }
+        },
+      });
+    },
+    []
+  );
+
   const start = useCallback(
     async (deviceId?: string): Promise<void> => {
       // Unlock audio on the same gesture that opens the camera. Asking twice, or
@@ -147,16 +165,7 @@ export function useDoorScanner({ onScan, repeatMs = SCAN_REPEAT_MS }: UseDoorSca
         await video.play();
 
         gateRef.current = createScanGate(repeatMs);
-        loopRef.current = runScanLoop({
-          video,
-          detector,
-          intervalMs: SCAN_INTERVAL_MS,
-          onValue: (value) => {
-            if (gateRef.current.accept(value, performance.now())) {
-              onScanRef.current(value);
-            }
-          },
-        });
+        startLoop(video, detector);
 
         setTorchAvailable(hasTorch(stream));
         // What the browser ACTUALLY opened, so the picker can mark the live
@@ -179,8 +188,33 @@ export function useDoorScanner({ onScan, repeatMs = SCAN_REPEAT_MS }: UseDoorSca
         teardown();
       }
     },
-    [repeatMs, teardown]
+    [repeatMs, startLoop, teardown]
   );
+
+  /**
+   * Stop DECODING without releasing the camera.
+   *
+   * Used while an attendee is on screen: the viewport is collapsed, so there is
+   * nothing to aim at, and decoding frames nobody is looking at only burns the
+   * battery and risks re-reading the badge still in frame. The stream stays
+   * open — closing it would cost another permission handshake on the next
+   * person, which is the one thing this whole screen is built to avoid.
+   */
+  const pause = useCallback(() => {
+    loopRef.current?.stop();
+    loopRef.current = null;
+  }, []);
+
+  /** Resume decoding on the stream that was kept open. No-op when already running. */
+  const resume = useCallback(() => {
+    const video = videoRef.current;
+    const detector = detectorRef.current;
+    if (!video || !detector || !streamRef.current || loopRef.current) return;
+    // Some browsers pause a video whose box was collapsed. Harmless when it
+    // wasn't; without it the loop would decode a frozen frame forever.
+    if (video.paused) void video.play().catch(() => undefined);
+    startLoop(video, detector);
+  }, [startLoop]);
 
   const stop = useCallback(() => {
     teardown();
@@ -218,6 +252,8 @@ export function useDoorScanner({ onScan, repeatMs = SCAN_REPEAT_MS }: UseDoorSca
     usesWasm,
     start,
     stop,
+    pause,
+    resume,
     toggleTorch,
     clearGate,
   };

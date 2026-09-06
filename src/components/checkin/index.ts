@@ -13,6 +13,9 @@ export type { DoorNoticeProps, DoorNoticeTone } from './DoorNotice';
 export { DeskLookup } from './DeskLookup';
 export type { DeskLookupProps } from './DeskLookup';
 
+export { DoorHelpNotice } from './DoorHelpNotice';
+export type { DoorHelpNoticeProps, DoorHelpNoticeStatus } from './DoorHelpNotice';
+
 export { DoorNotFound } from './DoorNotFound';
 export type { DoorNotFoundProps } from './DoorNotFound';
 
@@ -40,6 +43,12 @@ export type { WorkshopSeatsProps } from './WorkshopSeats';
 
 export { ScannerViewport } from './ScannerViewport';
 export type { ScannerViewportProps } from './ScannerViewport';
+
+export { StationAccessState } from './StationAccessState';
+export type { StationAccessPhase, StationAccessStateProps } from './StationAccessState';
+
+export { StationQuickActions } from './StationQuickActions';
+export type { StationQuickActionsProps } from './StationQuickActions';
 
 export { StationBar } from './StationBar';
 export type { StationBarProps } from './StationBar';

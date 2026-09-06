@@ -154,3 +154,35 @@ export interface SpeakerLogisticsSubmittedData {
   dietaryRestrictions?: string | null
   adminUrl?: string
 }
+
+/** A door volunteer tapped Help. Everything the core team needs to walk over prepared. */
+export interface DoorHelpRequestedData {
+  staffName: string
+  staffEmail: string
+  staffRole: string
+  /** Human label of the day being worked, e.g. "Conference day" */
+  occasionLabel: string
+  station?: string | null
+  /**
+   * Null when the code matched nobody. Then `scannedId` / `rawCode` are the
+   * only leads and the message says so.
+   */
+  attendee: {
+    name: string
+    email: string | null
+    company: string | null
+    /** e.g. "VIP · conference · confirmed" */
+    ticketSummary: string
+    admissible: boolean
+    refusalReason: string | null
+    checkedInSummary: string
+    badgeSummary: string
+    goodieSummary: string
+    workshops: string[]
+    doorNote: string | null
+    fromLookup: boolean
+  } | null
+  scannedId: string | null
+  rawCode: string | null
+  note?: string | null
+}

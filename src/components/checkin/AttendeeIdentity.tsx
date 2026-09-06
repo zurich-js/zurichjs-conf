@@ -43,7 +43,10 @@ export const AttendeeIdentity: React.FC<AttendeeIdentityProps> = ({
 
   return (
     <div className={className}>
-      <h2 className="text-3xl font-bold leading-tight text-text-primary break-words sm:text-4xl">
+      {/* Still the largest text on the screen, but one step down from before:
+          at this type scale text-3xl is 60px, which broke ordinary surnames
+          mid-word on a phone and pushed the actions below the fold. */}
+      <h2 className="text-2xl font-bold leading-tight text-text-primary break-words sm:text-3xl">
         {fullName || 'Name not on this seat'}
       </h2>
 

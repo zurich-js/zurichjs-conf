@@ -69,7 +69,9 @@ export const StationBar: React.FC<StationBarProps> = ({
       </button>
     ) : null}
 
-    <div className="min-w-0 flex-1">
+    {/* A floor on the width, so on a narrow phone the unsent-count pill wraps
+        to a second line instead of squeezing the day picker to a sliver. */}
+    <div className="min-w-36 flex-1">
       {onOccasionChange ? (
         <label className="block">
           <span className="sr-only">Day being worked</span>

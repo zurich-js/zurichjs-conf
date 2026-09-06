@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildHoodieAllocation, classifyVipTicket } from '../allocation';
+import { buildHoodieAllocation, classifyTicketHoodie, classifyVipTicket } from '../allocation';
 import type { HoodieSpeakerInput, HoodieTicketInput, HoodieUpgradeInput } from '@/lib/types/hoodies';
 
 function speaker(overrides: Partial<HoodieSpeakerInput> = {}): HoodieSpeakerInput {
@@ -234,5 +234,51 @@ describe('buildHoodieAllocation', () => {
     expect(stats.with_size + stats.missing_size).toBe(stats.eligible);
     expect(stats.handed + stats.not_handed).toBe(stats.eligible);
     expect(Object.values(stats.size_counts).reduce((a, b) => a + b, 0)).toBe(stats.with_size);
+  });
+});
+
+describe('classifyTicketHoodie (one ticket, as the door sees it)', () => {
+  const none = new Map<string, HoodieUpgradeInput>();
+  const noSpeakers = new Set<string>();
+  const doorTicket = (overrides: Partial<HoodieTicketInput & { is_vip: boolean }> = {}) => ({
+    ...ticket(),
+    is_vip: true,
+    ...overrides,
+  });
+
+  it('a paid VIP ticket is eligible', () => {
+    expect(classifyTicketHoodie(doorTicket(), none, noSpeakers)).toEqual({
+      eligible: true,
+      reason: 'vip_ticket_paid',
+    });
+  });
+
+  it('a complimentary upgrade to VIP is NOT eligible, with the reason for the volunteer', () => {
+    const upgrades = new Map([['upg-1', upgrade({ upgrade_mode: 'complimentary' })]]);
+    expect(classifyTicketHoodie(doorTicket({ upgrade_id: 'upg-1' }), upgrades, noSpeakers)).toEqual({
+      eligible: false,
+      exclusion: 'complimentary_upgrade',
+    });
+  });
+
+  it('a standard ticket is simply not in the running — no exclusion to explain', () => {
+    expect(classifyTicketHoodie(doorTicket({ is_vip: false }), none, noSpeakers)).toEqual({
+      eligible: false,
+      exclusion: null,
+    });
+  });
+
+  it('a program speaker gets a hoodie on any ticket, matched case-insensitively', () => {
+    const speakers = new Set(['grace@example.com']);
+    expect(
+      classifyTicketHoodie(doorTicket({ is_vip: false, email: 'Grace@Example.com ' }), none, speakers)
+    ).toEqual({ eligible: true, reason: 'speaker' });
+  });
+
+  it('the speaker rule outranks a comp VIP exclusion', () => {
+    const speakers = new Set(['grace@example.com']);
+    expect(
+      classifyTicketHoodie(doorTicket({ amount_paid: 0, payment_type: 'complimentary' }), none, speakers)
+    ).toEqual({ eligible: true, reason: 'speaker' });
   });
 });

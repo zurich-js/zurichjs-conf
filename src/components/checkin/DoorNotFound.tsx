@@ -41,12 +41,14 @@ export const DoorNotFound: React.FC<DoorNotFoundProps> = ({
       </div>
     </div>
 
-    <div className="flex items-stretch gap-3">
+    {/* Wraps so Help drops below the lookup button on a narrow phone rather
+        than being pushed past the screen edge. */}
+    <div className="flex flex-wrap items-stretch gap-3">
       {canLookUp ? (
         <Button
           variant="primary"
           size="lg"
-          className="flex-1 whitespace-nowrap"
+          className="flex-1 basis-48 whitespace-nowrap"
           onClick={onOpenLookup}
         >
           Look up by name
@@ -56,8 +58,8 @@ export const DoorNotFound: React.FC<DoorNotFoundProps> = ({
         <Button
           variant="dark"
           size={canLookUp ? 'md' : 'lg'}
-          className={canLookUp ? 'shrink-0 whitespace-nowrap' : 'flex-1 whitespace-nowrap'}
-          aria-label="Get help from a door lead"
+          className={canLookUp ? 'shrink-0 whitespace-nowrap' : 'min-w-0 flex-1 whitespace-nowrap'}
+          aria-label="Get help from the core team"
           onClick={onEscalate}
         >
           Help

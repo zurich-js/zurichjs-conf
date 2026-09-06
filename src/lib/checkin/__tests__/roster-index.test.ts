@@ -31,6 +31,8 @@ function ticket(overrides: Partial<RosterTicket> = {}): RosterTicket {
     goodieNote: null,
     tshirtHandedAt: null,
     hoodieHandedAt: null,
+    hoodieEligible: false,
+    hoodieExclusion: null,
     badgePickedUpAt: null,
     doorNote: null,
     tshirtSize: 'L',
@@ -416,5 +418,26 @@ describe('buildRosterIndex() metadata', () => {
     expect(index.size).toBe(0);
     expect(index.searchable()).toEqual([]);
     expect(index.resolve(TICKET_A).found).toBe(false);
+  });
+});
+
+describe('hoodie eligibility rides along with the ticket', () => {
+  it('passes the server verdict through untouched', () => {
+    const index = buildRosterIndex(
+      roster({
+        tickets: [
+          ticket({ isVip: true, hoodieEligible: false, hoodieExclusion: 'complimentary_upgrade' }),
+        ],
+      })
+    );
+    const result = index.resolve(TICKET_A);
+    expect(isDoorResolveHit(result) && result.goodie.hoodieEligible).toBe(false);
+    expect(isDoorResolveHit(result) && result.goodie.hoodieExclusion).toBe('complimentary_upgrade');
+  });
+
+  it('a workshop-only seat is never owed a hoodie', () => {
+    const index = buildRosterIndex(roster({ tickets: [], registrations: [seat()] }));
+    const result = index.resolve(SEAT_B);
+    expect(isDoorResolveHit(result) && result.goodie.hoodieEligible).toBe(false);
   });
 });

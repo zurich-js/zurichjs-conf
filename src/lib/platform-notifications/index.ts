@@ -32,6 +32,7 @@ export type {
   TicketReassignedData,
   TicketCreationErrorData,
   SpeakerLogisticsSubmittedData,
+  DoorHelpRequestedData,
 } from './types'
 
 export {
@@ -49,4 +50,5 @@ export {
   notifyTicketReassigned,
   notifyTicketCreationError,
   notifySpeakerLogisticsSubmitted,
+  notifyDoorHelpRequested,
 } from './send'

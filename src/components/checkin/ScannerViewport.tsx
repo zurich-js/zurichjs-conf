@@ -17,6 +17,13 @@ export interface ScannerViewportProps {
   /** deviceId of the live stream, so the picker shows which lens is on. */
   activeCameraId?: string | null;
   onPickCamera?: (deviceId: string) => void;
+  /**
+   * Hide the camera while an attendee is on screen. The video element STAYS in
+   * the tree — collapsed to zero height, never `display: none`, because iOS
+   * pauses a hidden video and every browser drops the stream on unmount — so
+   * the next "Next attendee" tap brings the live picture straight back.
+   */
+  collapsed?: boolean;
   className?: string;
 }
 
@@ -43,10 +50,15 @@ export const ScannerViewport: React.FC<ScannerViewportProps> = ({
   cameras = [],
   activeCameraId = null,
   onPickCamera,
+  collapsed = false,
   className = '',
 }) => (
-  <div className={`space-y-3 ${className}`}>
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black">
+  <div className={collapsed ? className : `space-y-3 ${className}`} aria-hidden={collapsed || undefined}>
+    <div
+      className={`relative w-full overflow-hidden rounded-2xl bg-black ${
+        collapsed ? 'h-0' : 'aspect-[4/3]'
+      }`}
+    >
       <video
         ref={videoRef}
         // playsInline is set imperatively too; both are needed because iOS reads
@@ -61,7 +73,7 @@ export const ScannerViewport: React.FC<ScannerViewportProps> = ({
 
       {/* The aiming frame. Sized to where a held-up badge actually lands, which
           is nearer the middle than people expect. */}
-      {status === 'scanning' ? (
+      {status === 'scanning' && !collapsed ? (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 flex items-center justify-center"
@@ -96,7 +108,7 @@ export const ScannerViewport: React.FC<ScannerViewportProps> = ({
       ) : null}
     </div>
 
-    {status === 'scanning' ? (
+    {status === 'scanning' && !collapsed ? (
       <div className="flex flex-wrap items-center gap-2">
         {torchAvailable ? (
           <Button

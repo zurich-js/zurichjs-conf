@@ -63,15 +63,23 @@ const STATE_STYLES: Record<DoorState, string> = {
 };
 
 const STATE_LABELS: Record<DoorState, string> = {
-  admit: 'Verified — tap to check in',
+  admit: 'Verified',
   admitted: 'Checked in',
   already: 'Already checked in',
-  pickup: 'Verified — hand over badge',
+  pickup: 'Verified',
   picked_up: 'Badge already picked up',
   nothing_today: 'Nothing to record today',
   refused: 'Do not admit',
   unknown: 'Not in the roster',
 };
+
+/**
+ * The two "verified" states are deliberately QUIET. They are not the verdict —
+ * the check-in has not happened yet — and a loud green bar was being read as
+ * "done" and tapped, when the real action is the button under the name. So they
+ * render half-height, say one word, and point at the button.
+ */
+const COMPACT_STATES: ReadonlySet<DoorState> = new Set<DoorState>(['admit', 'pickup']);
 
 const STATE_ICONS: Record<DoorState, React.ComponentType<{ className?: string }>> = {
   admit: Check,
@@ -91,6 +99,8 @@ export const DoorStateBanner: React.FC<DoorStateBannerProps> = ({
 }) => {
   const { shouldAnimate } = useMotion();
   const Icon = STATE_ICONS[state];
+  const compact = COMPACT_STATES.has(state);
+  const iconClassName = compact ? 'h-5 w-5' : 'h-8 w-8';
 
   const content = (
     <>
@@ -104,19 +114,27 @@ export const DoorStateBanner: React.FC<DoorStateBannerProps> = ({
           transition={{ type: 'spring', stiffness: 500, damping: 22 }}
           className="shrink-0"
         >
-          <Icon className="h-8 w-8" aria-hidden="true" />
+          <Icon className={iconClassName} aria-hidden="true" />
         </motion.span>
       ) : (
-        <Icon className="h-8 w-8 shrink-0" aria-hidden="true" />
+        <Icon className={`${iconClassName} shrink-0`} aria-hidden="true" />
       )}
       <div className="min-w-0">
-        <p className="text-xl font-bold leading-tight">{STATE_LABELS[state]}</p>
-        {detail ? <p className="mt-0.5 text-sm font-medium opacity-90">{detail}</p> : null}
+        <p className={compact ? 'text-sm font-bold leading-tight' : 'text-xl font-bold leading-tight'}>
+          {STATE_LABELS[state]}
+        </p>
+        {detail ? (
+          <p className={compact ? 'text-xs font-medium opacity-90' : 'mt-0.5 text-sm font-medium opacity-90'}>
+            {detail}
+          </p>
+        ) : null}
       </div>
     </>
   );
 
-  const baseClassName = `flex items-center gap-4 rounded-2xl px-5 py-4 ${STATE_STYLES[state]} ${className}`;
+  const baseClassName = `flex items-center rounded-2xl ${
+    compact ? 'gap-3 px-4 py-2.5' : 'gap-4 px-5 py-4'
+  } ${STATE_STYLES[state]} ${className}`;
 
   if (!shouldAnimate) {
     return (

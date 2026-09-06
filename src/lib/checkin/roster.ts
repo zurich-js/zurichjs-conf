@@ -12,6 +12,8 @@
  * onto a volunteer's personal phone — measured at 1132 KB raw versus 249 KB for
  * this projection, and `tickets.metadata` alone is 29% of the difference. Hiding
  * a field in the UI would not help: the payload is what leaves the server.
+ * (`amount_paid` and `metadata` ARE read here — for the hoodie verdict — but
+ * only the boolean verdict is projected; the fields themselves stay server-side.)
  *
  * The four queries run concurrently because they are independent, and they are
  * separate keys on the client so a workshop sale can invalidate seats without
@@ -20,9 +22,12 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { getAdminSpeakersWithSubmissions } from '@/lib/cfp/admin';
+import { classifyTicketHoodie } from '@/lib/hoodies';
 import { doorBadgePickups } from './rpc';
 import type { Database } from '@/lib/types/database.generated';
 import type { DoorOccasion, DoorTicketStatus } from '@/lib/types/checkin';
+import type { HoodieExclusion, HoodieUpgradeInput } from '@/lib/types/hoodies';
 
 const log = logger.scope('Door Roster');
 
@@ -60,8 +65,18 @@ export interface RosterTicket {
   goodieNote: string | null;
   /** When the t-shirt was physically handed over (null = not yet). */
   tshirtHandedAt: string | null;
-  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  /** When the hoodie was physically handed over (null = not yet). */
   hoodieHandedAt: string | null;
+  /**
+   * Whether a hoodie is owed at all. Decided here, on the server, by the same
+   * rules as the fulfilment allocation (src/lib/hoodies): a complimentary VIP
+   * ticket or a free upgrade earns none, a speaker earns one on any ticket.
+   * The inputs (payment metadata, upgrade records, the speaker list) never
+   * leave the server — only the verdict does.
+   */
+  hoodieEligible: boolean;
+  /** Why a VIP gets no hoodie, for the volunteer to explain. Null otherwise. */
+  hoodieExclusion: HoodieExclusion | null;
   /** When the physical badge was handed over (early pickup included). */
   badgePickedUpAt: string | null;
   doorNote: string | null;
@@ -142,6 +157,9 @@ interface TicketRow {
   tshirt_handed_at: string | null;
   hoodie_handed_at: string | null;
   door_note: string | null;
+  /** Read server-side for the hoodie verdict only; never projected to the station. */
+  amount_paid: number;
+  metadata: unknown;
 }
 
 interface ApparelRow {
@@ -160,6 +178,45 @@ interface RegistrationRow {
   company: string | null;
   seat_index: number;
   checked_in_at: string | null;
+}
+
+/** One metadata field, or null — tickets.metadata is untyped JSON. */
+function readMetadataString(metadata: unknown, field: string): string | null {
+  if (typeof metadata !== 'object' || metadata === null) return null;
+  const value = (metadata as Record<string, unknown>)[field];
+  return typeof value === 'string' && value ? value : null;
+}
+
+/**
+ * The two inputs the hoodie rule needs beyond the ticket row itself.
+ *
+ * Loaded best-effort: if either fails, the roster still ships and every VIP
+ * reads as eligible (the pre-eligibility behaviour), because a door with no
+ * roster is a far worse outcome than a hoodie handed to a comp VIP. The failure
+ * is logged so it does not pass silently.
+ */
+async function loadHoodieInputs(
+  supabase: ReturnType<typeof createServiceRoleClient>
+): Promise<{ upgradesById: Map<string, HoodieUpgradeInput>; speakerEmails: Set<string> } | null> {
+  try {
+    const [speakers, upgrades] = await Promise.all([
+      getAdminSpeakersWithSubmissions('program'),
+      supabase
+        .from('ticket_upgrades')
+        .select('id, upgrade_mode, status, admin_note')
+        .eq('to_tier', 'vip'),
+    ]);
+    if (upgrades.error) throw new Error(upgrades.error.message);
+    return {
+      upgradesById: new Map(
+        ((upgrades.data ?? []) as HoodieUpgradeInput[]).map((upgrade) => [upgrade.id, upgrade])
+      ),
+      speakerEmails: new Set(speakers.map((speaker) => speaker.email.trim().toLowerCase())),
+    };
+  } catch (error) {
+    log.error('Hoodie eligibility inputs unavailable; treating every VIP as eligible', error);
+    return null;
+  }
 }
 
 interface WorkshopRow {
@@ -182,13 +239,13 @@ interface WorkshopRow {
 export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoster> {
   const supabase = createServiceRoleClient();
 
-  const [tickets, apparel, registrations, workshops, badgePickups] = await Promise.all([
+  const [tickets, apparel, registrations, workshops, badgePickups, hoodieInputs] = await Promise.all([
     fetchAllPages<TicketRow>(
       (from, to) =>
         supabase
           .from('tickets')
           .select(
-            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, tshirt_handed_at, hoodie_handed_at, door_note'
+            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, tshirt_handed_at, hoodie_handed_at, door_note, amount_paid, metadata'
           )
           .order('created_at', { ascending: true })
           .range(from, to),
@@ -226,6 +283,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
     // Badge pickup state lives in door_events, not on the subject rows, so it
     // ships as one (subjectId, pickedUpAt) aggregate and is merged here.
     doorBadgePickups(),
+    loadHoodieInputs(supabase),
   ]);
 
   const apparelByTicket = new Map(apparel.map((a) => [a.ticket_id, a]));
@@ -236,6 +294,22 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
     generatedAt: new Date().toISOString(),
     tickets: tickets.map((t) => {
       const sizes = apparelByTicket.get(t.id);
+      const isVip = t.ticket_category === 'vip';
+      const hoodie = hoodieInputs
+        ? classifyTicketHoodie(
+            {
+              email: t.email,
+              is_vip: isVip,
+              amount_paid: t.amount_paid,
+              payment_type: readMetadataString(t.metadata, 'paymentType'),
+              complimentary_reason: readMetadataString(t.metadata, 'complimentaryReason'),
+              upgrade_id: readMetadataString(t.metadata, 'upgrade_id'),
+              upgraded_from: readMetadataString(t.metadata, 'upgraded_from'),
+            },
+            hoodieInputs.upgradesById,
+            hoodieInputs.speakerEmails
+          )
+        : ({ eligible: isVip, exclusion: null } as const);
       return {
         id: t.id,
         firstName: t.first_name,
@@ -247,7 +321,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         ticketCategory: t.ticket_category,
         ticketStage: t.ticket_stage,
         status: t.status,
-        isVip: t.ticket_category === 'vip',
+        isVip,
         transferredFromName: t.transferred_from_name,
         transferredFromEmail: t.transferred_from_email,
         checkedInWorkshopDayAt: t.checked_in_workshop_day_at,
@@ -256,6 +330,8 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         goodieNote: t.goodie_note,
         tshirtHandedAt: t.tshirt_handed_at,
         hoodieHandedAt: t.hoodie_handed_at,
+        hoodieEligible: hoodie.eligible,
+        hoodieExclusion: hoodie.eligible ? null : hoodie.exclusion,
         badgePickedUpAt: badgeBySubject.get(t.id) ?? null,
         doorNote: t.door_note,
         tshirtSize: sizes?.tshirt_size ?? null,

@@ -16,22 +16,22 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
-import { ListChecks, Search } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/atoms';
 import {
   AttendeePanel,
   DeskLookup,
+  DoorHelpNotice,
   DoorNotFound,
-  DoorNotice,
   ManualAdmit,
   MyCheckIns,
   ScanFlash,
   ScannerViewport,
+  StationAccessState,
   StationBar,
   StationNotices,
+  StationQuickActions,
   StationStartGate,
 } from '@/components/checkin';
 import { useDoorSession } from '@/hooks/checkin/useDoorSession';
@@ -40,6 +40,7 @@ import { useDoorMutationQueue } from '@/hooks/checkin/useDoorMutationQueue';
 import { useDoorMyActivity } from '@/hooks/checkin/useDoorMyActivity';
 import { useDoorScanner } from '@/hooks/checkin/useDoorScanner';
 import { useDoorFeedback } from '@/hooks/checkin/useDoorFeedback';
+import { useDoorHelp } from '@/hooks/checkin/useDoorHelp';
 import { extractScannedId } from '@/lib/checkin/roster-index';
 import { DoorApiError } from '@/lib/checkin/api-fetch';
 import { disarmDoorAudio } from '@/lib/checkin/feedback';
@@ -59,6 +60,12 @@ import {
 interface ScanState {
   /** Null when the code carried no id we recognise. */
   subjectId: string | null;
+  /**
+   * What the camera actually read, kept for the help request: when a code
+   * matches nobody, the raw payload is the only lead the core team has. Null
+   * on the lookup path, where nothing was scanned.
+   */
+  raw: string | null;
   /** Bumped per scan so a repeat of the same badge still registers. */
   nonce: number;
 }
@@ -81,7 +88,6 @@ export default function DoorStationPage() {
   const [shiftStarted, setShiftStarted] = useState(false);
   const [scan, setScan] = useState<ScanState | null>(null);
   const [lastResult, setLastResult] = useState<DoorCheckInResult | null>(null);
-  const [escalating, setEscalating] = useState(false);
   const [lookupOpen, setLookupOpen] = useState(false);
   const [myListOpen, setMyListOpen] = useState(false);
   /**
@@ -98,6 +104,14 @@ export default function DoorStationPage() {
 
   // Sound and colour from one call, so they can never disagree.
   const { feedback, signal, clear: clearFeedback } = useDoorFeedback();
+
+  /**
+   * The Help button. It pings the core team on Slack with everything the
+   * station knows; the notice under the panel reports whether that actually
+   * landed, and tells the volunteer to find someone in person either way.
+   */
+  const help = useDoorHelp();
+  const resetHelp = help.reset;
 
   /**
    * Starts as soon as the session resolves — which is while the volunteer is
@@ -145,18 +159,35 @@ export default function DoorStationPage() {
 
   const myActivity = useDoorMyActivity({ occasion, enabled: myListOpen && shiftStarted });
 
-  const handleScan = useCallback((raw: string) => {
-    const subjectId = extractScannedId(raw);
-    setScan((previous) => ({ subjectId, nonce: (previous?.nonce ?? 0) + 1 }));
-    setLastResult(null);
-    setEscalating(false);
-    setFromLookup(false);
-    // A scan takes precedence over a half-typed search: the person in front of
-    // the volunteer just presented a badge.
-    setLookupOpen(false);
-  }, []);
+  const handleScan = useCallback(
+    (raw: string) => {
+      const subjectId = extractScannedId(raw);
+      setScan((previous) => ({ subjectId, raw, nonce: (previous?.nonce ?? 0) + 1 }));
+      setLastResult(null);
+      resetHelp();
+      setFromLookup(false);
+      // A scan takes precedence over a half-typed search: the person in front of
+      // the volunteer just presented a badge.
+      setLookupOpen(false);
+    },
+    [resetHelp]
+  );
 
   const scanner = useDoorScanner({ onScan: handleScan });
+
+  /**
+   * While an attendee is on screen the camera is collapsed and decoding stops;
+   * "Next attendee" brings both back. The stream itself is never released —
+   * that would cost another permission handshake per person. Keyed on the
+   * stable callbacks, not the scanner object, which is new every render.
+   */
+  const showingAttendee = scan !== null;
+  const { pause: pauseScanner, resume: resumeScanner, status: scannerStatus } = scanner;
+  useEffect(() => {
+    if (scannerStatus !== 'scanning') return;
+    if (showingAttendee) pauseScanner();
+    else resumeScanner();
+  }, [showingAttendee, scannerStatus, pauseScanner, resumeScanner]);
 
   // Dev-only seam so visual tests (Playwright) can inject a scan without a
   // camera. Dead code in production builds — NODE_ENV is inlined at build time.
@@ -260,12 +291,15 @@ export default function DoorStationPage() {
   /** Changing the day mid-shift re-keys the roster; the attendee on screen was
    *  resolved against the OLD day's flags, so it is dismissed rather than lied
    *  about. Queued writes keep the day they were taken for. */
-  const changeOccasion = useCallback((next: DoorOccasion) => {
-    setOccasionOverride(next);
-    setScan(null);
-    setLastResult(null);
-    setEscalating(false);
-  }, []);
+  const changeOccasion = useCallback(
+    (next: DoorOccasion) => {
+      setOccasionOverride(next);
+      setScan(null);
+      setLastResult(null);
+      resetHelp();
+    },
+    [resetHelp]
+  );
 
   const handleCheckIn = useCallback(() => {
     if (!scan?.subjectId) return;
@@ -359,27 +393,46 @@ export default function DoorStationPage() {
     [queue, scan?.subjectId, signal]
   );
 
-  const handleLookupSelect = useCallback((record: DoorSearchableRecord) => {
-    setScan((previous) => ({
-      subjectId: record.subjectId,
-      nonce: (previous?.nonce ?? 0) + 1,
-    }));
-    setLastResult(null);
-    setEscalating(false);
-    setFromLookup(true);
-    setLookupOpen(false);
-  }, []);
+  const handleLookupSelect = useCallback(
+    (record: DoorSearchableRecord) => {
+      setScan((previous) => ({
+        subjectId: record.subjectId,
+        raw: null,
+        nonce: (previous?.nonce ?? 0) + 1,
+      }));
+      setLastResult(null);
+      resetHelp();
+      setFromLookup(true);
+      setLookupOpen(false);
+    },
+    [resetHelp]
+  );
+
+  /**
+   * Ask the core team over. Sends whatever the station has: the subject id for
+   * a known attendee (the server re-resolves them), the raw code for an unknown
+   * one, and nothing at all when the volunteer just needs a person.
+   */
+  const requestHelp = useCallback(() => {
+    const current = scanRef.current;
+    help.request({
+      scannedId: current?.subjectId ?? null,
+      rawCode: current?.raw ?? null,
+      occasion,
+      fromLookup,
+    });
+  }, [help, occasion, fromLookup]);
 
   const dismiss = useCallback(() => {
     setScan(null);
     clearFeedback();
     setLastResult(null);
-    setEscalating(false);
+    resetHelp();
     setFromLookup(false);
     // The repeat gate is deliberately NOT reset. A badge still lingering in frame
     // would otherwise re-open the panel the instant it is dismissed; leaving the
     // window to expire means a re-scan is a deliberate act.
-  }, [clearFeedback]);
+  }, [clearFeedback, resetHelp]);
 
   /**
    * Back to the start screen WITHOUT signing out: the way to switch day (or
@@ -392,11 +445,11 @@ export default function DoorStationPage() {
     setScan(null);
     clearFeedback();
     setLastResult(null);
-    setEscalating(false);
+    resetHelp();
     setFromLookup(false);
     setLookupOpen(false);
     setMyListOpen(false);
-  }, [clearFeedback, scanner]);
+  }, [clearFeedback, resetHelp, scanner]);
 
   const signOut = useCallback(async () => {
     // Signing out drops the queue, and those check-ins would simply never have
@@ -428,72 +481,21 @@ export default function DoorStationPage() {
 
   const body = (() => {
     if (session.isError) {
-      if (needsSignIn) {
-        // The effect above is already redirecting; this is the frame before
-        // it lands, and a link in case the replace is blocked.
-        return (
-          <p className="py-16 text-center text-text-muted">
-            Taking you to{' '}
-            <Link href="/checkin/login" className="text-brand-primary underline">
-              sign-in
-            </Link>
-            …
-          </p>
-        );
-      }
-
-      if (sessionStatus === 403) {
-        // Signed in, but not on the crew (or revoked). Re-authenticating cannot
-        // fix this, so say what will.
-        return (
-          <div className="py-16">
-            <DoorNotice tone="warning" title="No door access on this account">
-              {session.error instanceof Error
-                ? session.error.message
-                : 'This account is not active door staff.'}{' '}
-              Ask a door lead to invite or re-enable you, or{' '}
-              <Link href="/checkin/login" className="text-brand-primary underline">
-                sign in with a different address
-              </Link>
-              .
-            </DoorNotice>
-          </div>
-        );
-      }
-
-      // A server or network failure. The volunteer is still signed in — offer a
-      // retry instead of silently bouncing them to the login page.
       return (
-        <div className="py-16">
-          <DoorNotice
-            tone="error"
-            title="Could not start the door session"
-            actionLabel="Try again"
-            onAction={() => void session.refetch()}
-          >
-            This is a problem on our side, not with your sign-in. Retry in a moment,
-            and wave a lead over if it keeps failing.
-          </DoorNotice>
-        </div>
+        <StationAccessState
+          phase={needsSignIn ? 'sign_in' : sessionStatus === 403 ? 'forbidden' : 'error'}
+          errorMessage={session.error instanceof Error ? session.error.message : null}
+          onRetry={() => void session.refetch()}
+        />
       );
     }
 
     if (session.isLoading) {
-      return (
-        <p className="py-16 text-center text-text-muted" aria-live="polite">
-          Checking your access…
-        </p>
-      );
+      return <StationAccessState phase="loading" />;
     }
 
     if (!staff || !occasion || !serverOccasion) {
-      // Reachable only if the session resolved to nothing without erroring.
-      // A blank screen at a door is the worst possible answer, so say something.
-      return (
-        <p className="py-16 text-center text-text-muted">
-          Could not read your door access. Reload, and ask a lead if it persists.
-        </p>
-      );
+      return <StationAccessState phase="empty" />;
     }
 
     if (!shiftStarted) {
@@ -542,10 +544,13 @@ export default function DoorStationPage() {
         />
 
         {/* Never unmounted while a shift runs: tearing down the video element
-            releases the camera and the next scan pays for a new handshake. */}
+            releases the camera and the next scan pays for a new handshake. It is
+            COLLAPSED while an attendee is on screen so their details are what the
+            volunteer sees; "Next attendee" brings the picture back. */}
         <ScannerViewport
           videoRef={scanner.videoRef}
           status={scanner.status}
+          collapsed={showingAttendee}
           failureMessage={scanner.failureMessage}
           onRetry={() => void scanner.start()}
           torchAvailable={scanner.torchAvailable}
@@ -556,35 +561,15 @@ export default function DoorStationPage() {
           onPickCamera={(deviceId) => void scanner.start(deviceId)}
         />
 
-        {/* A two-up grid, not flex: equal halves at every width, and nowrap
-            keeps each label on one line down to the narrowest phones. */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* Always reachable, not only after a failed scan: a lead working the
-              problem desk searches for people who never got as far as a badge. */}
-          {!lookupOpen && roleCan(staff.role, 'lookup') && roster.index ? (
-            <Button
-              variant="dark"
-              size="md"
-              className="min-h-12 whitespace-nowrap text-sm"
-              onClick={() => setLookupOpen(true)}
-            >
-              <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
-              Find by name
-            </Button>
-          ) : null}
-
-          {!myListOpen ? (
-            <Button
-              variant="dark"
-              size="md"
-              className="min-h-12 whitespace-nowrap text-sm"
-              onClick={() => setMyListOpen(true)}
-            >
-              <ListChecks className="h-4 w-4 shrink-0" aria-hidden="true" />
-              My check-ins
-            </Button>
-          ) : null}
-        </div>
+        {/* Hidden while an attendee is on screen so their details come first. */}
+        {!showingAttendee ? (
+          <StationQuickActions
+            showLookup={!lookupOpen && roleCan(staff.role, 'lookup') && roster.index !== null}
+            showMyList={!myListOpen}
+            onOpenLookup={() => setLookupOpen(true)}
+            onOpenMyList={() => setMyListOpen(true)}
+          />
+        ) : null}
 
         {myListOpen ? (
           <MyCheckIns
@@ -623,7 +608,7 @@ export default function DoorStationPage() {
               onUndoGoodie={handleUndoGoodie}
               onHandOverBadge={handleBadgePickup}
               onUndoBadge={handleUndoBadge}
-              onEscalate={() => setEscalating(true)}
+              onEscalate={help.status === 'idle' ? requestHelp : undefined}
             />
 
             {fromLookup &&
@@ -644,30 +629,17 @@ export default function DoorStationPage() {
           <DoorNotFound
             canLookUp={roleCan(staff.role, 'lookup')}
             onOpenLookup={() => setLookupOpen(true)}
-            onEscalate={() => setEscalating(true)}
+            onEscalate={help.status === 'idle' ? requestHelp : undefined}
           />
         ) : null}
 
-        {escalating ? (
-          <DoorNotice
-            tone="info"
-            title="Wave a door lead over in person — nothing is sent automatically"
-            actionLabel="Got it"
-            onAction={() => setEscalating(false)}
-          >
-            This button only shows this note. Find a door lead in the room: they can admit
-            someone without a working code, look people up with contact details, and settle
-            payment questions at the desk.
-            {scan?.subjectId ? (
-              <>
-                {' '}
-                Show them this screen, or read them this reference:{' '}
-                <span className="font-mono text-text-primary">{scan.subjectId.slice(0, 8)}</span>.
-              </>
-            ) : (
-              <> Show them this screen so they can pick up where you are.</>
-            )}
-          </DoorNotice>
+        {help.status !== 'idle' ? (
+          <DoorHelpNotice
+            // Narrowed by the guard above: idle renders nothing.
+            status={help.status as Exclude<typeof help.status, 'idle'>}
+            reference={help.reference ?? scan?.subjectId?.slice(0, 8) ?? null}
+            onDismiss={resetHelp}
+          />
         ) : null}
 
         {scan ? (
@@ -695,7 +667,10 @@ export default function DoorStationPage() {
           same signal as the beep, so the two can never disagree. */}
       <ScanFlash nonce={feedback?.nonce ?? 0} tone={feedback?.tone ?? null} />
 
-      <main className="min-h-screen bg-surface-page px-4 py-4">
+      {/* overflow-x-hidden is a backstop, not the fix: every row below is meant
+          to wrap. It guarantees a stray long token can never make the whole
+          station scroll sideways under a volunteer's thumb. */}
+      <main className="min-h-screen overflow-x-hidden bg-surface-page px-4 py-4">
         <div className="mx-auto w-full max-w-lg">{body}</div>
       </main>
     </>
