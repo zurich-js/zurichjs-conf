@@ -3,7 +3,7 @@ import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import type { SessionFeedbackFeedEntry } from '@/lib/feedback/types';
 import { formatFeedbackStamp, ratingTone } from './format';
 
-interface FeedbackFeedProps {
+export interface FeedbackFeedProps {
   entries: SessionFeedbackFeedEntry[];
   /** Title of the session the feed is filtered to, if any */
   filterTitle: string | null;
@@ -13,7 +13,7 @@ interface FeedbackFeedProps {
 }
 
 /** Five small stars with `rating` of them filled. */
-function StarRow({ rating }: { rating: number }) {
+function StarRow({ rating }: { rating: number }): React.JSX.Element {
   return (
     <span className={`inline-flex items-center gap-0.5 ${ratingTone(rating)}`} role="img" aria-label={`${rating} out of 5`}>
       {[1, 2, 3, 4, 5].map((step) => (
@@ -24,7 +24,7 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 /** Newest-first stream of individual ratings, as they arrive. */
-export function FeedbackFeed({ entries, filterTitle, onClearFilter, commentsOnly, onToggleCommentsOnly }: FeedbackFeedProps) {
+export function FeedbackFeed({ entries, filterTitle, onClearFilter, commentsOnly, onToggleCommentsOnly }: FeedbackFeedProps): React.JSX.Element {
   const visible = commentsOnly ? entries.filter((entry) => entry.comment) : entries;
 
   return (

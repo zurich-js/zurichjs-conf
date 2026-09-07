@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { MessageSquareText, Star, Presentation, RadioTower } from 'lucide-react';
 import type { AdminSessionFeedbackResponse } from '@/lib/feedback/types';
+import { formatFeedbackClock } from './format';
 
-interface FeedbackStatsBarProps {
+export interface FeedbackStatsBarProps {
   totals: AdminSessionFeedbackResponse['totals'];
   sessionCount: number;
   isLive: boolean;
@@ -9,7 +11,13 @@ interface FeedbackStatsBarProps {
 }
 
 /** Headline counts for the admin feedback page plus the polling status. */
-export function FeedbackStatsBar({ totals, sessionCount, isLive, lastUpdatedAt }: FeedbackStatsBarProps) {
+export function FeedbackStatsBar({ totals, sessionCount, isLive, lastUpdatedAt }: FeedbackStatsBarProps): React.JSX.Element {
+  // Formatted after render so no Date work happens during render.
+  const [updatedLabel, setUpdatedLabel] = useState<string | null>(null);
+  useEffect(() => {
+    setUpdatedLabel(lastUpdatedAt ? formatFeedbackClock(lastUpdatedAt) : null);
+  }, [lastUpdatedAt]);
+
   return (
     <div className="flex flex-wrap items-center gap-3 mb-6">
       <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -32,9 +40,7 @@ export function FeedbackStatsBar({ totals, sessionCount, isLive, lastUpdatedAt }
         <RadioTower className={`w-4 h-4 ${isLive ? 'text-green-600' : 'text-gray-400'}`} aria-hidden="true" />
         <span className="text-sm text-gray-600">
           {isLive ? 'Live · refreshing every 15s' : 'Paused'}
-          {lastUpdatedAt ? (
-            <span className="text-gray-400"> · updated {new Date(lastUpdatedAt).toLocaleTimeString('en-GB', { timeZone: 'Europe/Zurich', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-          ) : null}
+          {updatedLabel ? <span className="text-gray-400"> · updated {updatedLabel}</span> : null}
         </span>
       </div>
     </div>

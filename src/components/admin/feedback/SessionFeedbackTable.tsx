@@ -2,14 +2,14 @@ import { Star } from 'lucide-react';
 import type { SessionFeedbackSummary } from '@/lib/feedback/types';
 import { KIND_LABELS, formatScheduleStart, ratingTone } from './format';
 
-interface SessionFeedbackTableProps {
+export interface SessionFeedbackTableProps {
   sessions: SessionFeedbackSummary[];
   selectedItemId: string | null;
   onSelect: (scheduleItemId: string | null) => void;
 }
 
 /** Stacked bar of one-to-five-star counts; a flat grey track when there are none. */
-function DistributionBar({ distribution, total }: { distribution: SessionFeedbackSummary['distribution']; total: number }) {
+function DistributionBar({ distribution, total }: { distribution: SessionFeedbackSummary['distribution']; total: number }): React.JSX.Element {
   if (total === 0) {
     return <div className="h-2 w-full rounded-full bg-gray-100" aria-hidden="true" />;
   }
@@ -30,7 +30,7 @@ function DistributionBar({ distribution, total }: { distribution: SessionFeedbac
  * One row per rateable session in schedule order. Clicking a row filters the
  * comment feed to that session; clicking it again clears the filter.
  */
-export function SessionFeedbackTable({ sessions, selectedItemId, onSelect }: SessionFeedbackTableProps) {
+export function SessionFeedbackTable({ sessions, selectedItemId, onSelect }: SessionFeedbackTableProps): React.JSX.Element {
   let lastDate: string | null = null;
 
   return (

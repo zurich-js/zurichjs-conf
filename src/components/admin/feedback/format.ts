@@ -22,6 +22,22 @@ export function formatFeedbackTime(iso: string): string {
   }
 }
 
+const clockFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Zurich',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
+
+/** `HH:MM:SS` venue time of an epoch-ms timestamp, for the "last updated" label. */
+export function formatFeedbackClock(epochMs: number): string {
+  try {
+    return clockFormatter.format(new Date(epochMs));
+  } catch {
+    return '';
+  }
+}
+
 /** `Thu 14:05`-style stamp for the live feed. */
 export function formatFeedbackStamp(iso: string): string {
   try {
