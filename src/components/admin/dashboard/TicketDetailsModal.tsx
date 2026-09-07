@@ -43,6 +43,12 @@ const COUNTRIES = [
   'Venezuela', 'Vietnam', 'Zimbabwe',
 ];
 
+/** Read the server-provided filename so the download matches the emailed attachment. */
+const filenameFromResponse = (res: Response): string | null => {
+  const match = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '');
+  return match?.[1] ?? null;
+};
+
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleString('en-GB', {
@@ -80,6 +86,8 @@ export function TicketDetailsModal({
   const isComplimentary = isComplimentaryTicket(ticket);
 
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const { data: spendData, isLoading: spendLoading } = useTicketSpendBreakdown(ticket.id);
 
   // Country editing state
@@ -94,6 +102,31 @@ export function TicketDetailsModal({
     const search = countrySearch.toLowerCase();
     return COUNTRIES.filter(c => c.toLowerCase().includes(search));
   }, [countrySearch]);
+
+  const handleDownloadPdf = async () => {
+    setIsDownloadingPdf(true);
+    setPdfError(null);
+    try {
+      const res = await fetch(`/api/admin/tickets/${ticket.id}/pdf`);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? 'Failed to generate ticket PDF');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filenameFromResponse(res) ?? `ZurichJS_Conference_2026_Ticket_${ticket.id}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (error) {
+      setPdfError(error instanceof Error ? error.message : 'Failed to generate ticket PDF');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   const handleSaveCountry = async () => {
     if (!selectedCountry.trim()) return;
@@ -370,6 +403,15 @@ export function TicketDetailsModal({
               </ActionLink>
             )}
             <ActionButton onClick={onResend} color="indigo" icon="mail">Resend</ActionButton>
+            <ActionButton
+              onClick={handleDownloadPdf}
+              color="emerald"
+              icon="download"
+              disabled={isDownloadingPdf || !ticket.qr_code_url}
+              title={ticket.qr_code_url ? 'Download the ticket PDF that is emailed on purchase' : 'No QR code available for this ticket'}
+            >
+              {isDownloadingPdf ? 'Preparing...' : 'Ticket PDF'}
+            </ActionButton>
             <ActionButton onClick={() => setShowInvoiceModal(true)} color="teal" icon="invoice">Invoice</ActionButton>
             <ActionButton onClick={onReassign} color="purple" icon="reassign">Reassign</ActionButton>
             {ticket.status === 'confirmed' && ticket.ticket_category !== 'vip' && (
@@ -383,6 +425,9 @@ export function TicketDetailsModal({
             )}
             <ActionButton onClick={onDelete} color="red" icon="delete">Delete</ActionButton>
           </div>
+          {pdfError && (
+            <p role="alert" className="mt-3 text-sm text-red-600">{pdfError}</p>
+          )}
           <div className="mt-4 pt-4 border-t border-gray-200">
             <button onClick={onClose} className="w-full px-6 py-2.5 bg-gray-200 text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer">
               Close
@@ -434,6 +479,7 @@ const iconPaths: Record<string, string> = {
   cancel: 'M6 18L18 6M6 6l12 12',
   delete: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
   invoice: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  download: 'M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3',
 };
 
 const colorClasses: Record<string, string> = {
@@ -445,11 +491,12 @@ const colorClasses: Record<string, string> = {
   gray: 'border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200',
   red: 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100',
   teal: 'border-teal-300 text-teal-700 bg-teal-50 hover:bg-teal-100',
+  emerald: 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100',
 };
 
-function ActionButton({ onClick, color, icon, children }: { onClick: () => void; color: string; icon: string; children: React.ReactNode }) {
+function ActionButton({ onClick, color, icon, disabled, title, children }: { onClick: () => void; color: string; icon: string; disabled?: boolean; title?: string; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`flex items-center justify-center px-3 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer ${colorClasses[color]}`}>
+    <button onClick={onClick} disabled={disabled} title={title} className={`flex items-center justify-center px-3 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${colorClasses[color]}`}>
       <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPaths[icon]} />
       </svg>
