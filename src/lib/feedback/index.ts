@@ -12,3 +12,4 @@ export {
   resolveDefaultScheduleDay,
 } from './schedule-status';
 export { buildAdminFeedbackResponse, averageRating } from './aggregate';
+export { PREVIEW_CLOCK_PARAM, isClockPreviewAllowed, parsePreviewInstant, resolvePreviewInstant } from './preview-clock';

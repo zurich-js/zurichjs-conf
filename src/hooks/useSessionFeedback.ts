@@ -38,7 +38,7 @@ export class SessionFeedbackError extends Error {
   }
 }
 
-async function postFeedback(input: SubmitSessionFeedbackInput, clientId: string): Promise<void> {
+async function postFeedback(input: SubmitSessionFeedbackInput, clientId: string, previewAt: string | null): Promise<void> {
   const res = await fetch('/api/feedback/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -47,6 +47,8 @@ async function postFeedback(input: SubmitSessionFeedbackInput, clientId: string)
       clientId,
       rating: input.rating,
       comment: input.comment || undefined,
+      // Only honoured outside production — keeps a rehearsal consistent end to end.
+      previewAt: previewAt ?? undefined,
     }),
   });
 
@@ -62,7 +64,12 @@ async function postFeedback(input: SubmitSessionFeedbackInput, clientId: string)
   throw new SessionFeedbackError(body.error ?? 'Could not send your feedback. Please try again.', body.code);
 }
 
-export function useSessionFeedback() {
+export interface UseSessionFeedbackOptions {
+  /** Frozen clock for rehearsals; forwarded to the API. See `@/lib/feedback/preview-clock`. */
+  previewAt?: string | null;
+}
+
+export function useSessionFeedback({ previewAt = null }: UseSessionFeedbackOptions = {}) {
   const [submitted, setSubmitted] = useState<Record<string, StoredSessionFeedback>>({});
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -77,7 +84,7 @@ export function useSessionFeedback() {
       if (!clientId) {
         throw new SessionFeedbackError('Your browser is blocking storage, so feedback cannot be sent from here.');
       }
-      await postFeedback(input, clientId);
+      await postFeedback(input, clientId, previewAt);
       return input;
     },
     onMutate: (input) => {

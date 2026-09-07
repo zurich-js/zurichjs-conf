@@ -16,6 +16,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { resolvePreviewInstant } from '@/lib/feedback/preview-clock';
 import { getScheduleItemStatus, getZurichClock, isFeedbackOpen } from '@/lib/feedback/schedule-status';
 import { logger } from '@/lib/logger';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
@@ -58,7 +59,7 @@ export default async function handler(
     return;
   }
 
-  const { scheduleItemId, clientId, rating, comment } = parsed.data;
+  const { scheduleItemId, clientId, rating, comment, previewAt } = parsed.data;
 
   try {
     const supabase = createServiceRoleClient();
@@ -81,8 +82,9 @@ export default async function handler(
     }
 
     // Admins previewing the schedule may rate ahead of the clock; everyone
-    // else waits until the session has actually started.
-    const clock = getZurichClock(new Date());
+    // else waits until the session has actually started. Outside production a
+    // rehearsal instant may stand in for "now" (no-op on the live site).
+    const clock = getZurichClock(resolvePreviewInstant(previewAt) ?? new Date());
     const { authorized: isAdmin } = verifyAdminAccess(req);
     if (!isAdmin && !isFeedbackOpen(item, clock)) {
       const status = getScheduleItemStatus(item, clock);

@@ -17,6 +17,8 @@ export const sessionFeedbackSchema = z.object({
     .max(2000, 'Comments are limited to 2000 characters')
     .optional()
     .transform((value) => (value ? value : undefined)),
+  /** Rehearsal clock; ignored on production. See `@/lib/feedback/preview-clock`. */
+  previewAt: z.string().datetime({ offset: true }).optional(),
 });
 
 export type SessionFeedbackPayload = z.infer<typeof sessionFeedbackSchema>;

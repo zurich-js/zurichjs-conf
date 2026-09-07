@@ -75,6 +75,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
 
@@ -120,6 +121,24 @@ describe('POST /api/feedback/session', () => {
     vi.setSystemTime(new Date('2026-09-11T06:59:00.000Z'));
     mocks.verifyAdminAccess.mockReturnValue({ authorized: true, isBot: false, botClient: null });
     expect((await call(validBody)).status).toBe(201);
+  });
+
+  it('honours a rehearsal instant outside production', async () => {
+    vi.setSystemTime(new Date('2026-09-01T10:00:00.000Z'));
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    expect((await call({ ...validBody, previewAt: '2026-09-11T07:30:00Z' })).status).toBe(201);
+  });
+
+  it('ignores the rehearsal instant on production', async () => {
+    vi.setSystemTime(new Date('2026-09-01T10:00:00.000Z'));
+    vi.stubEnv('VERCEL_ENV', 'production');
+    const result = await call({ ...validBody, previewAt: '2026-09-11T07:30:00Z' });
+    expect(result.status).toBe(403);
+    expect(result.body.code).toBe('NOT_OPEN');
+  });
+
+  it('rejects a malformed rehearsal instant', async () => {
+    expect((await call({ ...validBody, previewAt: 'tomorrow' })).status).toBe(400);
   });
 
   it('refuses feedback once the window after the conference has closed', async () => {
