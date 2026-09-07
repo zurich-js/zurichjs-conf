@@ -34,7 +34,7 @@ function item(overrides: Partial<ProgramScheduleItemRecord> & { id: string }): P
   };
 }
 
-function row(overrides: Partial<SessionFeedbackRow> & { id: string; schedule_item_id: string }): SessionFeedbackRow {
+function row(overrides: Partial<SessionFeedbackRow> & { id: string; schedule_item_id: string | null }): SessionFeedbackRow {
   return { session_id: null, rating: 5, comment: null, created_at: '2026-09-11T08:00:00.000Z', ...overrides };
 }
 
@@ -56,6 +56,7 @@ describe('buildAdminFeedbackResponse', () => {
     row({ id: 'r1', schedule_item_id: 'early', rating: 5, created_at: '2026-09-11T07:50:00.000Z' }),
     row({ id: 'r2', schedule_item_id: 'early', rating: 2, comment: 'Too fast', created_at: '2026-09-11T07:55:00.000Z' }),
     row({ id: 'r3', schedule_item_id: 'gone', rating: 4, created_at: '2026-09-11T07:58:00.000Z' }),
+    row({ id: 'r4', schedule_item_id: null, rating: 1, comment: 'Slot was deleted', created_at: '2026-09-11T07:59:00.000Z' }),
   ];
 
   const result = buildAdminFeedbackResponse(items, rows);
@@ -83,13 +84,14 @@ describe('buildAdminFeedbackResponse', () => {
     expect(workshop.speakers).toEqual([]);
   });
 
-  it('feeds entries newest first and labels orphaned rows', () => {
-    expect(result.entries.map((e) => e.id)).toEqual(['r3', 'r2', 'r1']);
+  it('feeds entries newest first and labels orphaned rows (unknown or deleted slot)', () => {
+    expect(result.entries.map((e) => e.id)).toEqual(['r4', 'r3', 'r2', 'r1']);
     expect(result.entries[0].sessionTitle).toBe('Removed session');
-    expect(result.entries[1].sessionTitle).toBe('Talk early');
+    expect(result.entries[1].sessionTitle).toBe('Removed session');
+    expect(result.entries[2].sessionTitle).toBe('Talk early');
   });
 
   it('totals across every row, including orphans', () => {
-    expect(result.totals).toEqual({ responses: 3, averageRating: 3.7, sessionsWithFeedback: 1 });
+    expect(result.totals).toEqual({ responses: 4, averageRating: 3, sessionsWithFeedback: 1 });
   });
 });

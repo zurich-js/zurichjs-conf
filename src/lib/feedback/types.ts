@@ -36,16 +36,21 @@ export interface SessionFeedbackInput {
   comment?: string;
 }
 
-/** What the browser keeps after a successful submission. */
+/**
+ * What the browser keeps after a submission. `rating` is null when the server
+ * reported the browser had already rated this session (a 409) and the
+ * original rating is unknown here.
+ */
 export interface StoredSessionFeedback {
-  rating: number;
+  rating: number | null;
   comment: string | null;
   submittedAt: string;
 }
 
 export interface SessionFeedbackRow {
   id: string;
-  schedule_item_id: string;
+  /** Null once the schedule item has been deleted — the row is kept as an audit trail */
+  schedule_item_id: string | null;
   session_id: string | null;
   rating: number;
   comment: string | null;

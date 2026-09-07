@@ -13,14 +13,18 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.session_feedback (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  schedule_item_id UUID NOT NULL REFERENCES public.program_schedule_items(id) ON DELETE CASCADE,
-  -- Denormalised so feedback survives a schedule item being re-pointed at a
-  -- different session (or the item being removed and recreated).
+  -- Both references are SET NULL on delete: feedback is an audit trail and
+  -- must outlive schedule edits. session_id is denormalised so a rating still
+  -- points at the talk even after its slot is deleted or re-pointed. Orphaned
+  -- rows surface in the admin feed as "Removed session".
+  schedule_item_id UUID REFERENCES public.program_schedule_items(id) ON DELETE SET NULL,
   session_id UUID REFERENCES public.program_sessions(id) ON DELETE SET NULL,
   client_id TEXT NOT NULL CHECK (char_length(client_id) BETWEEN 8 AND 64),
   rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment TEXT CHECK (comment IS NULL OR char_length(comment) <= 2000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- NULL schedule_item_id (orphaned rows) is exempt from uniqueness, as
+  -- Postgres treats NULLs as distinct.
   CONSTRAINT session_feedback_one_per_client UNIQUE (schedule_item_id, client_id)
 );
 

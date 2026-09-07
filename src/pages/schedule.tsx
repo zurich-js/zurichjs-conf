@@ -20,9 +20,10 @@ import {
   isEventDay,
   isFeedbackOpen,
   resolveDefaultScheduleDay,
+  secondsUntilZurichMidnight,
 } from '@/lib/feedback/schedule-status';
 import { PREVIEW_CLOCK_PARAM, resolvePreviewInstant } from '@/lib/feedback/preview-clock';
-import type { ScheduleDayParam } from '@/lib/feedback/types';
+import type { ScheduleDayParam, ZurichClock } from '@/lib/feedback/types';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
@@ -72,7 +73,7 @@ export default function SchedulePage({ items, initialDay, previewAt }: ScheduleP
   // the server-rendered schedule is time-neutral and the live badge + forms
   // appear on the client. Ticks every 30s so "Live now" moves with the day.
   const clock = useZurichClock(previewAt);
-  const { submitted, submit, pendingItemId, errors } = useSessionFeedback({ previewAt });
+  const { submitted, submit, pendingItemIds, errors } = useSessionFeedback({ previewAt });
   const activeTab = scheduleDayParamToTab[dayParam];
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
   // Workshop offerings so workshop rows show their price + add-to-cart chip
@@ -115,7 +116,7 @@ export default function SchedulePage({ items, initialDay, previewAt }: ScheduleP
         <SessionFeedbackForm
           subject={FEEDBACK_SUBJECTS[sessionKind]}
           submitted={submitted[item.id] ?? null}
-          isSubmitting={pendingItemId === item.id}
+          isSubmitting={pendingItemIds.has(item.id)}
           errorMessage={errors[item.id] ?? null}
           onSubmit={({ rating, comment }) =>
             submit({
@@ -273,20 +274,22 @@ export default function SchedulePage({ items, initialDay, previewAt }: ScheduleP
   );
 }
 
+function scheduleCacheControl(clock: ZurichClock): string {
+  const untilMidnight = secondsUntilZurichMidnight(clock);
+  const [maxAge, swr] = isEventDay(clock) ? [300, 600] : [86400, 604800];
+  const cappedMaxAge = Math.min(maxAge, untilMidnight);
+  const cappedSwr = Math.min(swr, Math.max(0, untilMidnight - cappedMaxAge));
+  return `public, s-maxage=${cappedMaxAge}, stale-while-revalidate=${cappedSwr}`;
+}
+
 export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async (ctx) => {
   const previewInstant = resolvePreviewInstant(ctx.query[PREVIEW_CLOCK_PARAM]);
   const clock = getZurichClock(previewInstant ?? new Date());
-  // The default tab flips with the calendar, so around the event the CDN copy
-  // must not outlive the day it was rendered on. A rehearsal render is never
-  // cached at all.
-  ctx.res.setHeader(
-    'Cache-Control',
-    previewInstant
-      ? 'private, no-store, max-age=0'
-      : isEventDay(clock)
-        ? 'public, s-maxage=300, stale-while-revalidate=600'
-        : 'public, s-maxage=86400, stale-while-revalidate=604800'
-  );
+  // The default tab flips with the venue calendar, so no CDN copy — fresh or
+  // stale-while-revalidate — may outlive the day it was rendered on. Around the
+  // event the schedule itself changes too, so lifetimes shrink further. A
+  // rehearsal render is never cached at all.
+  ctx.res.setHeader('Cache-Control', previewInstant ? 'private, no-store, max-age=0' : scheduleCacheControl(clock));
 
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();

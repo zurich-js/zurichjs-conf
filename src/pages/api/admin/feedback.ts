@@ -44,13 +44,13 @@ export default async function handler(
     ]);
 
     if (scheduleError) {
-      log.error('Failed to load schedule for feedback overview', new Error(scheduleError));
+      log.error('Failed to load schedule for feedback overview', new Error(scheduleError), { operation: 'load_schedule' });
       res.status(500).json({ error: 'Failed to load schedule' });
       return;
     }
 
     if (feedbackResult.error) {
-      log.error('Failed to load session feedback', feedbackResult.error);
+      log.error('Failed to load session feedback', feedbackResult.error, { operation: 'load_session_feedback' });
       res.status(500).json({ error: 'Failed to load feedback' });
       return;
     }
@@ -58,7 +58,7 @@ export default async function handler(
     const rows: SessionFeedbackRow[] = feedbackResult.data ?? [];
     res.status(200).json(buildAdminFeedbackResponse(items, rows));
   } catch (err) {
-    log.error('Unexpected error building feedback overview', err);
+    log.error('Unexpected error building feedback overview', err, { operation: 'build_feedback_overview' });
     res.status(500).json({ error: 'Internal server error' });
   }
 }

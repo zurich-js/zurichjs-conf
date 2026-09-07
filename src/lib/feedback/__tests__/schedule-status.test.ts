@@ -9,6 +9,7 @@ import {
   isFeedbackOpen,
   parseClockMinutes,
   resolveDefaultScheduleDay,
+  secondsUntilZurichMidnight,
 } from '../schedule-status';
 
 const talk = { date: '2026-09-11', start_time: '09:00:00', duration_minutes: 45 };
@@ -92,5 +93,16 @@ describe('isEventDay', () => {
     expect(isEventDay({ date: '2026-09-10', minutesOfDay: 0 })).toBe(true);
     expect(isEventDay({ date: FEEDBACK_CLOSE_DATE, minutesOfDay: 0 })).toBe(true);
     expect(isEventDay({ date: addDays(FEEDBACK_CLOSE_DATE, 1), minutesOfDay: 0 })).toBe(false);
+  });
+});
+
+describe('secondsUntilZurichMidnight', () => {
+  it('counts down to venue midnight with a minute of headroom', () => {
+    expect(secondsUntilZurichMidnight({ date: '2026-09-09', minutesOfDay: 0 })).toBe((24 * 60 - 1) * 60);
+    expect(secondsUntilZurichMidnight({ date: '2026-09-09', minutesOfDay: 23 * 60 + 30 })).toBe(29 * 60);
+  });
+
+  it('never drops below one minute', () => {
+    expect(secondsUntilZurichMidnight({ date: '2026-09-09', minutesOfDay: 23 * 60 + 59 })).toBe(60);
   });
 });

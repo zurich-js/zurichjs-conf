@@ -46,9 +46,11 @@ export function SessionFeedbackForm({
       >
         <p className="inline-flex items-center gap-2 text-sm font-semibold text-brand-black">
           <CheckCircle2 className="size-4 text-brand-green" aria-hidden="true" />
-          Thanks for your feedback on this {subject}!
+          {submitted.rating === null
+            ? `You've already rated this ${subject} from this browser.`
+            : `Thanks for your feedback on this ${subject}!`}
         </p>
-        <StarRating value={submitted.rating} readOnly size="sm" label="Your rating" />
+        {submitted.rating !== null ? <StarRating value={submitted.rating} readOnly size="sm" label="Your rating" /> : null}
       </div>
     );
   }

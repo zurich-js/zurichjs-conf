@@ -6,7 +6,6 @@
  */
 
 import { useMemo, useState } from 'react';
-import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, MessageSquareText } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -15,6 +14,7 @@ import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { FeedbackFeed, FeedbackStatsBar, SessionFeedbackTable } from '@/components/admin/feedback';
+import { SEO } from '@/components/SEO';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { adminFetch } from '@/lib/admin/api-fetch';
 import { adminKeys } from '@/lib/admin/query-keys';
@@ -50,9 +50,7 @@ export default function AdminFeedbackPage() {
 
   return (
     <AdminQueryProvider>
-      <Head>
-        <title>Session Feedback | ZurichJS Admin</title>
-      </Head>
+      <SEO title="Session Feedback | Admin" description="Attendee ratings and comments as they come in." noindex />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <AdminHeader title="Session Feedback" subtitle="Attendee ratings as they come in" onLogout={logout} />
 

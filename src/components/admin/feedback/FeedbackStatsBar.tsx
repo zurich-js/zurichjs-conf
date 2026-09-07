@@ -12,23 +12,23 @@ export function FeedbackStatsBar({ totals, sessionCount, isLive, lastUpdatedAt }
   return (
     <div className="flex flex-wrap items-center gap-3 mb-6">
       <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-        <MessageSquareText className="w-4 h-4 text-blue-600" />
+        <MessageSquareText className="w-4 h-4 text-blue-600" aria-hidden="true" />
         <span className="text-sm font-medium text-black">{totals.responses} responses</span>
       </div>
       <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-        <Star className="w-4 h-4 text-amber-500" />
+        <Star className="w-4 h-4 text-amber-500" aria-hidden="true" />
         <span className="text-sm font-medium text-black">
           {totals.averageRating === null ? 'No ratings yet' : `${totals.averageRating.toFixed(1)} average`}
         </span>
       </div>
       <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-        <Presentation className="w-4 h-4 text-gray-500" />
+        <Presentation className="w-4 h-4 text-gray-500" aria-hidden="true" />
         <span className="text-sm font-medium text-black">
           {totals.sessionsWithFeedback} of {sessionCount} sessions rated
         </span>
       </div>
       <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm ml-auto">
-        <RadioTower className={`w-4 h-4 ${isLive ? 'text-green-600' : 'text-gray-400'}`} />
+        <RadioTower className={`w-4 h-4 ${isLive ? 'text-green-600' : 'text-gray-400'}`} aria-hidden="true" />
         <span className="text-sm text-gray-600">
           {isLive ? 'Live · refreshing every 15s' : 'Paused'}
           {lastUpdatedAt ? (

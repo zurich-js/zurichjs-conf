@@ -9,10 +9,13 @@
  *    the form.
  *
  * Both are conveniences, not identity. Every access is wrapped because storage
- * can throw under strict privacy settings; callers get `null` / `{}` and the
- * page keeps working.
+ * can throw under strict privacy settings; when it does, the client id falls
+ * back to a page-scoped in-memory value so feedback can still be sent, and
+ * the submission map falls back to `{}` (the hook's state carries it for the
+ * rest of the page visit).
  */
 
+import { z } from 'zod';
 import type { StoredSessionFeedback } from './types';
 
 export const FEEDBACK_CLIENT_ID_KEY = 'zurichjs_feedback_client_id';
@@ -42,26 +45,40 @@ function randomClientId(): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** Returns this browser's feedback client id, creating it on first use. */
-export function getOrCreateFeedbackClientId(): string | null {
-  const store = getStore();
-  if (!store) return null;
-  try {
-    const existing = store.getItem(FEEDBACK_CLIENT_ID_KEY);
-    if (existing && existing.length >= 8 && existing.length <= 64) return existing;
-    const created = randomClientId();
-    store.setItem(FEEDBACK_CLIENT_ID_KEY, created);
-    return created;
-  } catch {
-    return null;
-  }
+/** Used when storage is unavailable: lives as long as the page does. */
+let memoryClientId: string | null = null;
+
+function isPlausibleClientId(value: string | null): value is string {
+  return typeof value === 'string' && value.length >= 8 && value.length <= 64;
 }
 
-function isStoredFeedback(value: unknown): value is StoredSessionFeedback {
-  if (typeof value !== 'object' || value === null) return false;
-  const candidate = value as Record<string, unknown>;
-  return typeof candidate.rating === 'number' && typeof candidate.submittedAt === 'string';
+/**
+ * Returns this browser's feedback client id, creating it on first use. Falls
+ * back to a page-scoped id when storage is blocked, so a private window can
+ * still submit (it just cannot remember having done so after a reload).
+ */
+export function getOrCreateFeedbackClientId(): string {
+  const store = getStore();
+  if (store) {
+    try {
+      const existing = store.getItem(FEEDBACK_CLIENT_ID_KEY);
+      if (isPlausibleClientId(existing)) return existing;
+      const created = randomClientId();
+      store.setItem(FEEDBACK_CLIENT_ID_KEY, created);
+      return created;
+    } catch {
+      /* fall through to the in-memory id */
+    }
+  }
+  memoryClientId ??= randomClientId();
+  return memoryClientId;
 }
+
+const storedFeedbackSchema = z.object({
+  rating: z.number().int().min(1).max(5).nullable(),
+  comment: z.string().nullable().optional(),
+  submittedAt: z.string(),
+});
 
 /** Every submission this browser has made, keyed by schedule item id. */
 export function readSubmittedFeedback(): SubmissionMap {
@@ -74,8 +91,9 @@ export function readSubmittedFeedback(): SubmissionMap {
     if (typeof parsed !== 'object' || parsed === null) return {};
     const result: SubmissionMap = {};
     for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (isStoredFeedback(value)) {
-        result[key] = { rating: value.rating, comment: value.comment ?? null, submittedAt: value.submittedAt };
+      const entry = storedFeedbackSchema.safeParse(value);
+      if (entry.success) {
+        result[key] = { rating: entry.data.rating, comment: entry.data.comment ?? null, submittedAt: entry.data.submittedAt };
       }
     }
     return result;

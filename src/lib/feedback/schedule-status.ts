@@ -91,6 +91,16 @@ export function resolveDefaultScheduleDay(clock: ZurichClock): ScheduleDayParam 
   return 'community';
 }
 
+/**
+ * Seconds from the given venue time until the next venue midnight, floored to
+ * a minute of headroom. Cache lifetimes that depend on "which day is it" must
+ * never outlive the day they were computed on.
+ */
+export function secondsUntilZurichMidnight(clock: ZurichClock): number {
+  const remainingMinutes = 24 * 60 - clock.minutesOfDay;
+  return Math.max(60, (remainingMinutes - 1) * 60);
+}
+
 /** True on the days the schedule content is changing under people's feet. */
 export function isEventDay(clock: ZurichClock): boolean {
   return clock.date >= WORKSHOP_DAY_DATE && clock.date <= FEEDBACK_CLOSE_DATE;

@@ -46,6 +46,7 @@ export function buildAdminFeedbackResponse(
 ): AdminSessionFeedbackResponse {
   const rowsByItem = new Map<string, SessionFeedbackRow[]>();
   for (const row of rows) {
+    if (!row.schedule_item_id) continue;
     const bucket = rowsByItem.get(row.schedule_item_id);
     if (bucket) bucket.push(row);
     else rowsByItem.set(row.schedule_item_id, [row]);
@@ -79,7 +80,10 @@ export function buildAdminFeedbackResponse(
   const titleByItem = new Map(sessions.map((summary) => [summary.scheduleItemId, summary.title]));
   const entries: SessionFeedbackFeedEntry[] = [...rows]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .map((row) => ({ ...row, sessionTitle: titleByItem.get(row.schedule_item_id) ?? 'Removed session' }));
+    .map((row) => ({
+      ...row,
+      sessionTitle: (row.schedule_item_id ? titleByItem.get(row.schedule_item_id) : undefined) ?? 'Removed session',
+    }));
 
   return {
     sessions,
