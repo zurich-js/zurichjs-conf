@@ -450,6 +450,58 @@ export const speakerGuide: InfoPage = {
     {
       type: "heading",
       level: "h3",
+      content: "Food & Coffee",
+    },
+    {
+      type: "paragraph",
+      content: "A few local favourites near the venue to get you started:",
+    },
+    {
+      type: "groupedList",
+      groups: [
+        {
+          heading: "Bakery, Coffee &amp; Ice Cream",
+          items: [
+            "<a href='https://babus.ch/' target='_blank' rel='noopener noreferrer'>Babu's</a> — bakery",
+            "<a href='https://www.mame.coffee/' target='_blank' rel='noopener noreferrer'>Mame</a> — coffee",
+            "<a href='https://mirocoffee.co/' target='_blank' rel='noopener noreferrer'>Miro</a> — coffee",
+            "<a href='https://collectivebakery.ch/' target='_blank' rel='noopener noreferrer'>Collective Bakery</a> — bakery &amp; coffee",
+            "Steiner Bäckerei-Konditorei — bakery",
+            "<a href='https://www.ahoi-ladencafe.ch/' target='_blank' rel='noopener noreferrer'>AHOI! Ladencafé</a> — café",
+            "<a href='https://gelateriadiberna.ch/en/' target='_blank' rel='noopener noreferrer'>Gelateria di Berna</a> — ice cream",
+          ],
+        },
+        {
+          heading: "Restaurants near the venue",
+          items: [
+            "<a href='https://naanu.ch/en/' target='_blank' rel='noopener noreferrer'>naanu</a> — Nepalese",
+            "<a href='https://www.spoonthaikitchen.ch/hardturm' target='_blank' rel='noopener noreferrer'>Spoon Hardturm</a> — Thai",
+            "<a href='https://burger-meister.ch/' target='_blank' rel='noopener noreferrer'>Burgermeister Escherwyss</a> — burgers",
+            "<a href='https://buny.ch/' target='_blank' rel='noopener noreferrer'>Buny Burgers and Fries</a> — burgers",
+            "<a href='https://www.kai-sushi-schiffbau.ch/' target='_blank' rel='noopener noreferrer'>Kai Sushi Schiffbau</a> — sushi",
+            "<a href='https://www.danoi.ch/' target='_blank' rel='noopener noreferrer'>DA NOI</a> — Italian",
+            "<a href='https://www.brisket.ch/' target='_blank' rel='noopener noreferrer'>Brisket Southern BBQ &amp; Bar</a> — barbecue",
+            "<a href='https://www.kitchen-republic.ch/en/home' target='_blank' rel='noopener noreferrer'>Kitchen Republic</a> — food hall, mixed cuisines",
+            "<a href='https://www.mar-mar.ch/' target='_blank' rel='noopener noreferrer'>marmar cuisine orientale</a> — Lebanese",
+            "<a href='https://ooki.tokyo/start' target='_blank' rel='noopener noreferrer'>Ooki</a> — Japanese",
+            "<a href='https://kaisin.ch/en/locations/' target='_blank' rel='noopener noreferrer'>kaisin. hardbrücke</a> — poke bowls",
+            "<a href='https://rootsandfriends.com/' target='_blank' rel='noopener noreferrer'>Roots</a> — vegetarian/vegan",
+            "<a href='https://www.fraugerold.ch/home' target='_blank' rel='noopener noreferrer'>Frau Gerolds Garten</a> — garden restaurant &amp; bar",
+          ],
+        },
+        {
+          heading: "Practical (supermarket &amp; pharmacy)",
+          items: [
+            "<a href='https://www.migrolino.ch/' target='_blank' rel='noopener noreferrer'>migrolino shop</a> — supermarket",
+            "<a href='https://www.coop.ch/en/locations/coop-supermarkt-prime-2/5240_POS' target='_blank' rel='noopener noreferrer'>Coop Supermarkt Prime 2</a> — supermarket",
+            "<a href='https://www.amavita.ch/de/apotheke-finden/amavita-apotheke-hardbrucke' target='_blank' rel='noopener noreferrer'>Amavita Apotheke Hardbrücke</a> — pharmacy",
+          ],
+        },
+      ],
+    },
+    {
+      type: "heading",
+      level: "h3",
       content: "Local Practicalities",
     },
     {
