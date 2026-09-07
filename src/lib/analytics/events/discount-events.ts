@@ -75,6 +75,8 @@ export interface DiscountEligibilityCheckedEvent {
   event: 'discount_eligibility_checked';
   properties: BaseEventProperties & {
     was_eligible: boolean;
+    /** Popup suppressed because the offer window closed (conference day onwards) */
+    is_offer_window_closed?: boolean;
     /** Popup permanently suppressed because this browser bought a ticket */
     is_known_ticket_holder?: boolean;
     /** Popup permanently suppressed via an admin-issued corporate access link */
