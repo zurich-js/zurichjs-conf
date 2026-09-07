@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ProgramScheduleItemRecord } from '@/lib/types/program-schedule';
 import { averageRating, buildAdminFeedbackResponse } from '../aggregate';
-import type { SessionFeedbackRow } from '../types';
+import type { SessionFeedbackRow } from '@/lib/types/session-feedback';
 
 function item(overrides: Partial<ProgramScheduleItemRecord> & { id: string }): ProgramScheduleItemRecord {
   return {

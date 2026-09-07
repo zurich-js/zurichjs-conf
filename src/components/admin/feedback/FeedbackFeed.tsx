@@ -1,6 +1,6 @@
 import { MessageSquareText, Star, X } from 'lucide-react';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
-import type { SessionFeedbackFeedEntry } from '@/lib/feedback/types';
+import type { SessionFeedbackFeedEntry } from '@/lib/types/session-feedback';
 import { formatFeedbackStamp, ratingTone } from './format';
 
 export interface FeedbackFeedProps {

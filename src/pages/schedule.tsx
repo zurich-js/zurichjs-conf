@@ -23,7 +23,7 @@ import {
   secondsUntilZurichMidnight,
 } from '@/lib/feedback/schedule-status';
 import { PREVIEW_CLOCK_PARAM, resolvePreviewInstant } from '@/lib/feedback/preview-clock';
-import type { ScheduleDayParam, ZurichClock } from '@/lib/feedback/types';
+import type { ScheduleDayParam, ZurichClock } from '@/lib/types/session-feedback';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
@@ -62,7 +62,7 @@ const scheduleTabToDayParam: Record<(typeof publicProgramTabs)[number]['id'], (t
   conference: 'conf',
 };
 
-export default function SchedulePage({ items, initialDay, previewAt }: SchedulePageProps) {
+export default function SchedulePage({ items, initialDay, previewAt }: SchedulePageProps): React.JSX.Element {
   // URL-driven via nuqs so tab flips don't emit router events (and phantom
   // $pageview captures), matching the workshops page pattern.
   const [dayParam, setDayParam] = useQueryState(

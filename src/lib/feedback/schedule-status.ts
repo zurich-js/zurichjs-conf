@@ -9,7 +9,7 @@
  */
 
 import { publicProgramTabs } from '@/data/public-program';
-import type { ScheduleDayParam, ScheduleItemLiveStatus, ScheduleTiming, ZurichClock } from './types';
+import type { ScheduleDayParam, ScheduleItemLiveStatus, ScheduleTiming, ZurichClock } from '@/lib/types/session-feedback';
 
 const VENUE_TIMEZONE = 'Europe/Zurich';
 
@@ -93,13 +93,14 @@ export function resolveDefaultScheduleDay(clock: ZurichClock): ScheduleDayParam 
 }
 
 /**
- * Seconds from the given venue time until the next venue midnight, floored to
- * a minute of headroom. Cache lifetimes that depend on "which day is it" must
- * never outlive the day they were computed on.
+ * Seconds from the given venue time until the next venue midnight, less a
+ * minute of headroom because the clock only has minute precision. Zero in
+ * the final minute of the day. Cache lifetimes that depend on "which day is
+ * it" must never outlive the day they were computed on.
  */
 export function secondsUntilZurichMidnight(clock: ZurichClock): number {
   const remainingMinutes = 24 * 60 - clock.minutesOfDay;
-  return Math.max(60, (remainingMinutes - 1) * 60);
+  return Math.max(0, (remainingMinutes - 1) * 60);
 }
 
 /** True on the days the schedule content is changing under people's feet. */

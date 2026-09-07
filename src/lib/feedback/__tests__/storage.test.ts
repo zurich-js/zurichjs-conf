@@ -73,6 +73,16 @@ describe('feedback storage', () => {
     const first = getOrCreateFeedbackClientId();
     expect(first.length).toBeGreaterThanOrEqual(8);
     expect(getOrCreateFeedbackClientId()).toBe(first);
-    expect(readSubmittedFeedback()).toEqual({});
+  });
+
+  it('keeps every submission of the visit in memory when storage is unavailable', () => {
+    vi.stubGlobal('window', {
+      get localStorage(): Storage {
+        throw new Error('blocked');
+      },
+    });
+    markFeedbackSubmitted('a', { rating: 5, comment: null, submittedAt: '2026-09-11T08:00:00.000Z' });
+    markFeedbackSubmitted('b', { rating: 3, comment: null, submittedAt: '2026-09-11T09:00:00.000Z' });
+    expect(Object.keys(readSubmittedFeedback()).sort()).toEqual(['a', 'b']);
   });
 });

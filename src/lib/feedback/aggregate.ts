@@ -8,7 +8,7 @@ import type {
   SessionFeedbackFeedEntry,
   SessionFeedbackRow,
   SessionFeedbackSummary,
-} from './types';
+} from '@/lib/types/session-feedback';
 
 /** Round to one decimal place for display. */
 function roundToTenth(value: number): number {

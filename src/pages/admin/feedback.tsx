@@ -18,7 +18,7 @@ import { SEO } from '@/components/SEO';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { adminFetch } from '@/lib/admin/api-fetch';
 import { adminKeys } from '@/lib/admin/query-keys';
-import type { AdminSessionFeedbackResponse } from '@/lib/feedback/types';
+import type { AdminSessionFeedbackResponse } from '@/lib/types/session-feedback';
 
 const REFRESH_MS = 15_000;
 

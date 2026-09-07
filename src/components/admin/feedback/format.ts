@@ -1,4 +1,4 @@
-import type { SessionFeedbackSummary } from '@/lib/feedback/types';
+import type { SessionFeedbackSummary } from '@/lib/types/session-feedback';
 
 const timeFormatter = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/Zurich',

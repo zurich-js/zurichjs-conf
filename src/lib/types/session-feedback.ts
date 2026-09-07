@@ -36,6 +36,16 @@ export interface SessionFeedbackInput {
   comment?: string;
 }
 
+/** What a schedule card hands the feedback hook when the visitor submits. */
+export interface SubmitSessionFeedbackInput {
+  scheduleItemId: string;
+  sessionId: string | null;
+  sessionKind: 'talk' | 'workshop' | 'panel' | null;
+  sessionStatus: 'live' | 'past';
+  rating: number;
+  comment: string;
+}
+
 /**
  * What the browser keeps after a submission. `rating` is null when the server
  * reported the browser had already rated this session (a 409) and the

@@ -11,7 +11,7 @@
 
 import { useEffect, useState } from 'react';
 import { getZurichClock } from '@/lib/feedback/schedule-status';
-import type { ZurichClock } from '@/lib/feedback/types';
+import type { ZurichClock } from '@/lib/types/session-feedback';
 
 const TICK_MS = 30_000;
 

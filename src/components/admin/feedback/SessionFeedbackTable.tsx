@@ -1,5 +1,5 @@
 import { Star } from 'lucide-react';
-import type { SessionFeedbackSummary } from '@/lib/feedback/types';
+import type { SessionFeedbackSummary } from '@/lib/types/session-feedback';
 import { KIND_LABELS, formatScheduleStart, ratingTone } from './format';
 
 export interface SessionFeedbackTableProps {

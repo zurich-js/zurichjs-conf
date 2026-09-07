@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/atoms';
-import type { StoredSessionFeedback } from '@/lib/feedback/types';
+import type { StoredSessionFeedback } from '@/lib/types/session-feedback';
 import { cn } from '@/lib/utils';
 import { StarRating } from './StarRating';
 
@@ -32,7 +32,7 @@ export function SessionFeedbackForm({
   isSubmitting = false,
   errorMessage,
   className,
-}: SessionFeedbackFormProps) {
+}: SessionFeedbackFormProps): React.JSX.Element {
   const fieldId = useId();
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState('');

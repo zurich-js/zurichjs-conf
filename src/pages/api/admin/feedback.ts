@@ -8,7 +8,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { buildAdminFeedbackResponse } from '@/lib/feedback/aggregate';
-import type { AdminSessionFeedbackResponse, SessionFeedbackRow } from '@/lib/feedback/types';
+import type { AdminSessionFeedbackResponse, SessionFeedbackRow } from '@/lib/types/session-feedback';
 import { logger } from '@/lib/logger';
 import { getAdminScheduleRows } from '@/lib/program/schedule';
 import { createServiceRoleClient } from '@/lib/supabase';

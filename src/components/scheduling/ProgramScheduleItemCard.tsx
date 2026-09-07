@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ScheduleItemLiveStatus } from '@/lib/feedback/types';
+import type { ScheduleItemLiveStatus } from '@/lib/types/session-feedback';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 import { BreakCard } from './BreakCard';

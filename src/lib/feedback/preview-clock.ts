@@ -9,7 +9,24 @@
  * ignored everywhere, so nobody can open a form early by editing the URL.
  */
 
+import { z } from 'zod';
+
 export const PREVIEW_CLOCK_PARAM = 'at';
+
+/**
+ * The `at` query value: a single string (the first value wins if repeated)
+ * that `Date` can parse into a plausible instant. Anything else is rejected so
+ * the page quietly falls back to the real clock.
+ */
+const previewInstantSchema = z
+  .union([z.string(), z.array(z.string()).nonempty()])
+  .transform((value) => (Array.isArray(value) ? value[0] : value).trim())
+  .pipe(z.string().min(1))
+  .pipe(z.coerce.date())
+  .refine((date) => {
+    const year = date.getUTCFullYear();
+    return year >= 2020 && year <= 2100;
+  });
 
 /** True on local dev and Vercel preview deployments, false on production. */
 export function isClockPreviewAllowed(): boolean {
@@ -17,19 +34,10 @@ export function isClockPreviewAllowed(): boolean {
   return vercelEnv !== 'production';
 }
 
-/**
- * Parse a user-supplied instant. Accepts any string `Date` understands, as
- * long as it lands in a plausible year — anything else yields null so the
- * page quietly falls back to the real clock.
- */
+/** Parse a user-supplied instant, or null when it isn't one. */
 export function parsePreviewInstant(value: unknown): Date | null {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (typeof raw !== 'string' || raw.trim() === '') return null;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return null;
-  const year = parsed.getUTCFullYear();
-  if (year < 2020 || year > 2100) return null;
-  return parsed;
+  const result = previewInstantSchema.safeParse(value);
+  return result.success ? result.data : null;
 }
 
 /** Resolve the instant to render for, honouring the override only where allowed. */

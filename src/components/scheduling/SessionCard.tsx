@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { BellPlus, CalendarPlus, Share2, Users } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Button } from '@/components/atoms';
-import type { ScheduleItemLiveStatus } from '@/lib/feedback/types';
+import type { ScheduleItemLiveStatus } from '@/lib/types/session-feedback';
 import type { PublicSession } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';

@@ -102,7 +102,8 @@ describe('secondsUntilZurichMidnight', () => {
     expect(secondsUntilZurichMidnight({ date: '2026-09-09', minutesOfDay: 23 * 60 + 30 })).toBe(29 * 60);
   });
 
-  it('never drops below one minute', () => {
-    expect(secondsUntilZurichMidnight({ date: '2026-09-09', minutesOfDay: 23 * 60 + 59 })).toBe(60);
+  it('is zero in the final minute so nothing is cached across the boundary', () => {
+    expect(secondsUntilZurichMidnight({ date: '2026-09-09', minutesOfDay: 23 * 60 + 59 })).toBe(0);
+    expect(secondsUntilZurichMidnight({ date: '2026-09-09', minutesOfDay: 23 * 60 + 58 })).toBe(60);
   });
 });

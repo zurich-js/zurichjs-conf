@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MessageSquareText, Star, Presentation, RadioTower } from 'lucide-react';
-import type { AdminSessionFeedbackResponse } from '@/lib/feedback/types';
+import type { AdminSessionFeedbackResponse } from '@/lib/types/session-feedback';
 import { formatFeedbackClock } from './format';
 
 export interface FeedbackStatsBarProps {
