@@ -160,6 +160,13 @@ export type {
   SpeakerGuideHowItWorksOpenedEvent,
 } from './speaker-guide-events';
 
+// Attendee info events
+export type {
+  AttendeeInfoAudienceChangedEvent,
+  AttendeeInfoTocClickedEvent,
+  AttendeeInfoQuicklinkClickedEvent,
+} from './attendee-info-events';
+
 // Import all event types for the union
 import type { PageViewedEvent, UserIdentifiedEvent } from './base';
 import type {
@@ -267,6 +274,11 @@ import type {
   SpeakerGuideChatResetEvent,
   SpeakerGuideHowItWorksOpenedEvent,
 } from './speaker-guide-events';
+import type {
+  AttendeeInfoAudienceChangedEvent,
+  AttendeeInfoTocClickedEvent,
+  AttendeeInfoQuicklinkClickedEvent,
+} from './attendee-info-events';
 
 /**
  * Union of all possible analytics events.
@@ -361,7 +373,10 @@ export type AnalyticsEvent =
   | SpeakerGuideQuestionAskedEvent
   | SpeakerGuideAnswerSourceClickedEvent
   | SpeakerGuideChatResetEvent
-  | SpeakerGuideHowItWorksOpenedEvent;
+  | SpeakerGuideHowItWorksOpenedEvent
+  | AttendeeInfoAudienceChangedEvent
+  | AttendeeInfoTocClickedEvent
+  | AttendeeInfoQuicklinkClickedEvent;
 
 /**
  * Extract event name from AnalyticsEvent
