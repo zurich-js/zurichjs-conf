@@ -36,6 +36,7 @@ interface SessionFeedbackResponse {
   issues?: unknown;
 }
 
+/** POST /api/feedback/session — validate, gate on the venue clock, insert once per browser. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SessionFeedbackResponse>

@@ -8,6 +8,7 @@ interface SessionFeedbackTableProps {
   onSelect: (scheduleItemId: string | null) => void;
 }
 
+/** Stacked bar of one-to-five-star counts; a flat grey track when there are none. */
 function DistributionBar({ distribution, total }: { distribution: SessionFeedbackSummary['distribution']; total: number }) {
   if (total === 0) {
     return <div className="h-2 w-full rounded-full bg-gray-100" aria-hidden="true" />;

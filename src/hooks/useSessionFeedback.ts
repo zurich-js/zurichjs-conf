@@ -42,6 +42,7 @@ export class SessionFeedbackError extends Error {
   }
 }
 
+/** POST one rating; resolves with whether it was stored or already existed, throws on any other failure. */
 async function postFeedback(
   input: SubmitSessionFeedbackInput,
   clientId: string,
@@ -77,6 +78,7 @@ export interface UseSessionFeedbackOptions {
   previewAt?: string | null;
 }
 
+/** Submitted-feedback map, per-item pending state, inline errors and the `submit` action for schedule cards. */
 export function useSessionFeedback({ previewAt = null }: UseSessionFeedbackOptions = {}) {
   const [submitted, setSubmitted] = useState<Record<string, StoredSessionFeedback>>({});
   // Several cards can be in flight at once (rate a talk, scroll, rate another),

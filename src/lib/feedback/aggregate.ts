@@ -10,16 +10,19 @@ import type {
   SessionFeedbackSummary,
 } from './types';
 
+/** Round to one decimal place for display. */
 function roundToTenth(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
+/** Mean rating to one decimal, or null when there is nothing to average. */
 export function averageRating(rows: Pick<SessionFeedbackRow, 'rating'>[]): number | null {
   if (rows.length === 0) return null;
   const sum = rows.reduce((total, row) => total + row.rating, 0);
   return roundToTenth(sum / rows.length);
 }
 
+/** Speaker display names in billing order, skipping entries with no name. */
 function speakerNames(item: ProgramScheduleItemRecord): string[] {
   const speakers = item.program_session?.speakers ?? [];
   return [...speakers]
@@ -28,6 +31,7 @@ function speakerNames(item: ProgramScheduleItemRecord): string[] {
     .filter((name) => name.length > 0);
 }
 
+/** Collapse program kinds to the three the feedback UI distinguishes (keynotes count as talks). */
 function sessionKind(item: ProgramScheduleItemRecord): SessionFeedbackSummary['kind'] {
   const kind = item.program_session?.kind;
   if (kind === 'workshop' || kind === 'panel') return kind;

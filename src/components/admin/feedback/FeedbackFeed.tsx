@@ -12,6 +12,7 @@ interface FeedbackFeedProps {
   onToggleCommentsOnly: (next: boolean) => void;
 }
 
+/** Five small stars with `rating` of them filled. */
 function StarRow({ rating }: { rating: number }) {
   return (
     <span className={`inline-flex items-center gap-0.5 ${ratingTone(rating)}`} role="img" aria-label={`${rating} out of 5`}>

@@ -23,6 +23,7 @@ export const FEEDBACK_SUBMISSIONS_KEY = 'zurichjs_session_feedback_v1';
 
 type SubmissionMap = Record<string, StoredSessionFeedback>;
 
+/** localStorage, or null on the server / when access throws. */
 function getStore(): Storage | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -32,6 +33,7 @@ function getStore(): Storage | null {
   }
 }
 
+/** Opaque random id: UUID where available, 16 random bytes as hex otherwise. */
 function randomClientId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -48,6 +50,7 @@ function randomClientId(): string {
 /** Used when storage is unavailable: lives as long as the page does. */
 let memoryClientId: string | null = null;
 
+/** Matches the length bounds the API enforces on `clientId`. */
 function isPlausibleClientId(value: string | null): value is string {
   return typeof value === 'string' && value.length >= 8 && value.length <= 64;
 }

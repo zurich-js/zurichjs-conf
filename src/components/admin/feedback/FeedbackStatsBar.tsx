@@ -8,6 +8,7 @@ interface FeedbackStatsBarProps {
   lastUpdatedAt: number | null;
 }
 
+/** Headline counts for the admin feedback page plus the polling status. */
 export function FeedbackStatsBar({ totals, sessionCount, isLive, lastUpdatedAt }: FeedbackStatsBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 mb-6">

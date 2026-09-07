@@ -22,6 +22,7 @@ import type { AdminSessionFeedbackResponse } from '@/lib/feedback/types';
 
 const REFRESH_MS = 15_000;
 
+/** Admin-only page polling the feedback overview and rendering stats, per-session table and live feed. */
 export default function AdminFeedbackPage() {
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);

@@ -15,6 +15,7 @@ import { createServiceRoleClient } from '@/lib/supabase';
 
 const log = logger.scope('Admin Feedback API');
 
+/** GET /api/admin/feedback — admin-only rolled-up feedback overview. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<AdminSessionFeedbackResponse | { error: string }>

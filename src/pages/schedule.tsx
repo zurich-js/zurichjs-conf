@@ -104,6 +104,7 @@ export default function SchedulePage({ items, initialDay, previewAt }: ScheduleP
     return undefined;
   };
 
+  /** Live status + feedback form for session cards once the venue clock is known. */
   const getFeedbackProps = (item: PublicProgramScheduleItem) => {
     if (!clock || item.type !== 'session' || !item.session || !item.session_kind) return {};
     const liveStatus = getScheduleItemStatus(item, clock);
@@ -274,6 +275,7 @@ export default function SchedulePage({ items, initialDay, previewAt }: ScheduleP
   );
 }
 
+/** Cache-Control for the public schedule, never outliving the venue day it was rendered on. */
 function scheduleCacheControl(clock: ZurichClock): string {
   const untilMidnight = secondsUntilZurichMidnight(clock);
   const [maxAge, swr] = isEventDay(clock) ? [300, 600] : [86400, 604800];

@@ -59,6 +59,7 @@ export function addDays(date: string, days: number): string {
 
 export const FEEDBACK_CLOSE_DATE = addDays(CONFERENCE_DAY_DATE, FEEDBACK_GRACE_DAYS);
 
+/** Classify a schedule item as upcoming, live or past against the venue clock. */
 export function getScheduleItemStatus(item: ScheduleTiming, clock: ZurichClock): ScheduleItemLiveStatus {
   if (item.date < clock.date) return 'past';
   if (item.date > clock.date) return 'upcoming';

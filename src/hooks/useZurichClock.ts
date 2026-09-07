@@ -15,6 +15,7 @@ import type { ZurichClock } from '@/lib/feedback/types';
 
 const TICK_MS = 30_000;
 
+/** Current venue clock, or null before mount. Frozen at `previewAt` when given. */
 export function useZurichClock(previewAt: string | null = null): ZurichClock | null {
   const [clock, setClock] = useState<ZurichClock | null>(null);
 
