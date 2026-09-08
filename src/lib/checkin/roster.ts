@@ -20,9 +20,10 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import { doorBadgePickups } from './rpc';
+import { doorBadgePickups, doorHoodieVerdicts } from './rpc';
 import type { Database } from '@/lib/types/database.generated';
 import type { DoorOccasion, DoorTicketStatus } from '@/lib/types/checkin';
+import type { HoodieExclusion } from '@/lib/types/hoodies';
 
 const log = logger.scope('Door Roster');
 
@@ -60,8 +61,17 @@ export interface RosterTicket {
   goodieNote: string | null;
   /** When the t-shirt was physically handed over (null = not yet). */
   tshirtHandedAt: string | null;
-  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  /** When the hoodie was physically handed over (null = not yet). */
   hoodieHandedAt: string | null;
+  /**
+   * Whether a hoodie is owed at all. Decided in the database
+   * (door_hoodie_exclusion) by the same rules as the fulfilment allocation:
+   * a complimentary VIP ticket or a free upgrade earns none, a speaker earns
+   * one on any ticket. Only the verdict reaches the station.
+   */
+  hoodieEligible: boolean;
+  /** Why a VIP gets no hoodie, for the volunteer to explain. Null otherwise. */
+  hoodieExclusion: HoodieExclusion | null;
   /** When the physical badge was handed over (early pickup included). */
   badgePickedUpAt: string | null;
   doorNote: string | null;
@@ -182,7 +192,7 @@ interface WorkshopRow {
 export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoster> {
   const supabase = createServiceRoleClient();
 
-  const [tickets, apparel, registrations, workshops, badgePickups] = await Promise.all([
+  const [tickets, apparel, registrations, workshops, badgePickups, hoodieVerdicts] = await Promise.all([
     fetchAllPages<TicketRow>(
       (from, to) =>
         supabase
@@ -226,16 +236,22 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
     // Badge pickup state lives in door_events, not on the subject rows, so it
     // ships as one (subjectId, pickedUpAt) aggregate and is merged here.
     doorBadgePickups(),
+    // Hoodie verdicts are decided in SQL, where the handover decides them too,
+    // and arrive as one small (ticketId, exclusion) set. A ticket with no row
+    // was never in the running: no hoodie, nothing to explain.
+    doorHoodieVerdicts(),
   ]);
 
   const apparelByTicket = new Map(apparel.map((a) => [a.ticket_id, a]));
   const badgeBySubject = new Map(badgePickups.map((b) => [b.subjectId, b.pickedUpAt]));
+  const hoodieByTicket = new Map(hoodieVerdicts.map((v) => [v.ticketId, v.exclusion]));
 
   return {
     occasion,
     generatedAt: new Date().toISOString(),
     tickets: tickets.map((t) => {
       const sizes = apparelByTicket.get(t.id);
+      const hoodie = hoodieByTicket.get(t.id);
       return {
         id: t.id,
         firstName: t.first_name,
@@ -256,6 +272,8 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         goodieNote: t.goodie_note,
         tshirtHandedAt: t.tshirt_handed_at,
         hoodieHandedAt: t.hoodie_handed_at,
+        hoodieEligible: hoodie === null,
+        hoodieExclusion: hoodie ?? null,
         badgePickedUpAt: badgeBySubject.get(t.id) ?? null,
         doorNote: t.door_note,
         tshirtSize: sizes?.tshirt_size ?? null,

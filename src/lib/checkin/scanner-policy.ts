@@ -51,6 +51,12 @@ export interface ScanGate {
   accept(value: string, nowMs: number): boolean;
   /** Forget the last value, e.g. after the volunteer dismisses the panel. */
   reset(): void;
+  /**
+   * Restart the repeat window for the last value without accepting anything.
+   * For resuming after a pause: the badge that opened the panel may still be
+   * in frame, and the window it was given has long since expired.
+   */
+  touch(nowMs: number): void;
 }
 
 /**
@@ -76,6 +82,9 @@ export function createScanGate(repeatMs: number = SCAN_REPEAT_MS): ScanGate {
     reset() {
       lastValue = null;
       lastAt = 0;
+    },
+    touch(nowMs) {
+      if (lastValue !== null) lastAt = nowMs;
     },
   };
 }

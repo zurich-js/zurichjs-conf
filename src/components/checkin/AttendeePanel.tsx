@@ -124,12 +124,38 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
 
   const primaryAction = (() => {
     if (badgeActionInBar && onHandOverBadge) {
-      return { label: 'Badge handed over', onClick: onHandOverBadge, loading: false };
+      // One size down: at this type scale the longer label in `lg` is wider
+      // than a 320px phone on its own.
+      return {
+        label: 'Badge handed over',
+        onClick: onHandOverBadge,
+        loading: false,
+        size: 'md' as const,
+      };
     }
     if (canCheckIn && onCheckIn && !seatDriven && !communityDay) {
-      return { label: 'Check in', onClick: onCheckIn, loading: checkInPending };
+      return { label: 'Check in', onClick: onCheckIn, loading: checkInPending, size: 'lg' as const };
     }
     return null;
+  })();
+
+  /**
+   * "Verified" is not a verdict, and the banner is not a button. The detail
+   * line says what has NOT happened yet and where the tap actually is — the
+   * volunteer who reads colour first was tapping the green bar and moving on.
+   */
+  const bannerDetail = (() => {
+    if (state === 'admit') {
+      if (seatDriven) return detail ?? 'Not checked in yet — check in their workshop below';
+      if (primaryAction) return `Not checked in yet — tap "${primaryAction.label}" below`;
+      return 'Not checked in yet';
+    }
+    if (state === 'pickup') {
+      return primaryAction
+        ? `Badge not handed over yet — tap "${primaryAction.label}" below`
+        : 'Badge not handed over yet';
+    }
+    return detail;
   })();
 
   const workshopSection =
@@ -164,7 +190,7 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
 
   return (
     <section className={`space-y-4 ${className}`} aria-label="Attendee">
-      <DoorStateBanner state={state} detail={detail} />
+      <DoorStateBanner state={state} detail={bannerDetail} />
 
       {!attendee.admissible && attendee.refusalReason ? (
         <DoorRefusalHint message={doorFailureMessage(attendee.refusalReason)} />
@@ -186,14 +212,18 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
           showContact={roleCan(role, 'view_contact')}
         />
 
-        {/* Primary actions integrated into the identity card */}
+        {/* Primary actions integrated into the identity card. The row WRAPS:
+            at this type scale "Badge handed over" plus "Help" is wider than a
+            360px phone, and a nowrap row pushed Help past the screen edge. */}
         {(primaryAction || onEscalate) && !seatDriven ? (
-          <div className="mt-4 flex items-stretch gap-3 border-t border-divider pt-4">
+          <div className="mt-4 flex flex-wrap items-stretch gap-3 border-t border-divider pt-4">
             {primaryAction ? (
               <Button
                 variant="primary"
-                size="lg"
-                className="flex-1 whitespace-nowrap"
+                size={primaryAction.size}
+                // No min-w-0: the pill must keep its label's width and let the
+                // row wrap, rather than shrink and spill the text past its edge.
+                className="flex-1 basis-40 whitespace-nowrap"
                 loading={primaryAction.loading}
                 onClick={primaryAction.onClick}
               >
@@ -204,8 +234,8 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
               <Button
                 variant="dark"
                 size={primaryAction ? 'md' : 'lg'}
-                className={primaryAction ? 'shrink-0 px-4!' : 'flex-1'}
-                aria-label="Get help from a door lead"
+                className={primaryAction ? 'shrink-0 px-4!' : 'min-w-0 flex-1'}
+                aria-label="Get help from the core team"
                 onClick={onEscalate}
               >
                 <LifeBuoy className="h-4 w-4" aria-hidden="true" />
@@ -249,6 +279,8 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
           preferredTshirtSize={attendee.apparel.tshirtSize}
           preferredHoodieSize={attendee.apparel.hoodieSize}
           isVip={attendee.ticket?.isVip ?? false}
+          hoodieEligible={attendee.goodie.hoodieEligible}
+          hoodieExclusion={attendee.goodie.hoodieExclusion}
           canHandOver={roleCan(role, 'goodie') && attendee.admissible}
           pending={goodiePending}
           onHandOver={onHandOverGoodie}
@@ -282,7 +314,7 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
             variant="dark"
             size="md"
             className="whitespace-nowrap"
-            aria-label="Get help from a door lead"
+            aria-label="Get help from the core team"
             onClick={onEscalate}
           >
             <LifeBuoy className="h-4 w-4" aria-hidden="true" />

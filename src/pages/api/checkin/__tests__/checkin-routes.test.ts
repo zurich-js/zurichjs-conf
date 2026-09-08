@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   doorCurrentOccasion: vi.fn(),
   buildDoorRoster: vi.fn(),
   verifyAdminAccess: vi.fn(),
+  notifyDoorHelpRequested: vi.fn(),
 }));
 
 vi.mock('@/lib/cfp/auth', () => ({
@@ -42,6 +43,9 @@ vi.mock('@/lib/checkin/rpc', () => ({
 }));
 vi.mock('@/lib/checkin/roster', () => ({ buildDoorRoster: mocks.buildDoorRoster }));
 vi.mock('@/lib/admin/auth', () => ({ verifyAdminAccess: mocks.verifyAdminAccess }));
+vi.mock('@/lib/platform-notifications', () => ({
+  notifyDoorHelpRequested: mocks.notifyDoorHelpRequested,
+}));
 vi.mock('@/lib/logger', () => ({
   logger: {
     scope: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
@@ -56,6 +60,7 @@ const manualAdmitHandler = (await import('../manual-admit')).default;
 const goodieHandler = (await import('../goodie')).default;
 const badgePickupHandler = (await import('../badge-pickup')).default;
 const rosterHandler = (await import('../roster')).default;
+const helpHandler = (await import('../help')).default;
 
 const UUID = 'a1b2c3d4-e5f6-4789-8abc-def012345678';
 const USER = { id: 'user-1', email: 'scanner@zurichjs.com' };
@@ -99,6 +104,7 @@ describe('method guards', () => {
     ['goodie', goodieHandler, 'GET'],
     ['badge-pickup', badgePickupHandler, 'GET'],
     ['roster', rosterHandler, 'POST'],
+    ['help', helpHandler, 'GET'],
   ])('%s rejects the wrong method with 405', async (_name, handler, method) => {
     const { req, res, statusOf } = mockReqRes(method);
     await handler(req, res);
@@ -431,5 +437,120 @@ describe('session', () => {
       staff: staff('scanner'),
       occasion: 'conference_day',
     });
+  });
+});
+
+describe('help', () => {
+  const hit = {
+    found: true,
+    subjectKind: 'ticket',
+    subjectId: UUID,
+    person: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@x.com', company: 'Engines', jobTitle: null },
+    ticket: {
+      type: 'conference', category: 'vip', stage: 'general_admission', status: 'confirmed', isVip: true,
+      transferredFromName: null, transferredFromEmail: null,
+    },
+    admissible: true,
+    refusalReason: null,
+    checkIn: { workshopDayAt: null, conferenceDayAt: '2026-09-11T07:14:00.000Z' },
+    goodie: {
+      entitled: true, handedAt: null, note: null, tshirtHandedAt: '2026-09-11T07:20:00.000Z',
+      hoodieHandedAt: null, hoodieEligible: true, hoodieExclusion: null,
+    },
+    apparel: { tshirtSize: 'L', hoodieSize: 'M' },
+    badge: { pickedUpAt: null },
+    doorNote: 'Ask about the invoice',
+    workshops: { held: [], purchasedForOthers: [] },
+  };
+
+  it('every role may call for help, and the team gets the server view of the attendee', async () => {
+    mocks.getStaffByUserId.mockResolvedValue(staff('goodie'));
+    mocks.doorResolve.mockResolvedValue(hit);
+    mocks.notifyDoorHelpRequested.mockResolvedValue(true);
+    const { req, res, statusOf, json } = mockReqRes('POST', { scannedId: UUID, occasion: 'conference_day' });
+    await helpHandler(req, res);
+    expect(statusOf()).toBe(200);
+    expect(json.mock.calls[0][0]).toEqual({ delivered: true, reference: UUID.slice(0, 8) });
+
+    const sent = mocks.notifyDoorHelpRequested.mock.calls[0][0];
+    // Identity comes from the guard, never the body.
+    expect(sent.staffEmail).toBe('goodie@zurichjs.com');
+    expect(sent.staffRole).toBe('Goodies');
+    expect(sent.occasionLabel).toBe('Conference day');
+    expect(sent.attendee.name).toBe('Ada Lovelace');
+    expect(sent.attendee.ticketSummary).toContain('VIP');
+    expect(sent.attendee.checkedInSummary).toMatch(/Conference day at \d\d:\d\d/);
+    expect(sent.attendee.goodieSummary).toContain('Hoodie not handed');
+    expect(sent.attendee.doorNote).toBe('Ask about the invoice');
+  });
+
+  // The team must read the same answer the volunteer's screen shows: a comp
+  // VIP is owed no hoodie, however the ticket is tiered.
+  it('says nothing about a hoodie when the database verdict is not eligible', async () => {
+    mocks.doorResolve.mockResolvedValue({
+      ...hit,
+      goodie: { ...hit.goodie, hoodieEligible: false, hoodieExclusion: 'complimentary_upgrade' },
+    });
+    mocks.notifyDoorHelpRequested.mockResolvedValue(true);
+    const { req, res } = mockReqRes('POST', { scannedId: UUID });
+    await helpHandler(req, res);
+    const sent = mocks.notifyDoorHelpRequested.mock.calls[0][0];
+    expect(sent.attendee.goodieSummary).toContain('T-shirt handed');
+    expect(sent.attendee.goodieSummary).not.toContain('Hoodie');
+  });
+
+  it('an unknown code still pings the team, with the raw code as the only lead', async () => {
+    mocks.doorResolve.mockResolvedValue({ found: false, subjectKind: null });
+    mocks.notifyDoorHelpRequested.mockResolvedValue(true);
+    const { req, res, statusOf, json } = mockReqRes('POST', {
+      scannedId: UUID,
+      rawCode: 'https://example.com/validate/' + UUID,
+    });
+    await helpHandler(req, res);
+    expect(statusOf()).toBe(200);
+    expect(json.mock.calls[0][0].delivered).toBe(true);
+    const sent = mocks.notifyDoorHelpRequested.mock.calls[0][0];
+    expect(sent.attendee).toBeNull();
+    expect(sent.scannedId).toBe(UUID);
+    expect(sent.rawCode).toContain('/validate/');
+  });
+
+  it('a resolve failure does not block the ping', async () => {
+    mocks.doorResolve.mockRejectedValue(new Error('db down'));
+    mocks.notifyDoorHelpRequested.mockResolvedValue(true);
+    const { req, res, statusOf } = mockReqRes('POST', { scannedId: UUID });
+    await helpHandler(req, res);
+    expect(statusOf()).toBe(200);
+    expect(mocks.notifyDoorHelpRequested).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports honestly when Slack did not accept the message', async () => {
+    mocks.notifyDoorHelpRequested.mockResolvedValue(false);
+    const { req, res, statusOf, json } = mockReqRes('POST', {});
+    await helpHandler(req, res);
+    expect(statusOf()).toBe(200);
+    expect(json.mock.calls[0][0]).toEqual({ delivered: false, reference: null });
+    expect(mocks.doorResolve).not.toHaveBeenCalled();
+  });
+
+  it('rejects an over-long raw code', async () => {
+    const { req, res, statusOf } = mockReqRes('POST', { rawCode: 'x'.repeat(301) });
+    await helpHandler(req, res);
+    expect(statusOf()).toBe(400);
+    expect(mocks.notifyDoorHelpRequested).not.toHaveBeenCalled();
+  });
+
+  it('rate-limits one volunteer, so a stuck button cannot flood the channel', async () => {
+    mocks.doorResolve.mockResolvedValue({ found: false, subjectKind: null });
+    mocks.notifyDoorHelpRequested.mockResolvedValue(true);
+    // Earlier tests in this file already spent some of staff-1's window, so send
+    // a full window's worth and assert only the final one is refused.
+    let last = 0;
+    for (let i = 0; i < 11; i += 1) {
+      const { req, res, statusOf } = mockReqRes('POST', {});
+      await helpHandler(req, res);
+      last = statusOf() as number;
+    }
+    expect(last).toBe(429);
   });
 });

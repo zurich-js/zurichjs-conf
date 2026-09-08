@@ -186,8 +186,10 @@ export function patchRosterGoodie(
       if (ticket.id !== ticketId) return ticket;
       const tshirtHandedAt = items.tshirt ? handedAt : ticket.tshirtHandedAt;
       const hoodieHandedAt = items.hoodie ? handedAt : ticket.hoodieHandedAt;
+      // "Owed" follows eligibility, not the VIP tier: a comp VIP is done once
+      // the t-shirt is over the counter.
       const fullyHanded =
-        tshirtHandedAt !== null && (!ticket.isVip || hoodieHandedAt !== null);
+        tshirtHandedAt !== null && (!ticket.hoodieEligible || hoodieHandedAt !== null);
       return {
         ...ticket,
         tshirtHandedAt,

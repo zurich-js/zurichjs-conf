@@ -24,7 +24,12 @@
 import type { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { DoorRpcError } from './errors';
-import type { DoorBadgePickupRow, DoorDatabase, DoorRpcName } from './door-database';
+import type {
+  DoorBadgePickupRow,
+  DoorDatabase,
+  DoorHoodieVerdictRow,
+  DoorRpcName,
+} from './door-database';
 import { DOOR_OCCASIONS } from '@/lib/types/checkin';
 import type {
   DoorBadgePickupResult,
@@ -244,6 +249,12 @@ export async function doorGoodieUndo(args: DoorGoodieUndoArgs): Promise<DoorGood
 export async function doorBadgePickups(): Promise<DoorBadgePickupRow[]> {
   const supabase = createDoorClient();
   return unwrap('door_badge_pickups', await supabase.rpc('door_badge_pickups'));
+}
+
+/** Hoodie verdict per confirmed ticket. Decided in SQL, same rule as the handover. */
+export async function doorHoodieVerdicts(): Promise<DoorHoodieVerdictRow[]> {
+  const supabase = createDoorClient();
+  return unwrap('door_hoodie_verdicts', await supabase.rpc('door_hoodie_verdicts'));
 }
 
 /** Admin-only removal of audit rows (rehearsal and test data). */

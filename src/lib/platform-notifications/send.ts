@@ -25,6 +25,7 @@ import type {
   TicketWaitlistData,
   WorkshopWaitlistData,
   SpeakerLogisticsSubmittedData,
+  DoorHelpRequestedData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -46,6 +47,16 @@ function truncate(str: string, max: number): string {
   return str.length > max ? str.slice(0, max - 3) + '...' : str
 }
 
+/**
+ * Neutralise Slack mrkdwn in text that people typed or a camera read. Slack
+ * decodes exactly three entities, so only those three are escaped (encoding
+ * more would render literally). Backticks become quotes so a value can sit
+ * safely inside our own code span.
+ */
+function escapeMrkdwn(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, "'")
+}
+
 // =============================================================================
 // Slack Sender
 // =============================================================================
@@ -58,11 +69,12 @@ const SLACK_RETRYABLE_ERRORS = new Set([
   'request_timeout',
 ])
 
-async function sendToSlack(text: string, blocks?: unknown[]): Promise<void> {
+/** Resolves false when Slack is not configured, so a caller can say so to a human. */
+async function sendToSlack(text: string, blocks?: unknown[]): Promise<boolean> {
   const token = process.env.SLACK_BOT_TOKEN
   if (!token) {
     log.debug('SLACK_BOT_TOKEN not configured, skipping notification')
-    return
+    return false
   }
 
   await retry(
@@ -104,6 +116,7 @@ async function sendToSlack(text: string, blocks?: unknown[]): Promise<void> {
       },
     }
   )
+  return true
 }
 
 function buildBlocks(
@@ -141,19 +154,21 @@ function buildBlocks(
   return blocks
 }
 
-// Wrapper that never throws
+// Wrapper that never throws. Resolves true only when Slack accepted the message.
 async function safeSend(
   eventName: string,
   text: string,
   blocks?: unknown[]
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await sendToSlack(text, blocks)
+    const delivered = await sendToSlack(text, blocks)
+    if (!delivered) return false
     log.info('Notification sent', { eventName })
     void serverAnalytics.track('platform_notification_sent', 'system', {
       eventName,
       destination: 'slack',
     })
+    return true
   } catch (error) {
     log.error('Notification failed', error instanceof Error ? error : null, {
       eventName,
@@ -165,6 +180,7 @@ async function safeSend(
       destination: 'slack',
       errorMessage: error instanceof Error ? error.message : 'Unknown',
     })
+    return false
   }
 }
 
@@ -440,4 +456,83 @@ export function notifyTicketCreationError(data: TicketCreationErrorData): void {
     ]
   )
   void safeSend('ticket_creation_error', text, blocks)
+}
+
+/**
+ * A door volunteer needs a core team member. Unlike the rest of this module
+ * this is AWAITED and reports delivery: the station tells the volunteer either
+ * "the team has been pinged" or "find someone in person", and it must not claim
+ * the first when the second is true.
+ */
+export async function notifyDoorHelpRequested(data: DoorHelpRequestedData): Promise<boolean> {
+  // Everything below that came from a person or a camera goes through esc():
+  // attendee fields, the volunteer's own name, a QR payload. A badge printed
+  // with "<!channel>" must read as text, not ping the whole workspace.
+  const esc = escapeMrkdwn
+  const who = data.attendee ? esc(data.attendee.name) : 'Unknown code'
+  const text = `Door help: ${esc(data.staffName)} needs a hand with ${who} (${data.occasionLabel})`
+
+  const fields: Array<{ label: string; value: string }> = [
+    { label: 'Volunteer', value: `${esc(data.staffName)} (${data.staffRole})\n${esc(data.staffEmail)}` },
+    {
+      label: 'Day',
+      value: data.station ? `${data.occasionLabel} · ${esc(data.station)}` : data.occasionLabel,
+    },
+  ]
+
+  if (data.attendee) {
+    const a = data.attendee
+    fields.push(
+      {
+        label: 'Attendee',
+        value: [a.name, a.email, a.company].filter(Boolean).map((v) => esc(v as string)).join('\n'),
+      },
+      { label: 'Ticket', value: esc(a.ticketSummary) },
+      {
+        label: 'Admissible',
+        value: a.admissible ? 'Yes' : `No — ${esc(a.refusalReason ?? 'reason not given')}`,
+      },
+      { label: 'Check-in', value: a.checkedInSummary },
+      { label: 'Badge', value: a.badgeSummary },
+      { label: 'Goodies', value: esc(a.goodieSummary) }
+    )
+    if (a.workshops.length > 0) {
+      fields.push({ label: 'Workshops', value: a.workshops.map(esc).join('\n') })
+    }
+    if (a.doorNote) fields.push({ label: 'Door note', value: esc(truncate(a.doorNote, 200)) })
+    if (a.fromLookup) fields.push({ label: 'Found via', value: 'Name lookup — no QR was verified' })
+  } else {
+    fields.push({
+      label: 'Attendee',
+      value: 'Not in the roster — no record for this code',
+    })
+    if (data.scannedId) fields.push({ label: 'Scanned id', value: `\`${esc(data.scannedId)}\`` })
+    if (data.rawCode) {
+      fields.push({ label: 'Raw code', value: `\`${esc(truncate(data.rawCode, 200))}\`` })
+    }
+    if (!data.scannedId && !data.rawCode) {
+      fields.push({ label: 'Code', value: 'Nothing scanned — volunteer asked for help directly' })
+    }
+  }
+
+  if (data.note) fields.push({ label: 'Note', value: esc(truncate(data.note, 300)) })
+
+  // Slack caps a section at 10 fields; two sections keep everything visible.
+  const header = `:rotating_light: *Door help requested* — ${who}`
+  const blocks: unknown[] = [
+    { type: 'section', text: { type: 'mrkdwn', text: header } },
+    { type: 'divider' },
+  ]
+  for (let i = 0; i < fields.length; i += 10) {
+    blocks.push({
+      type: 'section',
+      fields: fields.slice(i, i + 10).map((f) => ({ type: 'mrkdwn', text: `*${f.label}:*\n${f.value}` })),
+    })
+  }
+  blocks.push({
+    type: 'context',
+    elements: [{ type: 'mrkdwn', text: 'Someone from the core team: head to the door and find the volunteer.' }],
+  })
+
+  return safeSend('door_help_requested', text, blocks)
 }

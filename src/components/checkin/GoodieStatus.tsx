@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Gift, PackageCheck, RotateCcw } from 'lucide-react';
+import { Gift, PackageCheck, RotateCcw, Shirt } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
 import { TSHIRT_SIZES } from '@/lib/validations/cfp';
+import { HOODIE_EXCLUSION_LABELS, type HoodieExclusion } from '@/lib/types/hoodies';
 
 /** What actually went over the counter. `null` size = that item was NOT handed. */
 export interface GoodieHandoverPayload {
@@ -26,13 +27,21 @@ export interface GoodieStatusProps {
   note?: string | null;
   /** When the t-shirt was physically handed over (null = not yet). */
   tshirtHandedAt?: string | null;
-  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  /** When the hoodie was physically handed over (null = not yet). */
   hoodieHandedAt?: string | null;
   /** Preferred sizes from the attendee's apparel form; the defaults, not the truth. */
   preferredTshirtSize?: string | null;
   preferredHoodieSize?: string | null;
-  /** Hoodies are part of the VIP package only. */
+  /** VIP tier, for labelling. Does NOT decide the hoodie — `hoodieEligible` does. */
   isVip?: boolean;
+  /**
+   * Whether a hoodie is owed, per the fulfilment allocation. A VIP whose
+   * upgrade was complimentary is NOT eligible, and the row says so rather than
+   * offering a hoodie the count never included.
+   */
+  hoodieEligible?: boolean;
+  /** Why a VIP is not getting one, shown to the volunteer so they can explain. */
+  hoodieExclusion?: HoodieExclusion | null;
   /** Whether this role may record a handover — and take one back. */
   canHandOver?: boolean;
   pending?: boolean;
@@ -148,6 +157,8 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
   preferredTshirtSize = null,
   preferredHoodieSize = null,
   isVip = false,
+  hoodieEligible = false,
+  hoodieExclusion = null,
   canHandOver = false,
   pending = false,
   onHandOver,
@@ -158,15 +169,51 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
   // If the item was already handed, default to false (don't re-hand). Otherwise start checked.
   const [tshirtGiven, setTshirtGiven] = useState(!tshirtHandedAt);
   const [tshirtSize, setTshirtSize] = useState(normalizeSize(preferredTshirtSize));
-  // Only default hoodie to checked if VIP AND not already handed.
-  const [hoodieGiven, setHoodieGiven] = useState(isVip && !hoodieHandedAt);
+  // Only default hoodie to checked if one is owed AND not already handed.
+  const [hoodieGiven, setHoodieGiven] = useState(hoodieEligible && !hoodieHandedAt);
   const [hoodieSize, setHoodieSize] = useState(normalizeSize(preferredHoodieSize));
   const [extraNote, setExtraNote] = useState('');
 
-  // What's still owed: items entitled but not yet handed.
+  // What's still owed: items entitled but not yet handed. The hoodie follows
+  // ELIGIBILITY, not the tier — see hoodieEligible above.
   const tshirtOwed = !tshirtHandedAt;
-  const hoodieOwed = isVip && !hoodieHandedAt;
+  const hoodieOwed = hoodieEligible && !hoodieHandedAt;
   const anythingOwed = tshirtOwed || hoodieOwed;
+  const hoodieLabel = isVip ? 'Hoodie (VIP)' : 'Hoodie (speaker)';
+
+  /**
+   * The one thing a volunteer must not miss on this screen: a VIP badge that
+   * earns NO hoodie. Shown above whatever state the goodie row is in, because
+   * the question comes up at the table whichever state that is.
+   */
+  const noHoodieNotice =
+    isVip && !hoodieEligible ? (
+      <div
+        role="note"
+        className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3"
+      >
+        <Shirt className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-text-primary">
+            No hoodie for this ticket
+            {hoodieExclusion ? ` — ${HOODIE_EXCLUSION_LABELS[hoodieExclusion].toLowerCase()}` : ''}
+          </p>
+          <p className="text-xs text-text-secondary">
+            Hoodies go with paid VIP tickets, paid upgrades, speakers and sponsors. T-shirt only.
+          </p>
+        </div>
+      </div>
+    ) : null;
+
+  const withNotice = (body: React.ReactNode) =>
+    noHoodieNotice ? (
+      <div className={`space-y-2 ${className}`}>
+        {noHoodieNotice}
+        {body}
+      </div>
+    ) : (
+      body
+    );
 
   if (!entitled) {
     return (
@@ -183,19 +230,25 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
   // honest undo there is the whole handover.
   const legacyRow = Boolean(handedAt && !tshirtHandedAt && !hoodieHandedAt);
 
-  // Full handover complete: everything entitled was handed (or it's a legacy row).
-  if (handedAt && (legacyRow || !anythingOwed)) {
-    return (
+  // Full handover complete: everything owed was handed (or it's a legacy row).
+  // `handedAt` alone is not the test: the database stamps it by the VIP tier, so
+  // a comp VIP who took their t-shirt has everything they are owed and no stamp.
+  // The per-item timestamps are the truth here.
+  const handedStamp = handedAt ?? latestOf(tshirtHandedAt, hoodieHandedAt);
+  if ((handedAt && legacyRow) || !anythingOwed) {
+    return withNotice(
       <div
-        className={`rounded-xl border border-success/40 bg-success/10 px-4 py-3 ${className}`}
+        className={`rounded-xl border border-success/40 bg-success/10 px-4 py-3 ${noHoodieNotice ? '' : className}`}
       >
         <div className="flex items-center gap-3">
           <PackageCheck className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-text-primary">Goodies handed over</p>
-            <p className="text-xs text-text-tertiary">
-              <time dateTime={handedAt}>{formatTime(handedAt)}</time>
-            </p>
+            {handedStamp ? (
+              <p className="text-xs text-text-tertiary">
+                <time dateTime={handedStamp}>{formatTime(handedStamp)}</time>
+              </p>
+            ) : null}
           </div>
         </div>
         {note ? (
@@ -208,7 +261,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
             {legacyRow ? (
               <UndoLink
                 label="Undo handover"
-                onClick={() => onUndo({ undoTshirt: true, undoHoodie: isVip })}
+                onClick={() => onUndo({ undoTshirt: true, undoHoodie: hoodieEligible })}
               />
             ) : (
               <>
@@ -233,27 +286,12 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
   }
 
   // Partial handover: some items handed, some still owed.
-  if (!anythingOwed) {
-    // Shouldn't happen (anythingOwed should be true if handedAt is null), but
-    // defensive fallback to the "fully handed" state.
-    return (
-      <div
-        className={`rounded-xl border border-success/40 bg-success/10 px-4 py-3 ${className}`}
-      >
-        <div className="flex items-center gap-3">
-          <PackageCheck className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
-          <p className="text-sm font-semibold text-text-primary">Goodies handed over</p>
-        </div>
-      </div>
-    );
-  }
-
   // Compute what was already handed vs what's still owed for display.
   const handedItems: string[] = [];
   const owedItems: string[] = [];
   if (tshirtHandedAt) handedItems.push('T-shirt');
   else owedItems.push('T-shirt');
-  if (isVip) {
+  if (hoodieEligible) {
     if (hoodieHandedAt) handedItems.push('Hoodie');
     else owedItems.push('Hoodie');
   }
@@ -261,8 +299,8 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
   const askedFor = askedForLine(tshirtOwed, hoodieOwed, preferredTshirtSize, preferredHoodieSize);
 
   if (!canHandOver || !onHandOver) {
-    return (
-      <div className={`rounded-xl bg-surface-elevated px-4 py-3 ${className}`}>
+    return withNotice(
+      <div className={`rounded-xl bg-surface-elevated px-4 py-3 ${noHoodieNotice ? '' : className}`}>
         <div className="flex items-center gap-3">
           <Gift className="h-5 w-5 shrink-0 text-brand-yellow-main" aria-hidden="true" />
           <div className="min-w-0">
@@ -289,10 +327,12 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
   }
 
   if (!open) {
-    return (
-      <div className={`rounded-xl bg-surface-elevated px-4 py-3 ${className}`}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
+    return withNotice(
+      <div className={`rounded-xl bg-surface-elevated px-4 py-3 ${noHoodieNotice ? '' : className}`}>
+        {/* Wraps rather than squeezes: on a narrow phone the button drops under
+            the text instead of pushing past the edge of the screen. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 basis-40 items-center gap-3">
             <Gift className="h-5 w-5 shrink-0 text-brand-yellow-main" aria-hidden="true" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-text-primary">
@@ -311,7 +351,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
           <Button
             size="sm"
             variant="primary"
-            className="whitespace-nowrap"
+            className="ml-auto shrink-0 whitespace-nowrap"
             onClick={() => setOpen(true)}
           >
             {handedItems.length > 0 ? 'Complete' : 'Hand over'}
@@ -365,7 +405,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
         tshirtSize,
         hoodieGiven: hoodieOwed && hoodieGiven,
         hoodieSize,
-        isVip,
+        hoodieEligible,
         extraNote,
         isFollowUp: handedItems.length > 0,
       }),
@@ -373,9 +413,9 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
     setOpen(false);
   };
 
-  return (
+  return withNotice(
     <section
-      className={`rounded-xl bg-surface-elevated p-4 ${className}`}
+      className={`rounded-xl bg-surface-elevated p-4 ${noHoodieNotice ? '' : className}`}
       aria-label="Record goodie handover"
     >
       <div className="mb-1 flex items-center gap-3">
@@ -402,7 +442,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
         )}
         {hoodieOwed && (
           <ItemRow
-            label="Hoodie (VIP)"
+            label={hoodieLabel}
             given={hoodieGiven}
             onGivenChange={setHoodieGiven}
             size={hoodieSize}
@@ -428,11 +468,13 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
         </div>
       ) : null}
 
-      <div className="mt-3 flex gap-2">
+      {/* Stacked below the sm breakpoint: "Pick the sizes first" plus "Cancel"
+          at this type scale is wider than a phone. */}
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
         <Button
           variant="primary"
           size="lg"
-          className="flex-1"
+          className="w-full"
           loading={pending}
           disabled={pending || sizesMissing || nothingGiven}
           onClick={confirm}
@@ -443,7 +485,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
               ? 'Pick the sizes first'
               : 'Confirm handover'}
         </Button>
-        <Button variant="dark" size="lg" onClick={() => setOpen(false)}>
+        <Button variant="dark" size="md" className="w-full" onClick={() => setOpen(false)}>
           Cancel
         </Button>
       </div>
@@ -457,12 +499,20 @@ function normalizeSize(preferred: string | null): string {
   return (TSHIRT_SIZES as readonly string[]).includes(upper) ? upper : '';
 }
 
+/** The later of two optional timestamps, for the "handed at" line. */
+function latestOf(a: string | null, b: string | null): string | null {
+  if (!a) return b;
+  if (!b) return a;
+  return a > b ? a : b;
+}
+
 interface ComposeNoteArgs {
   tshirtGiven: boolean;
   tshirtSize: string;
   hoodieGiven: boolean;
   hoodieSize: string;
-  isVip: boolean;
+  /** Whether a hoodie was owed at all — decides whether "NOT handed" is worth noting. */
+  hoodieEligible: boolean;
   extraNote: string;
   /** True when this is a follow-up handover completing a partial. */
   isFollowUp?: boolean;
@@ -478,7 +528,7 @@ function composeNote({
   tshirtSize,
   hoodieGiven,
   hoodieSize,
-  isVip,
+  hoodieEligible,
   extraNote,
   isFollowUp = false,
 }: ComposeNoteArgs): string | undefined {
@@ -496,12 +546,12 @@ function composeNote({
 
   // First handover: record what was NOT handed so the follow-up knows.
   if (!tshirtGiven) parts.push('T-shirt NOT handed');
-  if (isVip && !hoodieGiven) parts.push('Hoodie NOT handed');
+  if (hoodieEligible && !hoodieGiven) parts.push('Hoodie NOT handed');
 
   const trimmedExtra = extraNote.trim();
   if (trimmedExtra) parts.push(trimmedExtra);
 
-  const anythingMissing = !tshirtGiven || (isVip && !hoodieGiven);
+  const anythingMissing = !tshirtGiven || (hoodieEligible && !hoodieGiven);
   if (!anythingMissing && !trimmedExtra) {
     // Everything went over in one go: the sizes live on the audit row's
     // metadata, and a noise note would bury real ones.
