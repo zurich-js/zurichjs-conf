@@ -24,6 +24,7 @@ import { requireDoorStaff } from '@/lib/checkin/guard';
 import { doorCurrentOccasion, doorResolve } from '@/lib/checkin/rpc';
 import { formatDoorTime } from '@/lib/checkin/panel-state';
 import { doorHelpRequestSchema } from '@/lib/validations/checkin';
+import { createRateLimiter } from '@/lib/rate-limit';
 import { notifyDoorHelpRequested, type DoorHelpRequestedData } from '@/lib/platform-notifications';
 import { logger } from '@/lib/logger';
 import {
@@ -35,6 +36,14 @@ import {
 } from '@/lib/types/checkin';
 
 const log = logger.scope('Door Help API');
+
+/**
+ * Per volunteer, not per IP: a whole door shares one venue network. Generous
+ * enough for a bad five minutes at the desk, tight enough that a stuck button
+ * or a bored thumb cannot flood the core team's channel.
+ */
+const HELP_RATE_LIMIT = { windowMs: 60_000, maxRequests: 10 } as const;
+const helpLimiter = createRateLimiter(HELP_RATE_LIMIT);
 
 export interface DoorHelpResponse {
   /** True only when Slack accepted the message. */
@@ -84,7 +93,11 @@ function describeAttendee(
       ? `All handed ${timeOrNot(hit.goodie.handedAt, '')}`
       : [
           `T-shirt ${hit.goodie.tshirtHandedAt ? 'handed' : 'not handed'}`,
-          ticket?.isVip ? `Hoodie ${hit.goodie.hoodieHandedAt ? 'handed' : 'not handed'}` : null,
+          // Owed per the database verdict, not the tier — the same answer the
+          // volunteer's screen gives, so the team never contradicts it.
+          hit.goodie.hoodieEligible
+            ? `Hoodie ${hit.goodie.hoodieHandedAt ? 'handed' : 'not handed'}`
+            : null,
           hit.goodie.note ? `note: ${hit.goodie.note}` : null,
         ]
           .filter(Boolean)
@@ -138,6 +151,13 @@ export default async function handler(
 
   const { scannedId = null, rawCode = null, station, note, fromLookup } = parsed.data;
   const { staff } = guard;
+
+  if (!helpLimiter.check(staff.id).allowed) {
+    log.warn('Help requests rate-limited', { staffId: staff.id });
+    return res
+      .status(429)
+      .json({ error: 'Too many help requests — find a core team member in person' });
+  }
 
   try {
     const occasion: DoorOccasion = parsed.data.occasion ?? (await doorCurrentOccasion());

@@ -453,7 +453,10 @@ describe('help', () => {
     admissible: true,
     refusalReason: null,
     checkIn: { workshopDayAt: null, conferenceDayAt: '2026-09-11T07:14:00.000Z' },
-    goodie: { entitled: true, handedAt: null, note: null, tshirtHandedAt: '2026-09-11T07:20:00.000Z', hoodieHandedAt: null },
+    goodie: {
+      entitled: true, handedAt: null, note: null, tshirtHandedAt: '2026-09-11T07:20:00.000Z',
+      hoodieHandedAt: null, hoodieEligible: true, hoodieExclusion: null,
+    },
     apparel: { tshirtSize: 'L', hoodieSize: 'M' },
     badge: { pickedUpAt: null },
     doorNote: 'Ask about the invoice',
@@ -479,6 +482,21 @@ describe('help', () => {
     expect(sent.attendee.checkedInSummary).toMatch(/Conference day at \d\d:\d\d/);
     expect(sent.attendee.goodieSummary).toContain('Hoodie not handed');
     expect(sent.attendee.doorNote).toBe('Ask about the invoice');
+  });
+
+  // The team must read the same answer the volunteer's screen shows: a comp
+  // VIP is owed no hoodie, however the ticket is tiered.
+  it('says nothing about a hoodie when the database verdict is not eligible', async () => {
+    mocks.doorResolve.mockResolvedValue({
+      ...hit,
+      goodie: { ...hit.goodie, hoodieEligible: false, hoodieExclusion: 'complimentary_upgrade' },
+    });
+    mocks.notifyDoorHelpRequested.mockResolvedValue(true);
+    const { req, res } = mockReqRes('POST', { scannedId: UUID });
+    await helpHandler(req, res);
+    const sent = mocks.notifyDoorHelpRequested.mock.calls[0][0];
+    expect(sent.attendee.goodieSummary).toContain('T-shirt handed');
+    expect(sent.attendee.goodieSummary).not.toContain('Hoodie');
   });
 
   it('an unknown code still pings the team, with the raw code as the only lead', async () => {
@@ -520,5 +538,19 @@ describe('help', () => {
     await helpHandler(req, res);
     expect(statusOf()).toBe(400);
     expect(mocks.notifyDoorHelpRequested).not.toHaveBeenCalled();
+  });
+
+  it('rate-limits one volunteer, so a stuck button cannot flood the channel', async () => {
+    mocks.doorResolve.mockResolvedValue({ found: false, subjectKind: null });
+    mocks.notifyDoorHelpRequested.mockResolvedValue(true);
+    // Earlier tests in this file already spent some of staff-1's window, so send
+    // a full window's worth and assert only the final one is refused.
+    let last = 0;
+    for (let i = 0; i < 11; i += 1) {
+      const { req, res, statusOf } = mockReqRes('POST', {});
+      await helpHandler(req, res);
+      last = statusOf() as number;
+    }
+    expect(last).toBe(429);
   });
 });

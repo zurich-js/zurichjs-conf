@@ -77,6 +77,24 @@ describe('createScanGate', () => {
 // Downscaling
 // ─────────────────────────────────────────────────────────────────────────────
 
+describe('createScanGate touch', () => {
+  it('restarts the window for the last code without accepting anything', () => {
+    // The panel stayed open past the window; on resume the same badge is still
+    // in frame. touch() must keep it suppressed, and a new badge must not wait.
+    const gate = createScanGate(SCAN_REPEAT_MS);
+    expect(gate.accept('ticket-a', 0)).toBe(true);
+    gate.touch(SCAN_REPEAT_MS * 5);
+    expect(gate.accept('ticket-a', SCAN_REPEAT_MS * 5 + 100)).toBe(false);
+    expect(gate.accept('ticket-b', SCAN_REPEAT_MS * 5 + 200)).toBe(true);
+  });
+
+  it('is a no-op before anything was accepted', () => {
+    const gate = createScanGate(SCAN_REPEAT_MS);
+    gate.touch(1000);
+    expect(gate.accept('ticket-a', 1001)).toBe(true);
+  });
+});
+
 describe('fitWithin', () => {
   it('scales a 720p frame to the detector budget, preserving aspect ratio', () => {
     expect(fitWithin({ width: 1280, height: 720 }, 960)).toEqual({ width: 960, height: 540 });

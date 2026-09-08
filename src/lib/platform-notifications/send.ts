@@ -47,6 +47,16 @@ function truncate(str: string, max: number): string {
   return str.length > max ? str.slice(0, max - 3) + '...' : str
 }
 
+/**
+ * Neutralise Slack mrkdwn in text that people typed or a camera read. Slack
+ * decodes exactly three entities, so only those three are escaped (encoding
+ * more would render literally). Backticks become quotes so a value can sit
+ * safely inside our own code span.
+ */
+function escapeMrkdwn(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, "'")
+}
+
 // =============================================================================
 // Slack Sender
 // =============================================================================
@@ -455,12 +465,19 @@ export function notifyTicketCreationError(data: TicketCreationErrorData): void {
  * the first when the second is true.
  */
 export async function notifyDoorHelpRequested(data: DoorHelpRequestedData): Promise<boolean> {
-  const who = data.attendee ? data.attendee.name : 'Unknown code'
-  const text = `Door help: ${data.staffName} needs a hand with ${who} (${data.occasionLabel})`
+  // Everything below that came from a person or a camera goes through esc():
+  // attendee fields, the volunteer's own name, a QR payload. A badge printed
+  // with "<!channel>" must read as text, not ping the whole workspace.
+  const esc = escapeMrkdwn
+  const who = data.attendee ? esc(data.attendee.name) : 'Unknown code'
+  const text = `Door help: ${esc(data.staffName)} needs a hand with ${who} (${data.occasionLabel})`
 
   const fields: Array<{ label: string; value: string }> = [
-    { label: 'Volunteer', value: `${data.staffName} (${data.staffRole})\n${data.staffEmail}` },
-    { label: 'Day', value: data.station ? `${data.occasionLabel} · ${data.station}` : data.occasionLabel },
+    { label: 'Volunteer', value: `${esc(data.staffName)} (${data.staffRole})\n${esc(data.staffEmail)}` },
+    {
+      label: 'Day',
+      value: data.station ? `${data.occasionLabel} · ${esc(data.station)}` : data.occasionLabel,
+    },
   ]
 
   if (data.attendee) {
@@ -468,35 +485,37 @@ export async function notifyDoorHelpRequested(data: DoorHelpRequestedData): Prom
     fields.push(
       {
         label: 'Attendee',
-        value: [a.name, a.email, a.company].filter(Boolean).join('\n'),
+        value: [a.name, a.email, a.company].filter(Boolean).map((v) => esc(v as string)).join('\n'),
       },
-      { label: 'Ticket', value: a.ticketSummary },
+      { label: 'Ticket', value: esc(a.ticketSummary) },
       {
         label: 'Admissible',
-        value: a.admissible ? 'Yes' : `No — ${a.refusalReason ?? 'reason not given'}`,
+        value: a.admissible ? 'Yes' : `No — ${esc(a.refusalReason ?? 'reason not given')}`,
       },
       { label: 'Check-in', value: a.checkedInSummary },
       { label: 'Badge', value: a.badgeSummary },
-      { label: 'Goodies', value: a.goodieSummary }
+      { label: 'Goodies', value: esc(a.goodieSummary) }
     )
     if (a.workshops.length > 0) {
-      fields.push({ label: 'Workshops', value: a.workshops.join('\n') })
+      fields.push({ label: 'Workshops', value: a.workshops.map(esc).join('\n') })
     }
-    if (a.doorNote) fields.push({ label: 'Door note', value: truncate(a.doorNote, 200) })
+    if (a.doorNote) fields.push({ label: 'Door note', value: esc(truncate(a.doorNote, 200)) })
     if (a.fromLookup) fields.push({ label: 'Found via', value: 'Name lookup — no QR was verified' })
   } else {
     fields.push({
       label: 'Attendee',
       value: 'Not in the roster — no record for this code',
     })
-    if (data.scannedId) fields.push({ label: 'Scanned id', value: `\`${data.scannedId}\`` })
-    if (data.rawCode) fields.push({ label: 'Raw code', value: `\`${truncate(data.rawCode, 200)}\`` })
+    if (data.scannedId) fields.push({ label: 'Scanned id', value: `\`${esc(data.scannedId)}\`` })
+    if (data.rawCode) {
+      fields.push({ label: 'Raw code', value: `\`${esc(truncate(data.rawCode, 200))}\`` })
+    }
     if (!data.scannedId && !data.rawCode) {
       fields.push({ label: 'Code', value: 'Nothing scanned — volunteer asked for help directly' })
     }
   }
 
-  if (data.note) fields.push({ label: 'Note', value: truncate(data.note, 300) })
+  if (data.note) fields.push({ label: 'Note', value: esc(truncate(data.note, 300)) })
 
   // Slack caps a section at 10 fields; two sections keep everything visible.
   const header = `:rotating_light: *Door help requested* — ${who}`

@@ -415,9 +415,13 @@ export default function DoorStationPage() {
    */
   const requestHelp = useCallback(() => {
     const current = scanRef.current;
+    const subjectId = current?.subjectId ?? null;
     help.request({
-      scannedId: current?.subjectId ?? null,
-      rawCode: current?.raw ?? null,
+      scannedId: subjectId,
+      // The raw payload is only a lead when the id resolved to nobody; with an
+      // id the server looks the person up itself. Capped to what the schema
+      // accepts so a chatty QR cannot turn a help request into a 400.
+      rawCode: subjectId ? null : (current?.raw?.trim().slice(0, 300) ?? null),
       occasion,
       fromLookup,
     });

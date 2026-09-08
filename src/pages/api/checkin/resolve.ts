@@ -18,33 +18,9 @@ import { requireDoorStaff } from '@/lib/checkin/guard';
 import { doorResolve } from '@/lib/checkin/rpc';
 import { doorScanSchema } from '@/lib/validations/checkin';
 import { logger } from '@/lib/logger';
-import {
-  isDoorResolveHit,
-  type DoorGoodieState,
-  type DoorResolveResult,
-} from '@/lib/types/checkin';
+import type { DoorResolveResult } from '@/lib/types/checkin';
 
 const log = logger.scope('Door Resolve API');
-
-/**
- * `door_resolve` predates hoodie eligibility and knows only the tier. The
- * roster (the path every station actually uses) carries the real verdict; this
- * fallback keeps the payload shape honest for the rare direct lookup by
- * treating the tier as the answer, which is what the door did before.
- */
-function withHoodieDefaults(result: DoorResolveResult): DoorResolveResult {
-  if (!isDoorResolveHit(result)) return result;
-  const goodie: Partial<DoorGoodieState> = result.goodie;
-  if (typeof goodie.hoodieEligible === 'boolean') return result;
-  return {
-    ...result,
-    goodie: {
-      ...result.goodie,
-      hoodieEligible: result.ticket?.isVip ?? false,
-      hoodieExclusion: null,
-    },
-  };
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -65,7 +41,7 @@ export default async function handler(
   }
 
   try {
-    const result = withHoodieDefaults(await doorResolve(parsed.data.scannedId));
+    const result = await doorResolve(parsed.data.scannedId);
 
     // A miss is 200, not 404: an unknown code is an expected event at a door and
     // the station renders a "not in roster, try the desk" panel for it. A 404

@@ -213,6 +213,10 @@ export function useDoorScanner({ onScan, repeatMs = SCAN_REPEAT_MS }: UseDoorSca
     // Some browsers pause a video whose box was collapsed. Harmless when it
     // wasn't; without it the loop would decode a frozen frame forever.
     if (video.paused) void video.play().catch(() => undefined);
+    // The badge that opened the panel is often still in frame when "Next
+    // attendee" is tapped, and its repeat window expired while decoding was
+    // stopped. Restart the window so it is not read straight back in.
+    gateRef.current.touch(performance.now());
     startLoop(video, detector);
   }, [startLoop]);
 

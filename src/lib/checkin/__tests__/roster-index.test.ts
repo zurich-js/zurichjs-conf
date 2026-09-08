@@ -437,7 +437,10 @@ describe('hoodie eligibility rides along with the ticket', () => {
 
   it('a workshop-only seat is never owed a hoodie', () => {
     const index = buildRosterIndex(roster({ tickets: [], registrations: [seat()] }));
-    const result = index.resolve(SEAT_B);
-    expect(isDoorResolveHit(result) && result.goodie.hoodieEligible).toBe(false);
+    const result = index.resolve(SEAT_A);
+    expect(isDoorResolveHit(result)).toBe(true);
+    if (!isDoorResolveHit(result)) return;
+    expect(result.goodie.hoodieEligible).toBe(false);
+    expect(result.goodie.hoodieExclusion).toBeNull();
   });
 });

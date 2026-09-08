@@ -241,4 +241,131 @@ COMMENT ON FUNCTION public.door_goodie_handover(UUID, UUID, TEXT, TIMESTAMPTZ, T
 REVOKE ALL ON FUNCTION public.door_goodie_handover(UUID, UUID, TEXT, TIMESTAMPTZ, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.door_goodie_handover(UUID, UUID, TEXT, TIMESTAMPTZ, TEXT, TEXT, TEXT, TEXT) TO service_role;
 
+-- ============================================
+-- door_resolve: carry the hoodie verdict, so a direct lookup and the help
+-- route read the same answer as the roster instead of guessing from the tier.
+-- Same signature; body otherwise unchanged from 20260902090000.
+-- ============================================
+CREATE OR REPLACE FUNCTION public.door_resolve(p_scanned_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_ticket        public.tickets;
+  v_registration  public.workshop_registrations;
+  v_email         TEXT;
+  v_hoodie_excl   TEXT;
+  v_result        JSONB;
+BEGIN
+  SELECT * INTO v_ticket FROM public.tickets WHERE id = p_scanned_id;
+
+  IF FOUND THEN
+    v_email := lower(v_ticket.email);
+    v_hoodie_excl := public.door_hoodie_exclusion(v_ticket);
+
+    SELECT jsonb_build_object(
+      'found', TRUE,
+      'subjectKind', 'ticket',
+      'subjectId', v_ticket.id,
+      'person', jsonb_build_object(
+        'firstName', v_ticket.first_name,
+        'lastName',  v_ticket.last_name,
+        'email',     v_ticket.email,
+        'company',   v_ticket.company,
+        'jobTitle',  v_ticket.job_title
+      ),
+      'ticket', jsonb_build_object(
+        'type',        v_ticket.ticket_type,
+        'category',    v_ticket.ticket_category,
+        'stage',       v_ticket.ticket_stage,
+        'status',      v_ticket.status,
+        'isVip',       v_ticket.ticket_category = 'vip',
+        'transferredFromName',  v_ticket.transferred_from_name,
+        'transferredFromEmail', v_ticket.transferred_from_email
+      ),
+      'admissible', v_ticket.status = 'confirmed',
+      'refusalReason', CASE
+        WHEN v_ticket.status = 'confirmed' THEN NULL
+        ELSE 'ticket_' || v_ticket.status::text
+      END,
+      'checkIn', jsonb_build_object(
+        'workshopDayAt',   v_ticket.checked_in_workshop_day_at,
+        'conferenceDayAt', v_ticket.checked_in_conference_day_at
+      ),
+      'goodie', jsonb_build_object(
+        'entitled', v_ticket.status = 'confirmed',
+        'handedAt', v_ticket.goodie_handed_at,
+        'note',     v_ticket.goodie_note,
+        'tshirtHandedAt', v_ticket.tshirt_handed_at,
+        'hoodieHandedAt', v_ticket.hoodie_handed_at,
+        'hoodieEligible', v_hoodie_excl IS NULL,
+        -- not_vip is "never in the running": nothing for the volunteer to explain.
+        'hoodieExclusion', CASE WHEN v_hoodie_excl = 'not_vip' THEN NULL ELSE v_hoodie_excl END
+      ),
+      'apparel', COALESCE(
+        (SELECT jsonb_build_object('tshirtSize', a.tshirt_size, 'hoodieSize', a.hoodie_size)
+           FROM public.ticket_apparel_preferences a WHERE a.ticket_id = v_ticket.id),
+        jsonb_build_object('tshirtSize', NULL, 'hoodieSize', NULL)
+      ),
+      'badge', jsonb_build_object(
+        'pickedUpAt', public.door_badge_picked_up_at(v_ticket.id, NULL)
+      ),
+      'doorNote', v_ticket.door_note,
+      'workshops', public.door_workshops_for(v_ticket.id, v_email)
+    ) INTO v_result;
+
+    RETURN v_result;
+  END IF;
+
+  SELECT * INTO v_registration
+    FROM public.workshop_registrations WHERE id = p_scanned_id;
+
+  IF FOUND THEN
+    RETURN jsonb_build_object(
+      'found', TRUE,
+      'subjectKind', 'workshop_registration',
+      'subjectId', v_registration.id,
+      'person', jsonb_build_object(
+        'firstName', v_registration.first_name,
+        'lastName',  v_registration.last_name,
+        'email',     v_registration.email,
+        'company',   v_registration.company,
+        'jobTitle',  v_registration.job_title
+      ),
+      'ticket', NULL,
+      'admissible', v_registration.status = 'confirmed',
+      'refusalReason', CASE
+        WHEN v_registration.status = 'confirmed' THEN NULL
+        ELSE 'registration_' || v_registration.status::text
+      END,
+      'checkIn', jsonb_build_object(
+        'workshopDayAt', v_registration.checked_in_at,
+        'conferenceDayAt', NULL
+      ),
+      'goodie', jsonb_build_object(
+        'entitled', FALSE,
+        'handedAt', NULL,
+        'note', NULL,
+        'tshirtHandedAt', NULL,
+        'hoodieHandedAt', NULL,
+        'hoodieEligible', FALSE,
+        'hoodieExclusion', NULL
+      ),
+      'apparel', jsonb_build_object('tshirtSize', NULL, 'hoodieSize', NULL),
+      'badge', jsonb_build_object(
+        'pickedUpAt', public.door_badge_picked_up_at(NULL, v_registration.id)
+      ),
+      'doorNote', NULL,
+      'workshops', public.door_workshops_for(NULL, lower(v_registration.email))
+    );
+  END IF;
+
+  RETURN jsonb_build_object('found', FALSE, 'subjectKind', NULL);
+END;
+$$;
+COMMENT ON FUNCTION public.door_resolve(UUID) IS 'The whole door panel for one scanned UUID. Badge pickup state follows the latest applied badge event, so an undone pickup reads as not picked up. Goodie state carries the hoodie verdict from door_hoodie_exclusion.';
+
 COMMIT;
