@@ -119,11 +119,9 @@ describe('GET /api/share/qr/[id]', () => {
 
     expect(mockGetAbsoluteUrl).toHaveBeenCalledWith(`/share/${publicId}`, undefined);
     const encodedUrl = new URL(mockToBuffer.mock.calls[0][0] as string);
+    expect(encodedUrl.search).toBe('');
     expect(encodedUrl.origin).toBe('https://conf.example.test');
     expect(encodedUrl.pathname).toBe(`/share/${publicId}`);
-    expect(encodedUrl.searchParams.get('utm_source')).toBe('offline');
-    expect(encodedUrl.searchParams.get('utm_medium')).toBe('qr_code');
-    expect(encodedUrl.searchParams.get('utm_campaign')).toBe('zurichjs_networking');
     expect(mockToBuffer.mock.calls[0][1]).toMatchObject({ width: 400, errorCorrectionLevel: 'H' });
   });
 

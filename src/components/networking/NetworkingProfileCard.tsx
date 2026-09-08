@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Heading } from '@/components/atoms';
-import { addNetworkingUtm, shareNetworkingProfile } from '@/lib/networking/share';
+import { removeNetworkingUtm } from '@/lib/networking/links';
+import { shareNetworkingProfile } from '@/lib/networking/share';
 import type {
   NetworkingLinkKind,
   PublicNetworkingProfile,
@@ -138,7 +139,7 @@ export function NetworkingProfileCard({
           <ul className="grid gap-3 sm:grid-cols-2" aria-label={`${profile.name}'s contact links`}>
             {profile.links.map((link) => {
               const Icon = LINK_ICONS[link.kind];
-              const href = addNetworkingUtm(link.href, profile.publicId);
+              const href = removeNetworkingUtm(link.href);
               const isHttp = /^https?:\/\//i.test(href);
               return (
                 <li key={`${link.kind}-${link.href}`}>
