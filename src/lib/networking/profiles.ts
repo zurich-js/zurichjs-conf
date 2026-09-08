@@ -5,6 +5,7 @@
  * narrow, explicitly public contract used by /share/[id].
  */
 
+import { removeNetworkingUtm } from '@/lib/networking/links';
 import { logger } from '@/lib/logger';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { createServiceRoleClient } from '@/lib/supabase';
@@ -379,8 +380,13 @@ export async function resolvePublicNetworkingProfile(publicId: string): Promise<
   const parsed = parsePublicId(publicId);
   if (!parsed) return null;
 
-  if (parsed.kind === 'attendee') return resolveAttendee(publicId, parsed.shareId);
-  if (parsed.kind === 'sponsor') return resolveSponsor(publicId, parsed.shareId);
-  if (parsed.kind === 'speaker') return resolveSpeaker(publicId, parsed.slug);
-  return resolveManualBadge(publicId, parsed.shareId);
+  const profile = await (parsed.kind === 'attendee' ? resolveAttendee(publicId, parsed.shareId)
+    : parsed.kind === 'sponsor' ? resolveSponsor(publicId, parsed.shareId)
+    : parsed.kind === 'speaker' ? resolveSpeaker(publicId, parsed.slug)
+    : resolveManualBadge(publicId, parsed.shareId));
+  if (!profile) return null;
+  return {
+    ...profile,
+    links: profile.links.map((link) => ({ ...link, href: removeNetworkingUtm(link.href) })),
+  };
 }

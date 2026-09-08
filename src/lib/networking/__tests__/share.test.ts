@@ -1,7 +1,7 @@
+import { removeNetworkingUtm } from '@/lib/networking/links';
 import { describe, expect, it, vi } from 'vitest';
 import type { PublicNetworkingProfile } from '@/lib/types/networking';
 import {
-  addNetworkingUtm,
   formatNetworkingShareText,
   shareNetworkingProfile,
 } from '@/lib/networking/share';
@@ -20,40 +20,23 @@ const profile: PublicNetworkingProfile = {
 };
 
 describe('networking sharing helpers', () => {
-  it('adds UTM tags to ZurichJS links while preserving existing parameters and hashes', () => {
-    const result = new URL(
-      addNetworkingUtm('https://conf.zurichjs.com/contact?team=dev#hello', profile.publicId)
-    );
-
-    expect(result.searchParams.get('team')).toBe('dev');
-    expect(result.searchParams.get('utm_source')).toBe('zurichjs-conf');
-    expect(result.searchParams.get('utm_medium')).toBe('networking');
-    expect(result.searchParams.get('utm_campaign')).toBe('connections');
-    expect(result.searchParams.get('utm_content')).toBe(profile.publicId);
-    expect(result.hash).toBe('#hello');
+  it('removes UTM parameters from social and website URLs, preserving functional parameters and hashes', () => {
+    expect(removeNetworkingUtm('https://linkedin.com/in/ada?utm_source=share&team=dev&utm_campaign=conf&UTM_medium=social#hello'))
+      .toBe('https://linkedin.com/in/ada?team=dev#hello');
+    expect(removeNetworkingUtm('https://conf.zurichjs.com/?utm_source=share')).toBe('https://conf.zurichjs.com/');
   });
 
-  it('preserves existing UTM values on ZurichJS links and leaves non-HTTP links unchanged', () => {
-    const existing = addNetworkingUtm(
-      'https://zurichjs.com/?utm_source=partner&utm_content=original',
-      profile.publicId
-    );
-    const parsed = new URL(existing);
+  it.each(['mailto:partners@example.com', 'tel:+41441234567', 'invalid', 'https://example.com/?team=dev#hello'])(
+    'preserves untracked or non-HTTP link %s', (href) => {
+      expect(removeNetworkingUtm(href)).toBe(href);
+    }
+  );
 
-    expect(parsed.searchParams.get('utm_source')).toBe('partner');
-    expect(parsed.searchParams.get('utm_content')).toBe('original');
-    expect(addNetworkingUtm('mailto:partners@example.com', profile.publicId)).toBe(
-      'mailto:partners@example.com'
-    );
-    expect(addNetworkingUtm('tel:+41441234567', profile.publicId)).toBe('tel:+41441234567');
-  });
-
-  it.each([
-    'https://github.com/zurich-js/zurichjs-conf',
-    'https://example.com/contact?team=dev#hello',
-    'https://zurichjs.com.evil.example/contact',
-  ])('does not add UTM tags to external networking link %s', (href) => {
-    expect(addNetworkingUtm(href, profile.publicId)).toBe(href);
+  it('removes tracking from shared contact links and the source page', () => {
+    const text = formatNetworkingShareText({ ...profile, links: [
+      { kind: 'website', label: 'Website', href: 'https://example.com/?utm_source=share' },
+    ] }, 'https://conf.zurichjs.com/share/sponsor-example?utm_medium=qr');
+    expect(text).not.toContain('utm_');
   });
 
   it('formats labeled semantic contact details and the source page URL', () => {

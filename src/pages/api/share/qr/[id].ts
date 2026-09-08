@@ -1,6 +1,6 @@
 /**
  * Public networking QR image.
- * Encodes only the namespaced public share path and campaign attribution.
+ * Encodes only the namespaced public share path.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -38,9 +38,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Publicly cached QR payloads must never depend on attacker-controlled Host
     // or Origin headers. Calling without req requires the configured base URL.
     const shareUrl = new URL(getAbsoluteUrl(`/share/${id}`));
-    shareUrl.searchParams.set('utm_source', 'offline');
-    shareUrl.searchParams.set('utm_medium', 'qr_code');
-    shareUrl.searchParams.set('utm_campaign', 'zurichjs_networking');
 
     const image = await QRCode.toBuffer(shareUrl.toString(), {
       width: 400,

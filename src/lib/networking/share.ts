@@ -1,3 +1,4 @@
+import { removeNetworkingUtm } from '@/lib/networking/links';
 import { copyToClipboard } from '@/lib/social-share';
 import type { PublicNetworkingProfile } from '@/lib/types/networking';
 
@@ -6,17 +7,6 @@ export type NetworkingShareOutcome = 'shared' | 'copied' | 'cancelled' | 'failed
 interface ShareDependencies {
   nativeShare?: (data: ShareData) => Promise<void>;
   copyText?: (text: string) => Promise<boolean>;
-}
-
-const UTM_TAGS = {
-  utm_source: 'zurichjs-conf',
-  utm_medium: 'networking',
-  utm_campaign: 'connections',
-} as const;
-
-function isZurichJsHost(hostname: string): boolean {
-  const normalized = hostname.toLowerCase().replace(/\.$/, '');
-  return normalized === 'zurichjs.com' || normalized.endsWith('.zurichjs.com');
 }
 
 function isAbortError(error: unknown): boolean {
@@ -41,28 +31,6 @@ function readableHref(href: string): string {
   return href;
 }
 
-export function addNetworkingUtm(href: string, publicId: string): string {
-  let url: URL;
-  try {
-    url = new URL(href);
-  } catch {
-    return href;
-  }
-
-  if (
-    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
-    !isZurichJsHost(url.hostname)
-  ) return href;
-
-  for (const [key, value] of Object.entries(UTM_TAGS)) {
-    if (!url.searchParams.has(key)) url.searchParams.set(key, value);
-  }
-  if (!url.searchParams.has('utm_content')) {
-    url.searchParams.set('utm_content', publicId);
-  }
-  return url.toString();
-}
-
 export function formatNetworkingShareText(
   profile: PublicNetworkingProfile,
   pageUrl: string
@@ -71,10 +39,10 @@ export function formatNetworkingShareText(
   if (profile.headline) lines.push(profile.headline);
 
   for (const link of profile.links) {
-    lines.push(`${link.label}: ${readableHref(addNetworkingUtm(link.href, profile.publicId))}`);
+    lines.push(`${link.label}: ${readableHref(removeNetworkingUtm(link.href))}`);
   }
 
-  lines.push(`ZurichJS networking page: ${pageUrl}`);
+  lines.push(`ZurichJS networking page: ${removeNetworkingUtm(pageUrl)}`);
   return lines.join('\n');
 }
 
@@ -91,7 +59,7 @@ export async function shareNetworkingProfile(
       await nativeShare({
         title: `${profile.name} — contact details`,
         text,
-        url: pageUrl,
+        url: removeNetworkingUtm(pageUrl),
       });
       return 'shared';
     } catch (error) {
