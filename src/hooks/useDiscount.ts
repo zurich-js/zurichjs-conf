@@ -48,6 +48,7 @@ import {
   recordVisit,
   rollPopupShowLottery,
   isDiscountPopupClosed,
+  getDiscountClosureCheckDelayMs,
   POPUP_SHOW_PROBABILITY,
   RECURRING_OFFER_DEFAULTS,
 } from '@/lib/discount';
@@ -123,9 +124,41 @@ export function useDiscount() {
   const [, copyToClipboard] = useCopyToClipboard();
 
   // From conference day onwards there is nothing left to discount, so the
-  // popup and its widget stay off. Computed behind the isClient gate: reading
-  // the clock during the server/first client render would break hydration.
-  const offerWindowClosed = useMemo(() => isClient && isDiscountPopupClosed(), [isClient]);
+  // popup and its widget stay off. Read behind the isClient gate: reading the
+  // clock during the server/first client render would break hydration.
+  //
+  // `cutoffPassed` holds no truth of its own — the clock is still the source —
+  // it only forces the re-render for a tab that was already open when the
+  // cutoff went by, so a mounted hook doesn't keep serving a stale `false`.
+  const [cutoffPassed, setCutoffPassed] = useState(false);
+  const offerWindowClosed = isClient && (cutoffPassed || isDiscountPopupClosed());
+
+  useEffect(() => {
+    if (!isClient || cutoffPassed) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Chunked because setTimeout can't hold a delay longer than ~24.8 days.
+    const scheduleCheck = () => {
+      const delay = getDiscountClosureCheckDelayMs();
+      if (delay === null) {
+        setCutoffPassed(true);
+        return;
+      }
+      timer = setTimeout(scheduleCheck, delay);
+    };
+    scheduleCheck();
+    return () => {
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, [isClient, cutoffPassed]);
+
+  // Crossing the cutoff mid-session takes the offer down with it: the dwell
+  // timer is cancelled by `shouldTrigger` below, and anything already on
+  // screen — open modal or corner widget — is dropped back to idle.
+  useEffect(() => {
+    if (!offerWindowClosed) return;
+    isEligible.current = false;
+    setState((prev) => (prev === 'modal_open' || prev === 'minimized' ? 'idle' : prev));
+  }, [offerWindowClosed]);
 
   // Check for existing discount
   const { data: statusData, isLoading } = useQuery({
