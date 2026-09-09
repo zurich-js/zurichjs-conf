@@ -25,6 +25,7 @@ export { isKnownTicketHolder, markTicketHolder } from './ticket-holder';
 export {
   DISCOUNT_POPUP_CLOSE_DATE_ISO,
   getDiscountPopupCloseDate,
+  getDiscountClosureCheckDelayMs,
   isDiscountPopupClosed,
 } from './closure';
 // NOTE: corporate-code.ts is deliberately NOT exported here — it reads a server

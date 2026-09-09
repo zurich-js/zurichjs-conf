@@ -25,3 +25,20 @@ export function getDiscountPopupCloseDate(): Date {
 export function isDiscountPopupClosed(now: Date = new Date()): boolean {
   return now.getTime() >= DISCOUNT_POPUP_CLOSES_AT_MS;
 }
+
+/**
+ * Longest delay `setTimeout` can hold (~24.8 days). Anything larger wraps to a
+ * 32-bit signed int and fires immediately, so long waits have to be chunked.
+ */
+const MAX_TIMEOUT_DELAY_MS = 2_147_483_647;
+
+/**
+ * How long a still-mounted client should wait before re-checking the cutoff,
+ * clamped to what `setTimeout` can actually hold. `null` once the window has
+ * closed — there is nothing left to wait for.
+ */
+export function getDiscountClosureCheckDelayMs(now: Date = new Date()): number | null {
+  const remaining = DISCOUNT_POPUP_CLOSES_AT_MS - now.getTime();
+  if (remaining <= 0) return null;
+  return Math.min(remaining, MAX_TIMEOUT_DELAY_MS);
+}
