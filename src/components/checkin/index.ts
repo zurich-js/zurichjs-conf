@@ -32,7 +32,7 @@ export type {
   GoodieUndoPayload,
 } from './GoodieStatus';
 
-export { MyCheckIns } from './MyCheckIns';
+export { MyCheckIns, countMyActions } from './MyCheckIns';
 export type { MyCheckInsProps } from './MyCheckIns';
 
 export { ScanFlash } from './ScanFlash';

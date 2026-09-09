@@ -73,6 +73,17 @@ describe('checkinKeys', () => {
     );
   });
 
+  it('keeps every day\'s own-activity list under one prefix a landed write can sweep', () => {
+    // The queue invalidates the prefix after a flush, so a write taken for the
+    // other day never leaves a stale list behind.
+    expect(checkinKeys.myActivity('workshop_day').slice(0, 2)).toEqual([
+      ...checkinKeys.myActivities(),
+    ]);
+    expect(checkinKeys.myActivity('workshop_day')).not.toEqual(
+      checkinKeys.myActivity('conference_day'),
+    );
+  });
+
   it('gives each attendee its own key so one write cannot disturb another', () => {
     expect(checkinKeys.attendee('t1')).not.toEqual(checkinKeys.attendee('t2'));
   });

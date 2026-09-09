@@ -116,9 +116,10 @@ export const DOOR_ABILITY_GUIDE: Record<
 > = {
   check_in: {
     label: 'Check people in',
-    withIt: 'Scanning a badge shows a green "Check in" button. One tap admits them.',
+    withIt:
+      'Scanning a badge checks them in on the spot: the panel turns green and offers an undo link for a wrong person.',
     withoutIt:
-      'Scanning still shows who the person is and whether they are admissible, but there is no button to admit them.',
+      'Scanning still shows who the person is and whether they are admissible, but nothing is recorded and there is no button to admit them.',
   },
   goodie: {
     label: 'Hand over t-shirts and hoodies',
@@ -149,7 +150,7 @@ export const DOOR_ABILITY_GUIDE: Record<
   badge_pickup: {
     label: 'Hand over badges',
     withIt:
-      'A "Badge handed over" button records the pickup — including early pickup the day before — without touching any day\'s check-in.',
+      'On the warm-up meetup a scan records the badge handover itself, with an undo on the badge row; on the other days a "Badge handed over" button does it. Neither touches any day\'s check-in.',
     withoutIt: 'Badge pickups cannot be recorded from this account.',
   },
 };

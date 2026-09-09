@@ -32,6 +32,7 @@ import {
   type DoorQueuedMutation,
   type FlushResult,
 } from '@/lib/checkin/mutation-queue';
+import { checkinKeys } from '@/lib/checkin/query-keys';
 import {
   patchRosterBadgePickup,
   patchRosterCheckIn,
@@ -194,6 +195,15 @@ export function useDoorMutationQueue({
         setFailures((previous) => [...previous, ...result.failed]);
       }
       setPending(result.pending);
+
+      // The volunteer's own list is a view of what LANDED, so it goes stale the
+      // moment a write does. This is the one invalidation the station makes,
+      // and it is cheap: the list is only fetched while its panel is open, so a
+      // closed panel merely gets marked stale and refetches on the next open.
+      // Without it the count sat at whatever it read on first open — usually 0.
+      if (result.sent.length > 0) {
+        void queryClient.invalidateQueries({ queryKey: checkinKeys.myActivities() });
+      }
     },
     [queryClient, revertOptimistic]
   );

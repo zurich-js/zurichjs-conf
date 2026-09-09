@@ -3,10 +3,16 @@ import { CircleSlash, IdCard, ListChecks, RotateCcw, ShieldAlert, X } from 'luci
 import { Button } from '@/components/atoms/Button';
 import { formatDoorTime } from '@/lib/checkin/panel-state';
 import type { DoorEventRecord } from '@/lib/checkin/events';
+import type { DoorOccasion } from '@/lib/types/checkin';
 
 export interface MyCheckInsProps {
   /** Newest first, as served by /api/checkin/my-activity. */
   events: DoorEventRecord[] | undefined;
+  /**
+   * The day being worked, which decides what the headline COUNTS: badges on
+   * the warm-up meetup (that day has no check-ins), admissions otherwise.
+   */
+  occasion: DoorOccasion;
   isLoading: boolean;
   isError: boolean;
   /** Writes still in the offline queue, which are not in the list yet. */
@@ -40,6 +46,32 @@ const EVENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
 };
 
 /**
+ * The headline number, net of this volunteer's own undos.
+ *
+ * On the warm-up meetup the action is the badge, so counting check-ins there
+ * read "0 admitted today" over a list full of handovers — the number a
+ * volunteer glances at must count the thing they are actually doing.
+ */
+export function countMyActions(events: readonly DoorEventRecord[], occasion: DoorOccasion): number {
+  const applied = events.filter((event) => event.outcome === 'applied');
+  const count = (types: readonly string[]) =>
+    applied.filter((event) => types.includes(event.eventType)).length;
+
+  const done =
+    occasion === 'community_day'
+      ? count(['badge_pickup']) - count(['badge_pickup_undone'])
+      : count(['checked_in', 'manual_admit']) - count(['check_in_undone']);
+  return Math.max(done, 0);
+}
+
+function headline(count: number, occasion: DoorOccasion): string {
+  if (occasion === 'community_day') {
+    return `${count} badge${count === 1 ? '' : 's'} handed today`;
+  }
+  return `${count} admitted today`;
+}
+
+/**
  * Everything THIS volunteer has done this shift, newest first.
  *
  * Exists because mid-queue the two questions a volunteer actually asks are
@@ -50,6 +82,7 @@ const EVENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
  */
 export const MyCheckIns: React.FC<MyCheckInsProps> = ({
   events,
+  occasion,
   isLoading,
   isError,
   pendingWrites = 0,
@@ -57,11 +90,7 @@ export const MyCheckIns: React.FC<MyCheckInsProps> = ({
   onClose,
   className = '',
 }) => {
-  const admitted = (events ?? []).filter(
-    (event) =>
-      (event.eventType === 'checked_in' || event.eventType === 'manual_admit') &&
-      event.outcome === 'applied'
-  ).length;
+  const done = countMyActions(events ?? [], occasion);
 
   return (
     <section
@@ -72,7 +101,7 @@ export const MyCheckIns: React.FC<MyCheckInsProps> = ({
         <div>
           <h2 className="text-sm font-semibold text-text-primary">My check-ins</h2>
           <p className="text-xs text-text-muted" aria-live="polite">
-            {events ? `${admitted} admitted today` : 'Loading…'}
+            {events ? headline(done, occasion) : 'Loading…'}
             {pendingWrites > 0 ? ` · ${pendingWrites} still sending` : ''}
           </p>
         </div>

@@ -6,6 +6,7 @@ import {
   formatDoorTime,
   resolveDoorPanelDetail,
   resolveDoorPanelState,
+  resolveScanAutoAction,
   toneForOutcome,
   workshopSeatProgress,
 } from '../panel-state';
@@ -165,6 +166,19 @@ describe('community day (warm-up meetup)', () => {
     expect(resolveDoorPanelState(hit({ ticket: null }), 'community_day')).toBe('nothing_today');
   });
 
+  it('reads a handover recorded just now as a success, not as "already picked up"', () => {
+    // The scan records the handover itself, so the roster patch and the
+    // applied result arrive together. A yellow "already" banner there would
+    // read as a duplicate to the volunteer who just did it.
+    const justHanded = hit({ badge: { pickedUpAt: '2026-09-09T18:02:00.000Z' } });
+    expect(resolveDoorPanelState(justHanded, 'community_day', applied)).toBe('handed');
+    expect(resolveDoorPanelDetail('handed', justHanded, 'community_day', applied)).toMatch(
+      /send them through/i
+    );
+    // Without a fresh result the same roster state IS the second-scan case.
+    expect(resolveDoorPanelState(justHanded, 'community_day')).toBe('picked_up');
+  });
+
   it('still refuses a refunded ticket before offering a badge', () => {
     expect(
       resolveDoorPanelState(
@@ -303,5 +317,88 @@ describe('toneForOutcome', () => {
     ['not_found', 'refused'],
   ] as const)('maps %s to the %s tone', (outcome, tone) => {
     expect(toneForOutcome(outcome)).toBe(tone);
+  });
+});
+
+describe('resolveScanAutoAction', () => {
+  // The scan IS the check-in. The volunteer's remaining tap is the undo.
+  it('checks a clean conference ticket in on the spot', () => {
+    expect(resolveScanAutoAction(hit(), 'conference_day', 'scanner')).toEqual({
+      kind: 'check_in',
+      subjectId: 't1',
+    });
+  });
+
+  it('records nothing for a role that may not check in', () => {
+    expect(resolveScanAutoAction(hit(), 'conference_day', 'goodie')).toBeNull();
+  });
+
+  it('records nothing for an inadmissible subject', () => {
+    const refunded = hit({ admissible: false, refusalReason: 'ticket_refunded' });
+    expect(resolveScanAutoAction(refunded, 'conference_day', 'door_lead')).toBeNull();
+  });
+
+  // A second read of the same badge must cost a "duplicate" tone, never a write.
+  it('records nothing for someone already in for this occasion', () => {
+    const already = hit({
+      checkIn: { workshopDayAt: null, conferenceDayAt: '2026-09-11T07:14:00.000Z' },
+    });
+    expect(resolveScanAutoAction(already, 'conference_day', 'scanner')).toBeNull();
+  });
+
+  it('checks in the one open seat on workshop day, by its seat id', () => {
+    const oneSeat = hit({ workshops: { held: [heldSeat()], purchasedForOthers: [] } });
+    expect(resolveScanAutoAction(oneSeat, 'workshop_day', 'scanner')).toEqual({
+      kind: 'check_in',
+      subjectId: 'r1',
+    });
+
+    const secondDoor = hit({
+      workshops: {
+        held: [
+          heldSeat({ registrationId: 'r1', checkedInAt: '2026-09-10T08:00:00.000Z' }),
+          heldSeat({ registrationId: 'r2', startTime: '13:00' }),
+        ],
+        purchasedForOthers: [],
+      },
+    });
+    expect(resolveScanAutoAction(secondDoor, 'workshop_day', 'scanner')).toEqual({
+      kind: 'check_in',
+      subjectId: 'r2',
+    });
+  });
+
+  // The volunteer stands at ONE workshop's door; the station cannot know which.
+  it('leaves the choice to the volunteer when more than one seat is open', () => {
+    const twoOpen = hit({
+      workshops: {
+        held: [heldSeat({ registrationId: 'r1' }), heldSeat({ registrationId: 'r2' })],
+        purchasedForOthers: [],
+      },
+    });
+    expect(resolveScanAutoAction(twoOpen, 'workshop_day', 'scanner')).toBeNull();
+  });
+
+  it('checks a seatless ticket holder in on workshop day by the ticket', () => {
+    expect(resolveScanAutoAction(hit(), 'workshop_day', 'scanner')).toEqual({
+      kind: 'check_in',
+      subjectId: 't1',
+    });
+  });
+
+  it('hands the badge over on the warm-up meetup, which has no check-ins', () => {
+    expect(resolveScanAutoAction(hit(), 'community_day', 'goodie')).toEqual({
+      kind: 'badge_pickup',
+      subjectId: 't1',
+    });
+    expect(
+      resolveScanAutoAction(
+        hit({ badge: { pickedUpAt: '2026-09-09T18:02:00.000Z' } }),
+        'community_day',
+        'scanner'
+      )
+    ).toBeNull();
+    // No conference ticket, no badge — a legitimate visitor, nothing to record.
+    expect(resolveScanAutoAction(hit({ ticket: null }), 'community_day', 'scanner')).toBeNull();
   });
 });

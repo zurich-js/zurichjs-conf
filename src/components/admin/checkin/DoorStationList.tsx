@@ -1,11 +1,17 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import { DOOR_ROLE_LABELS } from '@/lib/types/checkin';
+import { DOOR_ROLE_LABELS, type DoorOccasion } from '@/lib/types/checkin';
 import type { DoorStationStat, DoorVolunteerStat } from '@/lib/checkin/dashboard';
 
 export interface DoorStationListProps {
   stations: DoorStationStat[];
   volunteers: DoorVolunteerStat[];
+  /**
+   * The day shown. On the warm-up meetup the headline per volunteer is badges
+   * handed, because that day has no check-ins and "0 admitted" for everyone
+   * read as a broken desk.
+   */
+  occasion?: DoorOccasion;
   /** How long without an action before someone is called quiet. */
   quietAfterMs?: number;
   className?: string;
@@ -32,9 +38,11 @@ const DEFAULT_QUIET_AFTER_MS = 10 * 60 * 1000;
 export const DoorStationList: React.FC<DoorStationListProps> = ({
   stations,
   volunteers,
+  occasion,
   quietAfterMs = DEFAULT_QUIET_AFTER_MS,
   className = '',
 }) => {
+  const badgeDay = occasion === 'community_day';
   if (stations.length === 0 && volunteers.length === 0) {
     return (
       <p className={`rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 ${className}`}>
@@ -67,7 +75,9 @@ export const DoorStationList: React.FC<DoorStationListProps> = ({
                     {` · ${volunteer.scans} scan${volunteer.scans === 1 ? '' : 's'}`}
                     {volunteer.manualAdmits > 0 ? ` · ${volunteer.manualAdmits} manual` : ''}
                     {volunteer.undos > 0 ? ` · ${volunteer.undos} undone` : ''}
-                    {volunteer.badgePickups > 0 ? ` · ${volunteer.badgePickups} badges` : ''}
+                    {!badgeDay && volunteer.badgePickups > 0
+                      ? ` · ${volunteer.badgePickups} badges`
+                      : ''}
                     {volunteer.refusals > 0 ? ` · ${volunteer.refusals} refused` : ''}
                     {volunteer.duplicates > 0 ? ` · ${volunteer.duplicates} second scans` : ''}
                   </p>
@@ -80,9 +90,9 @@ export const DoorStationList: React.FC<DoorStationListProps> = ({
                     </span>
                   ) : null}
                   <p className="text-lg font-bold tabular-nums text-black">
-                    {volunteer.admitted}
+                    {badgeDay ? volunteer.badgePickups : volunteer.admitted}
                   </p>
-                  <p className="text-xs text-gray-500">admitted</p>
+                  <p className="text-xs text-gray-500">{badgeDay ? 'badges' : 'admitted'}</p>
                   <p className="text-xs tabular-nums text-gray-500">
                     {volunteer.lastSeenAt ? `last ${formatClock(volunteer.lastSeenAt)}` : '—'}
                   </p>
