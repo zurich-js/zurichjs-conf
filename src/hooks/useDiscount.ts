@@ -13,9 +13,10 @@
  * (30% by default) are offered the popup at all, rolled once per visit so it
  * doesn't blink in and out on a reload. UTM lottery winners bypass the roll —
  * the QR code or flyer they arrived from already promised them a discount.
- * Beyond the roll, two things suppress the popup outright — a browser that
- * already bought a ticket or is marked as a corporate buyer — and an explicit
- * dismissal minimizes it to the corner widget so the offer stays reachable.
+ * Beyond the roll, three things suppress the popup outright — the offer window
+ * having closed (conference day onwards), a browser that already bought a
+ * ticket, or one marked as a corporate buyer — and an explicit dismissal
+ * minimizes it to the corner widget so the offer stays reachable.
  *
  * Timing and generosity vary by intent signal:
  * - UTM lottery winners see it immediately at the lottery percentage
@@ -46,6 +47,8 @@ import {
   buildDiscountPersonalization,
   recordVisit,
   rollPopupShowLottery,
+  isDiscountPopupClosed,
+  getDiscountClosureCheckDelayMs,
   POPUP_SHOW_PROBABILITY,
   RECURRING_OFFER_DEFAULTS,
 } from '@/lib/discount';
@@ -119,6 +122,43 @@ export function useDiscount() {
 
   // Clipboard
   const [, copyToClipboard] = useCopyToClipboard();
+
+  // From conference day onwards there is nothing left to discount, so the
+  // popup and its widget stay off. Read behind the isClient gate: reading the
+  // clock during the server/first client render would break hydration.
+  //
+  // `cutoffPassed` holds no truth of its own — the clock is still the source —
+  // it only forces the re-render for a tab that was already open when the
+  // cutoff went by, so a mounted hook doesn't keep serving a stale `false`.
+  const [cutoffPassed, setCutoffPassed] = useState(false);
+  const offerWindowClosed = isClient && (cutoffPassed || isDiscountPopupClosed());
+
+  useEffect(() => {
+    if (!isClient || cutoffPassed) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Chunked because setTimeout can't hold a delay longer than ~24.8 days.
+    const scheduleCheck = () => {
+      const delay = getDiscountClosureCheckDelayMs();
+      if (delay === null) {
+        setCutoffPassed(true);
+        return;
+      }
+      timer = setTimeout(scheduleCheck, delay);
+    };
+    scheduleCheck();
+    return () => {
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, [isClient, cutoffPassed]);
+
+  // Crossing the cutoff mid-session takes the offer down with it: the dwell
+  // timer is cancelled by `shouldTrigger` below, and anything already on
+  // screen — open modal or corner widget — is dropped back to idle.
+  useEffect(() => {
+    if (!offerWindowClosed) return;
+    isEligible.current = false;
+    setState((prev) => (prev === 'modal_open' || prev === 'minimized' ? 'idle' : prev));
+  }, [offerWindowClosed]);
 
   // Check for existing discount
   const { data: statusData, isLoading } = useQuery({
@@ -229,14 +269,19 @@ export function useDiscount() {
 
     // Never offer a discount to someone who already bought a ticket, or to a
     // corporate buyer spending a training budget — they book at the standard
-    // rate either way, so the offer is pure margin loss.
+    // rate either way, so the offer is pure margin loss. Past the close date
+    // nobody is offered anything, lottery winners included.
     const isTicketHolder = isKnownTicketHolder();
     const isCorporate = isCorporateBuyer();
     isEligible.current =
-      !isTicketHolder && !isCorporate && (lottery.eligible || wonShowLottery === true);
+      !offerWindowClosed &&
+      !isTicketHolder &&
+      !isCorporate &&
+      (lottery.eligible || wonShowLottery === true);
 
     analytics.track('discount_eligibility_checked', {
       was_eligible: isEligible.current,
+      is_offer_window_closed: offerWindowClosed,
       is_known_ticket_holder: isTicketHolder,
       is_corporate_buyer: isCorporate,
       is_recurring_visitor: isRecurring.current,
@@ -244,11 +289,12 @@ export function useDiscount() {
       show_probability: lottery.eligible ? undefined : POPUP_SHOW_PROBABILITY,
       visit_count: visitCount,
     });
-  }, [isClient, configResolved, configRecurringMinVisits]);
+  }, [isClient, configResolved, configRecurringMinVisits, offerWindowClosed]);
 
-  // Restore minimized state from existing discount
+  // Restore minimized state from existing discount. A code still sitting in
+  // cookies past the close date isn't resurfaced — the widget stays off too.
   useEffect(() => {
-    if (!statusData?.active || !statusData.code || data) return;
+    if (offerWindowClosed || !statusData?.active || !statusData.code || data) return;
 
     setData({
       code: statusData.code,
@@ -256,13 +302,19 @@ export function useDiscount() {
       percentOff: statusData.percentOff!,
     });
     setState('minimized');
-  }, [statusData, data]);
+  }, [statusData, data, offerWindowClosed]);
 
   // Show popup after delay if eligible (lottery shows immediately, normal has
   // 15s delay). Waits for the config to resolve so the gate advertises the
   // real offer percentage.
   const shouldTrigger =
-    isClient && !isLoading && configResolved && state === 'idle' && !statusData?.active && !hasDismissedCookie();
+    isClient &&
+    !offerWindowClosed &&
+    !isLoading &&
+    configResolved &&
+    state === 'idle' &&
+    !statusData?.active &&
+    !hasDismissedCookie();
   const delayMs = showImmediately ? 0 : POPUP_DELAY_MS;
 
   useTimeout(() => {
