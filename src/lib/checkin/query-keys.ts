@@ -78,7 +78,12 @@ export const checkinKeys = {
   events: () => [...checkinKeys.all, 'events'] as const,
   eventList: (params: DoorEventListParams) => [...checkinKeys.events(), 'list', params] as const,
 
-  /** One volunteer's own actions, for the station's "my check-ins" view. */
+  /**
+   * One volunteer's own actions, for the station's "my check-ins" view. The
+   * prefix is what a landed write invalidates — every day at once, so a write
+   * taken for the other day never leaves a stale list behind.
+   */
+  myActivities: () => [...checkinKeys.all, 'my-activity'] as const,
   myActivity: (occasion: DoorOccasion | null) =>
-    [...checkinKeys.all, 'my-activity', occasion] as const,
+    [...checkinKeys.myActivities(), occasion] as const,
 } as const;

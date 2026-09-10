@@ -2,10 +2,12 @@
  * The door station.
  *
  * THE WHOLE POINT, IN ONE SENTENCE: a scan costs no network request, and a
- * check-in costs no wait.
+ * check-in costs no tap and no wait.
  *
  * The roster is prefetched once per shift and indexed in memory, so resolving a
- * badge is a Map lookup. The write is queued and acknowledged locally, so the
+ * badge is a Map lookup. The scan itself records the day's action — a check-in,
+ * or a badge handover on the warm-up meetup — and the only tap left is an undo
+ * for the wrong person. The write is queued and acknowledged locally, so the
  * volunteer sees the verdict and moves on while it lands in the background.
  * Nothing on this screen navigates — a route change would tear down the video
  * track and cost another permission handshake.
@@ -41,14 +43,18 @@ import { useDoorMyActivity } from '@/hooks/checkin/useDoorMyActivity';
 import { useDoorScanner } from '@/hooks/checkin/useDoorScanner';
 import { useDoorFeedback } from '@/hooks/checkin/useDoorFeedback';
 import { useDoorHelp } from '@/hooks/checkin/useDoorHelp';
+import { useDoorActions } from '@/hooks/checkin/useDoorActions';
 import { extractScannedId } from '@/lib/checkin/roster-index';
 import { DoorApiError } from '@/lib/checkin/api-fetch';
 import { disarmDoorAudio } from '@/lib/checkin/feedback';
 import { readQueue } from '@/lib/checkin/mutation-queue';
 import { checkinKeys } from '@/lib/checkin/query-keys';
 import type { DoorSearchableRecord } from '@/lib/checkin/roster-index';
-import type { GoodieHandoverPayload, GoodieUndoPayload } from '@/components/checkin';
-import { checkedInAtFor, toneForOutcome } from '@/lib/checkin/panel-state';
+import {
+  checkedInAtFor,
+  resolveScanAutoAction,
+  toneForOutcome,
+} from '@/lib/checkin/panel-state';
 import { ROLL_CALL_REASON } from '@/lib/checkin/roll-call';
 import { supabase } from '@/lib/supabase/client';
 import {
@@ -261,16 +267,25 @@ export default function DoorStationPage() {
   }, [roster.index, scan?.subjectId]);
 
   /**
-   * Announce the verdict once per scan.
+   * Announce the verdict once per scan — and when the verdict is "admissible
+   * and not yet done", RECORD it. The scan is the check-in (or, on the warm-up
+   * meetup, the badge handover); the volunteer's only remaining tap is an undo.
    *
    * Deliberately here and not in the scan handler: the verdict depends on the
    * roster, and the handler runs inside the frame loop where the resolved
    * attendee is not yet known. Guarded on the nonce so the optimistic cache
-   * patch — which changes `attendee` and re-runs this — does not beep again.
+   * patch — which changes `attendee` and re-runs this — neither beeps nor
+   * writes a second time.
+   *
+   * The lookup path is excluded on purpose: nobody verified a code there, so
+   * that admission is a `manual_admit` with a reason, never automatic.
    */
   const announcedNonce = useRef(0);
+  const submitRef = useRef(queue.submit);
+  submitRef.current = queue.submit;
+  const role = staff?.role;
   useEffect(() => {
-    if (!scan || !occasion || !roster.index) return;
+    if (!scan || !occasion || !roster.index || !role) return;
     if (scan.nonce === announcedNonce.current) return;
     announcedNonce.current = scan.nonce;
 
@@ -278,8 +293,27 @@ export default function DoorStationPage() {
       signal('refused');
       return;
     }
-    signal(checkedInAtFor(attendee, occasion) ? 'duplicate' : 'success');
-  }, [scan, attendee, roster.index, occasion, signal]);
+
+    const action = fromLookup ? null : resolveScanAutoAction(attendee, occasion, role);
+    if (action) {
+      submitRef.current(
+        action.kind === 'badge_pickup'
+          ? { kind: 'badge_pickup', scannedId: action.subjectId }
+          : { kind: 'check_in', scannedId: action.subjectId }
+      );
+      // Turns the banner green before the network is consulted; the roster
+      // patch already holds the timestamp the rows read.
+      setLastResult({ outcome: 'applied' });
+      signal('success');
+      return;
+    }
+
+    const alreadyDone =
+      occasion === 'community_day'
+        ? attendee.badge.pickedUpAt
+        : checkedInAtFor(attendee, occasion);
+    signal(alreadyDone ? 'duplicate' : 'success');
+  }, [scan, attendee, roster.index, occasion, role, fromLookup, signal]);
 
   /**
    * ORDERING MATTERS HERE — do not make this synchronous.
@@ -309,87 +343,13 @@ export default function DoorStationPage() {
     [resetHelp]
   );
 
-  const handleCheckIn = useCallback(() => {
-    if (!scan?.subjectId) return;
-    queue.submit({ kind: 'check_in', scannedId: scan.subjectId });
-    // Optimistic: the roster patch has already recorded the arrival, and this is
-    // what turns the banner green before the network is consulted.
-    setLastResult({ outcome: 'applied' });
-    signal('success');
-  }, [queue, scan?.subjectId, signal]);
-
-  /** One workshop seat, on workshop day. The seat id is its own check-in subject. */
-  const handleCheckInSeat = useCallback(
-    (registrationId: string) => {
-      queue.submit({ kind: 'check_in', scannedId: registrationId });
-      // No lastResult: the banner derives from the seats, which the optimistic
-      // roster patch has already advanced.
-      signal('success');
-    },
-    [queue, signal]
-  );
-
-  const handleUndo = useCallback(() => {
-    if (!scan?.subjectId) return;
-    queue.submit({ kind: 'undo_check_in', scannedId: scan.subjectId });
-    // The roster patch has already cleared the arrival; the banner recomputes
-    // to "Ready to admit" on its own. No beep — nothing was admitted.
-    setLastResult(null);
-    // Let the same badge be re-scanned immediately for the corrected person.
-    scanner.clearGate();
-  }, [queue, scan?.subjectId, scanner]);
-
-  const handleUndoSeat = useCallback(
-    (registrationId: string) => {
-      queue.submit({ kind: 'undo_check_in', scannedId: registrationId });
-    },
-    [queue]
-  );
-
-  const handleGoodie = useCallback(
-    (payload: GoodieHandoverPayload) => {
-      // Entitlement follows the conference ticket, so only a ticket subject
-      // reaches this — a workshop-only attendee has no ticket to key it on.
-      const current = scanRef.current;
-      if (!current?.subjectId) return;
-      queue.submit({
-        kind: 'goodie',
-        ticketId: current.subjectId,
-        tshirtSize: payload.tshirtSize ?? undefined,
-        hoodieSize: payload.hoodieSize ?? undefined,
-        note: payload.note,
-      });
-      signal('success');
-    },
-    [queue, signal]
-  );
-
-  const handleBadgePickup = useCallback(() => {
-    if (!scan?.subjectId) return;
-    queue.submit({ kind: 'badge_pickup', scannedId: scan.subjectId });
-    signal('success');
-  }, [queue, scan?.subjectId, signal]);
-
-  const handleUndoBadge = useCallback(() => {
-    if (!scan?.subjectId) return;
-    queue.submit({ kind: 'undo_badge_pickup', scannedId: scan.subjectId });
-    // No beep — nothing was handed. The badge row recomputes from the patch.
-  }, [queue, scan?.subjectId]);
-
-  const handleUndoGoodie = useCallback(
-    (payload: GoodieUndoPayload) => {
-      // Like the handover, keyed on the conference ticket.
-      const current = scanRef.current;
-      if (!current?.subjectId) return;
-      queue.submit({
-        kind: 'undo_goodie',
-        ticketId: current.subjectId,
-        undoTshirt: payload.undoTshirt,
-        undoHoodie: payload.undoHoodie,
-      });
-    },
-    [queue]
-  );
+  const actions = useDoorActions({
+    subjectId: scan?.subjectId ?? null,
+    submit: queue.submit,
+    setLastResult,
+    signal,
+    clearGate: scanner.clearGate,
+  });
 
   /**
    * Admit someone found by name — or, with the roll-call reason, someone ticked
@@ -608,7 +568,7 @@ export default function DoorStationPage() {
                 ? (registrationId) => handleManualAdmit(ROLL_CALL_REASON, registrationId)
                 : undefined
             }
-            onUndoSeat={roleCan(staff.role, 'check_in') ? handleUndoSeat : undefined}
+            onUndoSeat={roleCan(staff.role, 'check_in') ? actions.undoSeat : undefined}
             onClose={() => setWorkshopsOpen(false)}
             showContact={roleCan(staff.role, 'view_contact')}
           />
@@ -617,6 +577,7 @@ export default function DoorStationPage() {
         {myListOpen ? (
           <MyCheckIns
             events={myActivity.data?.events}
+            occasion={occasion}
             isLoading={myActivity.isLoading}
             isError={myActivity.isError}
             pendingWrites={queue.pending}
@@ -641,15 +602,15 @@ export default function DoorStationPage() {
             role={staff.role}
             lastResult={lastResult}
             fromLookup={fromLookup}
-            onCheckIn={handleCheckIn}
-            onCheckInSeat={handleCheckInSeat}
+            onCheckIn={actions.checkIn}
+            onCheckInSeat={actions.checkInSeat}
             onManualAdmit={handleManualAdmit}
-            onUndo={handleUndo}
-            onUndoSeat={handleUndoSeat}
-            onHandOverGoodie={handleGoodie}
-            onUndoGoodie={handleUndoGoodie}
-            onHandOverBadge={handleBadgePickup}
-            onUndoBadge={handleUndoBadge}
+            onUndo={actions.undo}
+            onUndoSeat={actions.undoSeat}
+            onHandOverGoodie={actions.handOverGoodie}
+            onUndoGoodie={actions.undoGoodie}
+            onHandOverBadge={actions.handOverBadge}
+            onUndoBadge={actions.undoBadge}
             onEscalate={help.status === 'idle' ? requestHelp : undefined}
           />
         ) : null}

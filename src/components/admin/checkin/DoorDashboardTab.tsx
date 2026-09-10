@@ -145,7 +145,11 @@ export const DoorDashboardTab: React.FC<DoorDashboardTabProps> = ({ className = 
             />
           </div>
 
-          <DoorStationList stations={data.stations} volunteers={data.volunteers} />
+          <DoorStationList
+            stations={data.stations}
+            volunteers={data.volunteers}
+            occasion={data.occasion}
+          />
 
           <section>
             <h2 className="mb-3 text-lg font-semibold text-black">Worth a look</h2>

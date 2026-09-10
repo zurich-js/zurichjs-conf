@@ -7,17 +7,25 @@
  * is spelled out rather than left to render-order accident.
  */
 
-import type { DoorCheckInResult, DoorOccasion, DoorResolveHit } from '@/lib/types/checkin';
+import {
+  roleCan,
+  type DoorCheckInResult,
+  type DoorOccasion,
+  type DoorResolveHit,
+  type DoorRole,
+} from '@/lib/types/checkin';
 
 /**
- * `pickup` / `picked_up` are the community-day pair: that occasion has no
- * check-ins, so the badge IS the verdict the banner announces.
+ * `pickup` / `handed` / `picked_up` are the community-day trio: that occasion
+ * has no check-ins, so the badge IS the verdict the banner announces. `handed`
+ * is the badge counterpart of `admitted` — recorded just now, on this station.
  */
 export type DoorPanelState =
   | 'admit'
   | 'admitted'
   | 'already'
   | 'pickup'
+  | 'handed'
   | 'picked_up'
   | 'nothing_today'
   | 'refused'
@@ -105,6 +113,9 @@ export function resolveDoorPanelState(
   // conference tickets; a workshop-only attendee has nothing to record there.
   if (occasion === 'community_day') {
     if (!attendee.ticket) return 'nothing_today';
+    // A handover recorded on THIS station just now reads as a success, not as
+    // "already picked up" — the latter is what a second scan should say.
+    if (lastResult?.outcome === 'applied') return 'handed';
     return attendee.badge.pickedUpAt ? 'picked_up' : 'pickup';
   }
 
@@ -211,7 +222,7 @@ export function resolveDoorPanelDetail(
     const at = lastResult?.alreadyCheckedInAt ?? checkedInAtFor(attendee, occasion);
     return at ? `Arrived at ${formatDoorTime(at)}` : 'Already recorded for today';
   }
-  if (state === 'admitted') return 'Recorded — send them through';
+  if (state === 'admitted' || state === 'handed') return 'Recorded — send them through';
   if (state === 'picked_up') {
     const at = attendee.badge.pickedUpAt;
     return at ? `Handed over at ${formatDoorTime(at)}` : 'Already handed over';
@@ -232,6 +243,58 @@ export function resolveDoorPanelDetail(
     }
   }
   return undefined;
+}
+
+/** What a scan records on its own, before the volunteer touches anything. */
+export type DoorScanAutoAction =
+  | { kind: 'check_in'; subjectId: string }
+  | { kind: 'badge_pickup'; subjectId: string };
+
+/**
+ * The scan IS the action.
+ *
+ * A volunteer at a door does not need a button between "this badge is valid"
+ * and "let them in": the person is standing right there, and the tap was one
+ * more thing to do per attendee with a queue behind them. So a scan records
+ * the day's primary action by itself, and the panel offers an undo instead —
+ * the "wrong person of a pair" mistake is noticed within a second either way.
+ *
+ * Returns null when nothing should be recorded without a human deciding:
+ *   - the role may not do it, the subject is inadmissible, or it is already
+ *     done — all of which the banner explains;
+ *   - workshop day with more than one seat still open: the volunteer stands at
+ *     ONE workshop's door and the station cannot know which;
+ *   - a workshop-only attendee on the warm-up meetup, who has no badge.
+ *
+ * The lookup path must never reach this. Nobody verified a code there, so that
+ * admission is a manual one with a reason — the caller withholds the call.
+ */
+export function resolveScanAutoAction(
+  attendee: DoorResolveHit,
+  occasion: DoorOccasion,
+  role: DoorRole
+): DoorScanAutoAction | null {
+  if (!attendee.admissible) return null;
+
+  // The warm-up meetup hands badges and never checks anyone in.
+  if (occasion === 'community_day') {
+    if (!roleCan(role, 'badge_pickup') || !attendee.ticket || attendee.badge.pickedUpAt) {
+      return null;
+    }
+    return { kind: 'badge_pickup', subjectId: attendee.subjectId };
+  }
+
+  if (!canOfferCheckIn(attendee, occasion, roleCan(role, 'check_in'))) return null;
+
+  const seats = attendee.workshops.held;
+  if (occasion === 'workshop_day' && seats.length > 0) {
+    const open = seats.filter((seat) => seat.checkedInAt === null);
+    const [only] = open;
+    if (open.length !== 1 || !only) return null;
+    return { kind: 'check_in', subjectId: only.registrationId };
+  }
+
+  return { kind: 'check_in', subjectId: attendee.subjectId };
 }
 
 /** Which feedback tone an outcome should play. */

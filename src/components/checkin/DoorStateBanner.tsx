@@ -12,15 +12,17 @@ import {
 import { useMotion } from '@/contexts/MotionContext';
 
 /**
- * `pickup` / `picked_up` are the warm-up meetup's pair — that day has no
- * check-ins, so the badge is the verdict. `nothing_today` is the workshop-only
- * attendee on badge day: legitimate, but nothing to record for them.
+ * `pickup` / `handed` / `picked_up` are the warm-up meetup's trio — that day
+ * has no check-ins, so the badge is the verdict; `handed` is its `admitted`.
+ * `nothing_today` is the workshop-only attendee on badge day: legitimate, but
+ * nothing to record for them.
  */
 export type DoorState =
   | 'admit'
   | 'admitted'
   | 'already'
   | 'pickup'
+  | 'handed'
   | 'picked_up'
   | 'nothing_today'
   | 'refused'
@@ -56,6 +58,7 @@ const STATE_STYLES: Record<DoorState, string> = {
   admitted: 'bg-success text-brand-black',
   already: 'bg-warning text-brand-black',
   pickup: 'bg-success text-brand-black',
+  handed: 'bg-success text-brand-black',
   picked_up: 'bg-warning text-brand-black',
   nothing_today: 'bg-surface-elevated text-text-primary',
   refused: 'bg-error text-brand-white',
@@ -67,6 +70,7 @@ const STATE_LABELS: Record<DoorState, string> = {
   admitted: 'Checked in',
   already: 'Already checked in',
   pickup: 'Verified',
+  handed: 'Badge handed over',
   picked_up: 'Badge already picked up',
   nothing_today: 'Nothing to record today',
   refused: 'Do not admit',
@@ -86,6 +90,7 @@ const STATE_ICONS: Record<DoorState, React.ComponentType<{ className?: string }>
   admitted: Check,
   already: Clock,
   pickup: IdCard,
+  handed: IdCard,
   picked_up: Clock,
   nothing_today: CalendarClock,
   refused: CircleSlash,
