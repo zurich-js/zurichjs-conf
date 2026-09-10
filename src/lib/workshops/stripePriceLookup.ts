@@ -7,6 +7,7 @@ import Stripe from 'stripe';
 import type { SupportedCurrency } from '@/config/currency';
 import type { Workshop } from '@/lib/types/database';
 import { logger } from '@/lib/logger';
+import { isWorkshopPurchaseClosed } from './purchaseWindow';
 
 const log = logger.scope('Workshop Stripe Lookup');
 
@@ -24,9 +25,42 @@ export interface WorkshopOfferingSummary {
   enrolledCount: number;
   capacityRemaining: number;
   soldOut: boolean;
+  /**
+   * True once the workshop's scheduled start (Zurich time) has passed. The
+   * public UI must not offer a buy CTA (or waitlist) and checkout rejects it.
+   */
+  purchaseClosed: boolean;
   room: string | null;
   durationMinutes: number | null;
 }
+
+const toOfferingSummary = (
+  workshop: Workshop,
+  lookupKey: string,
+  price: Stripe.Price & { unit_amount: number; currency: string },
+  now: Date
+): WorkshopOfferingSummary => {
+  const capacityRemaining = Math.max(0, (workshop.capacity ?? 0) - (workshop.enrolled_count ?? 0));
+
+  return {
+    workshopId: workshop.id,
+    sessionId: workshop.session_id ?? null,
+    cfpSubmissionId: workshop.cfp_submission_id,
+    slug: slugForWorkshop(workshop) ?? workshop.id,
+    lookupKey,
+    priceId: price.id,
+    stripeProductId: workshop.stripe_product_id,
+    unitAmount: price.unit_amount,
+    currency: price.currency.toUpperCase(),
+    capacity: workshop.capacity ?? 0,
+    enrolledCount: workshop.enrolled_count ?? 0,
+    capacityRemaining,
+    soldOut: capacityRemaining <= 0,
+    purchaseClosed: isWorkshopPurchaseClosed(workshop, now),
+    room: workshop.room,
+    durationMinutes: workshop.duration_minutes,
+  };
+};
 
 export const getStripeClient = (): Stripe => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -75,7 +109,8 @@ export const slugForWorkshop = (workshop: Workshop): string | null => {
 export const buildOfferingSummary = async (
   stripe: Stripe,
   workshop: Workshop,
-  targetCurrency: SupportedCurrency
+  targetCurrency: SupportedCurrency,
+  now: Date = new Date()
 ): Promise<WorkshopOfferingSummary | null> => {
   if (!workshop.stripe_price_lookup_key) return null;
 
@@ -83,25 +118,12 @@ export const buildOfferingSummary = async (
   const price = await fetchStripePriceByLookupKey(stripe, lookupKey);
   if (!price?.unit_amount || !price.currency) return null;
 
-  const capacityRemaining = Math.max(0, (workshop.capacity ?? 0) - (workshop.enrolled_count ?? 0));
-
-  return {
-    workshopId: workshop.id,
-    sessionId: workshop.session_id ?? null,
-    cfpSubmissionId: workshop.cfp_submission_id,
-    slug: slugForWorkshop(workshop) ?? workshop.id,
+  return toOfferingSummary(
+    workshop,
     lookupKey,
-    priceId: price.id,
-    stripeProductId: workshop.stripe_product_id,
-    unitAmount: price.unit_amount,
-    currency: price.currency.toUpperCase(),
-    capacity: workshop.capacity ?? 0,
-    enrolledCount: workshop.enrolled_count ?? 0,
-    capacityRemaining,
-    soldOut: capacityRemaining <= 0,
-    room: workshop.room,
-    durationMinutes: workshop.duration_minutes,
-  };
+    price as Stripe.Price & { unit_amount: number; currency: string },
+    now
+  );
 };
 
 /**
@@ -112,7 +134,8 @@ export const buildOfferingSummary = async (
 export const buildOfferingSummaries = async (
   stripe: Stripe,
   workshops: Workshop[],
-  targetCurrency: SupportedCurrency
+  targetCurrency: SupportedCurrency,
+  now: Date = new Date()
 ): Promise<WorkshopOfferingSummary[]> => {
   if (workshops.length === 0) return [];
 
@@ -157,27 +180,14 @@ export const buildOfferingSummaries = async (
     const price = priceByLookupKey.get(lookupKey);
     if (!price?.unit_amount || !price.currency) continue;
 
-    const capacityRemaining = Math.max(
-      0,
-      (workshop.capacity ?? 0) - (workshop.enrolled_count ?? 0)
+    out.push(
+      toOfferingSummary(
+        workshop,
+        lookupKey,
+        price as Stripe.Price & { unit_amount: number; currency: string },
+        now
+      )
     );
-    out.push({
-      workshopId: workshop.id,
-      sessionId: workshop.session_id ?? null,
-      cfpSubmissionId: workshop.cfp_submission_id,
-      slug: slugForWorkshop(workshop) ?? workshop.id,
-      lookupKey,
-      priceId: price.id,
-      stripeProductId: workshop.stripe_product_id,
-      unitAmount: price.unit_amount,
-      currency: price.currency.toUpperCase(),
-      capacity: workshop.capacity ?? 0,
-      enrolledCount: workshop.enrolled_count ?? 0,
-      capacityRemaining,
-      soldOut: capacityRemaining <= 0,
-      room: workshop.room,
-      durationMinutes: workshop.duration_minutes,
-    });
   }
   return out;
 };

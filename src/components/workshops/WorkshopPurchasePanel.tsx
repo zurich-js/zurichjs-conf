@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { trackWorkshopAddedToCart } from '@/lib/analytics';
-import { BellRing, Check, GraduationCap, MapPin, Timer, Users } from 'lucide-react';
+import { BellRing, Check, GraduationCap, Lock, MapPin, Timer, Users } from 'lucide-react';
 import { Button, Heading } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -63,9 +63,11 @@ export function WorkshopPurchasePanel({
 
   const itemId = offering ? `workshop_${offering.workshopId}` : null;
   const alreadyInCart = itemId ? isInCart(itemId) : false;
+  const purchaseClosed = offering?.purchaseClosed ?? false;
+  const canBuy = Boolean(offering) && !purchaseClosed;
 
   const handleAddToCart = () => {
-    if (!offering || !itemId) return;
+    if (!offering || !itemId || purchaseClosed) return;
     if (alreadyInCart) {
       navigateToCart();
       return;
@@ -104,7 +106,7 @@ export function WorkshopPurchasePanel({
               <GraduationCap size={14} /> Workshop seat
             </div>
             <Heading level="h2" variant="light" className="mt-4 text-xl md:text-2xl">
-              Secure your spot
+              {purchaseClosed ? 'Sales have closed' : 'Secure your spot'}
             </Heading>
             {offering && (
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-brand-black/70">
@@ -136,7 +138,7 @@ export function WorkshopPurchasePanel({
             )}
           </div>
 
-          {offering && (
+          {canBuy && offering && (
             <div className="sm:text-right">
               <div className="text-xs uppercase tracking-wide text-brand-black/50">Price</div>
               <div className="text-2xl sm:text-3xl font-bold text-brand-black">
@@ -156,7 +158,13 @@ export function WorkshopPurchasePanel({
               Workshop purchases aren&apos;t open yet — check back soon.
             </p>
           )}
-          {offering && !offering.soldOut && alreadyInCart && (
+          {purchaseClosed && (
+            <p className="inline-flex items-center gap-2 text-sm text-brand-black/70">
+              <Lock size={16} aria-hidden="true" />
+              This workshop has already started, so seats can no longer be purchased.
+            </p>
+          )}
+          {canBuy && offering && !offering.soldOut && alreadyInCart && (
             <button
               type="button"
               onClick={handleAddToCart}
@@ -166,13 +174,13 @@ export function WorkshopPurchasePanel({
               View in cart
             </button>
           )}
-          {offering?.soldOut && (
+          {canBuy && offering?.soldOut && (
             <Button variant="blue" onClick={() => setIsWaitlistOpen(true)}>
               <BellRing size={16} aria-hidden="true" />
               Join the waitlist
             </Button>
           )}
-          {offering && !offering.soldOut && !alreadyInCart && (
+          {canBuy && offering && !offering.soldOut && !alreadyInCart && (
             <Button variant="blue" onClick={handleAddToCart}>
               Add to cart
             </Button>
@@ -182,13 +190,13 @@ export function WorkshopPurchasePanel({
               onClick={() => router.push('/workshops')}
               className="text-sm font-medium text-brand-black/70 underline-offset-4 hover:underline cursor-pointer"
             >
-              {alreadyInCart ? 'Add another workshop' : 'Back to workshops'}
+              {canBuy && alreadyInCart ? 'Add another workshop' : 'Back to workshops'}
             </button>
           )}
         </div>
       </div>
 
-      {offering && (
+      {canBuy && offering && (
         <WorkshopWaitlistModal
           isOpen={isWaitlistOpen}
           workshopId={offering.workshopId}
