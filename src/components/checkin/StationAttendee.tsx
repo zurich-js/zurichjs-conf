@@ -62,7 +62,9 @@ export const StationAttendee: React.FC<StationAttendeeProps> = ({
       <ManualAdmit onAdmit={onManualAdmit} seats={manualAdmitSeatOptions(attendee, occasion)} />
     ) : null}
 
-    {fromLookup && !roleCan(role, 'manual_admit') ? (
+    {fromLookup &&
+    canOfferCheckIn(attendee, occasion, true) &&
+    !roleCan(role, 'manual_admit') ? (
       <p className="rounded-xl bg-surface-card px-4 py-3 text-sm text-text-tertiary">
         Admitting someone without a code needs a door lead.
       </p>

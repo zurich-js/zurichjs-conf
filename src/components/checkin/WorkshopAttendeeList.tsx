@@ -16,21 +16,23 @@ export interface WorkshopAttendeeListProps {
   className?: string;
 }
 
-function displayName(row: DoorWorkshopSeatRow): string {
+function displayName(row: DoorWorkshopSeatRow, showContact: boolean): string {
   return (
     [row.firstName, row.lastName].filter(Boolean).join(' ') ||
     // An unnamed seat: the buyer never said who was coming, so the company or
     // the address is all there is to call out.
     row.company ||
-    row.email ||
+    (showContact ? row.email : null) ||
     'Unnamed seat'
   );
 }
 
-function matches(row: DoorWorkshopSeatRow, needle: string): boolean {
+function matches(row: DoorWorkshopSeatRow, needle: string, showContact: boolean): boolean {
   if (!needle) return true;
   const haystack = foldTerm(
-    [row.firstName, row.lastName, row.company, row.email].filter(Boolean).join(' ')
+    [row.firstName, row.lastName, row.company, showContact ? row.email : null]
+      .filter(Boolean)
+      .join(' ')
   );
   return haystack.includes(needle);
 }
@@ -59,12 +61,12 @@ export const WorkshopAttendeeList: React.FC<WorkshopAttendeeListProps> = ({
   const needle = foldTerm(filter.trim());
 
   const { waiting, arrived } = useMemo(() => {
-    const visible = workshop.seats.filter((row) => matches(row, needle));
+    const visible = workshop.seats.filter((row) => matches(row, needle, showContact));
     return {
       waiting: visible.filter((row) => row.checkedInAt === null),
       arrived: visible.filter((row) => row.checkedInAt !== null),
     };
-  }, [workshop.seats, needle]);
+  }, [workshop.seats, needle, showContact]);
 
   const renderRow = (row: DoorWorkshopSeatRow) => {
     const arrivedAt = row.checkedInAt;
@@ -82,7 +84,9 @@ export const WorkshopAttendeeList: React.FC<WorkshopAttendeeListProps> = ({
         className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-surface-card px-4 py-3"
       >
         <span className="min-w-0 flex-1 basis-40">
-          <span className="block truncate font-medium text-text-primary">{displayName(row)}</span>
+          <span className="block truncate font-medium text-text-primary">
+            {displayName(row, showContact)}
+          </span>
           {detail ? (
             <span className="block truncate text-sm text-text-tertiary">{detail}</span>
           ) : null}
@@ -100,7 +104,7 @@ export const WorkshopAttendeeList: React.FC<WorkshopAttendeeListProps> = ({
             variant="primary"
             size="sm"
             className="shrink-0 whitespace-nowrap"
-            aria-label={`Check in ${displayName(row)}`}
+            aria-label={`Check in ${displayName(row, showContact)}`}
             onClick={() => onCheckInSeat(row.registrationId)}
           >
             Check in
@@ -112,7 +116,7 @@ export const WorkshopAttendeeList: React.FC<WorkshopAttendeeListProps> = ({
             variant="dark"
             size="sm"
             className="shrink-0 whitespace-nowrap"
-            aria-label={`Undo the check-in for ${displayName(row)}`}
+            aria-label={`Undo the check-in for ${displayName(row, showContact)}`}
             onClick={() => onUndoSeat(row.registrationId)}
           >
             Undo
