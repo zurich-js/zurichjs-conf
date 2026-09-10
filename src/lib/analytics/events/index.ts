@@ -81,6 +81,7 @@ export type {
   SearchPerformedEvent,
   FilterAppliedEvent,
   ScheduleTabChangedEvent,
+  SessionFeedbackSubmittedEvent,
   ShareClickedEvent,
   NewsletterSubscribedEvent,
   FaqOpenedEvent,
@@ -216,6 +217,7 @@ import type {
   SearchPerformedEvent,
   FilterAppliedEvent,
   ScheduleTabChangedEvent,
+  SessionFeedbackSubmittedEvent,
   ShareClickedEvent,
   NewsletterSubscribedEvent,
   FaqOpenedEvent,
@@ -327,6 +329,7 @@ export type AnalyticsEvent =
   | SearchPerformedEvent
   | FilterAppliedEvent
   | ScheduleTabChangedEvent
+  | SessionFeedbackSubmittedEvent
   | ShareClickedEvent
   | NewsletterSubscribedEvent
   | FaqOpenedEvent

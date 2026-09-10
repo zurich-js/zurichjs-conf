@@ -6,6 +6,8 @@ export { PlaceholderCard } from './PlaceholderCard';
 export { ProgramScheduleItemCard } from './ProgramScheduleItemCard';
 export { SessionDetailHero } from './SessionDetailHero';
 export { MarkdownAbstract } from './MarkdownAbstract';
+export { SessionFeedbackForm } from './SessionFeedbackForm';
+export { StarRating } from './StarRating';
 
 export type { ScheduleCardProps } from './ScheduleCard';
 export type { SessionCardProps } from './SessionCard';
@@ -14,3 +16,5 @@ export type { BreakCardProps } from './BreakCard';
 export type { PlaceholderCardProps } from './PlaceholderCard';
 export type { ProgramScheduleItemCardProps } from './ProgramScheduleItemCard';
 export type { SessionDetailSpeaker } from './SessionDetailHero';
+export type { SessionFeedbackFormProps, FeedbackSubject } from './SessionFeedbackForm';
+export type { StarRatingProps } from './StarRating';

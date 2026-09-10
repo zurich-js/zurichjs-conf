@@ -81,6 +81,10 @@ export const adminKeys = {
   hoodies: () => [...adminKeys.all, 'hoodies'] as const,
   hoodieAllocation: () => [...adminKeys.hoodies(), 'allocation'] as const,
 
+  /** Attendee session feedback (ratings + comments), polled live on conference day */
+  feedback: () => [...adminKeys.all, 'feedback'] as const,
+  feedbackOverview: () => [...adminKeys.feedback(), 'overview'] as const,
+
   /** Cart-builder catalog (Stripe prices + workshops), currency-scoped */
   cartBuilderCatalog: (currency: SupportedCurrency) =>
     [...adminKeys.all, 'cart-builder', 'catalog', currency] as const,
