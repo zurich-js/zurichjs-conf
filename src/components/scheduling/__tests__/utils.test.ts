@@ -5,7 +5,40 @@ import { formatWorkshopAvailability } from '../utils';
 describe('formatWorkshopAvailability', () => {
   it('reports sold out regardless of counts', () => {
     const result = formatWorkshopAvailability({ soldOut: true, capacity: 30, capacityRemaining: 0 });
-    expect(result).toEqual({ label: 'Sold out', soldOut: true, isLow: false, tone: 'red' });
+    expect(result).toEqual({
+      label: 'Sold out',
+      soldOut: true,
+      purchaseClosed: false,
+      isLow: false,
+      tone: 'red',
+    });
+  });
+
+  it('reports sales closed once the workshop has started, even with seats left', () => {
+    const result = formatWorkshopAvailability({
+      soldOut: false,
+      purchaseClosed: true,
+      capacity: 30,
+      capacityRemaining: 18,
+    });
+    expect(result).toEqual({
+      label: 'Sales closed',
+      soldOut: false,
+      purchaseClosed: true,
+      isLow: false,
+      tone: 'red',
+    });
+  });
+
+  it('prefers sales closed over sold out', () => {
+    const result = formatWorkshopAvailability({
+      soldOut: true,
+      purchaseClosed: true,
+      capacity: 30,
+      capacityRemaining: 0,
+    });
+    expect(result.label).toBe('Sales closed');
+    expect(result.soldOut).toBe(false);
   });
 
   it('shows only the remaining seats in green when more than half are available', () => {

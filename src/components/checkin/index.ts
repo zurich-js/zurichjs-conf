@@ -23,7 +23,7 @@ export { DoorRefusalHint, DoorStateBanner } from './DoorStateBanner';
 export type { DoorRefusalHintProps, DoorState, DoorStateBannerProps } from './DoorStateBanner';
 
 export { ManualAdmit } from './ManualAdmit';
-export type { ManualAdmitProps } from './ManualAdmit';
+export type { ManualAdmitProps, ManualAdmitSeatOption } from './ManualAdmit';
 
 export { GoodieStatus } from './GoodieStatus';
 export type {
@@ -41,8 +41,17 @@ export type { ScanFlashProps } from './ScanFlash';
 export { WorkshopSeats } from './WorkshopSeats';
 export type { WorkshopSeatsProps } from './WorkshopSeats';
 
+export { WorkshopOverview } from './WorkshopOverview';
+export type { WorkshopOverviewProps } from './WorkshopOverview';
+
+export { WorkshopAttendeeList } from './WorkshopAttendeeList';
+export type { WorkshopAttendeeListProps } from './WorkshopAttendeeList';
+
 export { ScannerViewport } from './ScannerViewport';
 export type { ScannerViewportProps } from './ScannerViewport';
+
+export { StationAttendee } from './StationAttendee';
+export type { StationAttendeeProps } from './StationAttendee';
 
 export { StationAccessState } from './StationAccessState';
 export type { StationAccessPhase, StationAccessStateProps } from './StationAccessState';

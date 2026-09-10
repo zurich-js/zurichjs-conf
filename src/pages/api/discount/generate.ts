@@ -15,6 +15,7 @@ import { addNewsletterContact, sendDiscountCodeEmail } from '@/lib/email';
 import { getStripeClient } from '@/lib/stripe/client';
 import { getDiscountConfig } from '@/lib/discount/config-server';
 import { createSingleUseDiscountCode } from '@/lib/discount/stripe-codes';
+import { isDiscountPopupClosed } from '@/lib/discount/closure';
 import { isValidLotteryPercent } from '@/lib/discount/utm-lottery';
 import { isRecurringVisitor } from '@/lib/discount/visit-tracker';
 import { logger } from '@/lib/logger';
@@ -48,6 +49,13 @@ export default async function handler(
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // The offer is off from conference day onwards. The popup never renders past
+  // that point, so this only catches a stale tab (or a direct call) — no new
+  // codes, and no cookie-restored ones either.
+  if (isDiscountPopupClosed()) {
+    return res.status(403).json({ error: 'Discount offers have closed' });
   }
 
   const { allowed } = limiter.check(getClientIp(req));

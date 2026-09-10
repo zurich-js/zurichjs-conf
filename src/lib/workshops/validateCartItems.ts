@@ -13,6 +13,7 @@ import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
 import { stripCurrencySuffix } from '@/lib/stripe/ticket-utils';
+import { isWorkshopPurchaseClosed } from './purchaseWindow';
 
 const log = logger.scope('Workshop Cart Validation');
 
@@ -29,6 +30,8 @@ export interface WorkshopCartValidationResult {
 export interface WorkshopCartValidationInput {
   items: CartItem[];
   stripe: Stripe;
+  /** Injectable clock for tests; defaults to the current time. */
+  now?: Date;
 }
 
 /**
@@ -36,12 +39,14 @@ export interface WorkshopCartValidationInput {
  * on any of:
  * - workshop id missing / doesn't exist
  * - workshop not published
+ * - workshop has already started (sales cutoff, Zurich time)
  * - priceId doesn't belong to THIS workshop's Stripe product
  * - quantity <= 0 or quantity > remaining capacity
  */
 export async function validateWorkshopCartItems(
   input: WorkshopCartValidationInput
 ): Promise<WorkshopCartValidationResult> {
+  const now = input.now ?? new Date();
   const workshopItems = input.items.filter((item) => item.kind === 'workshop');
   if (workshopItems.length === 0) {
     return { valid: true, workshopsById: new Map() };
@@ -88,6 +93,17 @@ export async function validateWorkshopCartItems(
     }
     if ((workshop.status as WorkshopStatus) !== 'published') {
       return { valid: false, error: `"${workshop.title}" is no longer available.` };
+    }
+    if (isWorkshopPurchaseClosed(workshop, now)) {
+      log.warn('Checkout blocked: workshop has already started', {
+        workshopId: workshop.id,
+        date: workshop.date,
+        startTime: workshop.start_time,
+      });
+      return {
+        valid: false,
+        error: `Sales for "${workshop.title}" have closed — the workshop has already started.`,
+      };
     }
     if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
       return { valid: false, error: `Invalid quantity for "${workshop.title}".` };

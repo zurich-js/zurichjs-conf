@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { BellRing, Check } from 'lucide-react';
+import { BellRing, Check, Lock } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -39,6 +39,23 @@ export function WorkshopBuyButton({
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const itemId = `workshop_${offering.workshopId}`;
   const alreadyInCart = isInCart(itemId);
+
+  // The workshop has started — no buying, no waitlist, no cart link. Checkout
+  // enforces the same cutoff server-side, this just keeps the UI honest.
+  if (offering.purchaseClosed) {
+    return (
+      <div className="flex flex-wrap items-center gap-3">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full bg-brand-black/5 font-semibold text-brand-black/60 ${
+            size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-md'
+          }`}
+        >
+          <Lock size={14} aria-hidden="true" />
+          Sales closed
+        </span>
+      </div>
+    );
+  }
 
   const handleAdd = () => {
     if (!alreadyInCart) {

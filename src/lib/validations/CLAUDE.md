@@ -9,6 +9,7 @@ Zod schemas. Every API route input must be validated through here.
 | `cfp.ts` | Submissions, speaker profiles, reviews, travel forms |
 | `checkout.ts` | Cart items, checkout payloads |
 | `issue-report.ts` | Bug-report submissions |
+| `session-feedback.ts` | Anonymous session ratings posted from `/schedule` |
 | `__tests__/social-handles.test.ts` | Social handle normalization edge cases |
 
 ## Usage in API routes

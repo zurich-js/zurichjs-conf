@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BellPlus, CalendarPlus, Share2, Users } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Button } from '@/components/atoms';
+import type { ScheduleItemLiveStatus } from '@/lib/types/session-feedback';
 import type { PublicSession } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
@@ -42,6 +44,10 @@ export interface SessionCardProps {
    * non-workshop session) is a no-op.
    */
   offering?: WorkshopOfferingSummary | null;
+  /** Where the session sits against the venue clock; `live` shows a badge. */
+  liveStatus?: ScheduleItemLiveStatus;
+  /** Feedback form (or its submitted state), rendered below the header. */
+  feedback?: ReactNode;
 }
 
 const LEVEL_LABELS: Record<PublicSession['level'], string> = {
@@ -68,6 +74,8 @@ export function SessionCard({
   showDuration = false,
   actionMode = 'schedule',
   offering = null,
+  liveStatus,
+  feedback,
 }: SessionCardProps) {
   const resolvedId = id ?? `session-${session.id}`;
   const timeRange = formatTimeRange(session.schedule?.start_time, session.schedule?.duration_minutes);
@@ -101,7 +109,17 @@ export function SessionCard({
 
   const header = (
     <>
-      {timeRange ? <p className={cn(compact ? 'text-xs' : 'text-sm', 'text-brand-gray-medium')}>{timeRange}</p> : null}
+      {timeRange || liveStatus === 'live' ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {timeRange ? <p className={cn(compact ? 'text-xs' : 'text-sm', 'text-brand-gray-medium')}>{timeRange}</p> : null}
+          {liveStatus === 'live' ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-white px-2.5 py-0.5 text-xs font-medium text-brand-black ring-1 ring-brand-gray-light">
+              <span className="size-1.5 rounded-full bg-brand-orange motion-safe:animate-pulse" aria-hidden="true" />
+              Live now
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       <h3 className={cn('mt-1 font-bold leading-tight text-brand-black', compact ? 'text-base md:text-lg' : 'text-lg')}>
         {session.title}
       </h3>
@@ -283,6 +301,7 @@ export function SessionCard({
       panel={panel}
       footer={footer}
       trailing={trailing}
+      inline={feedback}
     />
   );
 }

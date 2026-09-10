@@ -103,7 +103,10 @@ export function resolveDoorPanelState(
   if (lastResult?.outcome === 'denied' || lastResult?.outcome === 'not_found') {
     return 'refused';
   }
-  if (!attendee.admissible) return 'refused';
+  // A refunded conference ticket still refuses on conference day and on the
+  // badge desk. On workshop day a held seat is its own admission, so the
+  // banner reads the seats and the ticket's status is shown as a hint instead.
+  if (!isAdmissibleFor(attendee, occasion)) return 'refused';
 
   // On the warm-up meetup the badge is the whole transaction, so the banner
   // reads it instead of the (non-existent) check-in state. Badges belong to
@@ -124,6 +127,58 @@ export function resolveDoorPanelState(
 }
 
 /**
+ * Whether this person's workshop seats are what gets checked in today.
+ *
+ * True on workshop day for anyone holding at least one seat. The seats in
+ * `held` are confirmed by construction (the roster index drops any other
+ * status, mirroring door_workshops_for), so they stand on their own: a
+ * conference ticket that is pending or refunded does not cancel a workshop
+ * seat that was paid for separately.
+ */
+export function isSeatDriven(attendee: DoorResolveHit, occasion: DoorOccasion): boolean {
+  return occasion === 'workshop_day' && attendee.workshops.held.length > 0;
+}
+
+/** A held seat still to check in, as the manual-admission form offers it. */
+export interface ManualAdmitSeatOption {
+  registrationId: string;
+  title: string;
+  startTime: string | null;
+}
+
+/**
+ * The seats a manual admission may target, or undefined when the admission is
+ * for the person (any day but workshop day, or a seat-less ticket holder).
+ * Admitting the ticket of a seat holder on workshop day would stamp the
+ * person-level column and leave every seat unchecked — so the form must name
+ * a seat, and this is the list it names from.
+ */
+export function manualAdmitSeatOptions(
+  attendee: DoorResolveHit,
+  occasion: DoorOccasion
+): ManualAdmitSeatOption[] | undefined {
+  if (!isSeatDriven(attendee, occasion)) return undefined;
+  return attendee.workshops.held
+    .filter((seat) => seat.checkedInAt === null)
+    .map((seat) => ({
+      registrationId: seat.registrationId,
+      title: seat.title,
+      startTime: seat.startTime,
+    }));
+}
+
+/**
+ * Whether this person may be admitted today at all, irrespective of role.
+ *
+ * On workshop day a seat holder is admissible on the strength of the seat;
+ * everywhere else the subject's own status decides. Badges and goodies keep
+ * reading `attendee.admissible` directly — those follow the conference ticket.
+ */
+export function isAdmissibleFor(attendee: DoorResolveHit, occasion: DoorOccasion): boolean {
+  return attendee.admissible || isSeatDriven(attendee, occasion);
+}
+
+/**
  * Whether the check-in action should be offered.
  *
  * Hides the button rather than letting the volunteer press something the
@@ -138,7 +193,7 @@ export function canOfferCheckIn(
   return (
     occasion !== 'community_day' &&
     canCheckInByRole &&
-    attendee.admissible &&
+    isAdmissibleFor(attendee, occasion) &&
     !checkedInAtFor(attendee, occasion)
   );
 }

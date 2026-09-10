@@ -6,7 +6,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, ShieldCheck, ScanLine, ChevronDown, QrCode, type LucideIcon } from 'lucide-react';
+import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, ShieldCheck, ScanLine, ChevronDown, QrCode, MessageSquareText, type LucideIcon } from 'lucide-react';
 import {Button} from '@/components/atoms';
 
 interface AdminHeaderProps {
@@ -56,6 +56,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { href: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   { href: '/admin/checkin', label: 'Door', icon: ScanLine },
+  { href: '/admin/feedback', label: 'Feedback', icon: MessageSquareText },
 ];
 
 // All links flattened — used for mobile menu

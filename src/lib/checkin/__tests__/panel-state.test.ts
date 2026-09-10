@@ -4,6 +4,7 @@ import {
   canOfferCheckIn,
   checkedInAtFor,
   formatDoorTime,
+  manualAdmitSeatOptions,
   resolveDoorPanelDetail,
   resolveDoorPanelState,
   resolveScanAutoAction,
@@ -400,5 +401,58 @@ describe('resolveScanAutoAction', () => {
     ).toBeNull();
     // No conference ticket, no badge — a legitimate visitor, nothing to record.
     expect(resolveScanAutoAction(hit({ ticket: null }), 'community_day', 'scanner')).toBeNull();
+  });
+});
+
+describe('a paid workshop seat outlives the conference ticket', () => {
+  const refundedTicket = () =>
+    hit({
+      admissible: false,
+      refusalReason: 'ticket_refunded',
+      ticket: {
+        type: 'standard', category: 'standard', stage: 'general_admission',
+        status: 'refunded', isVip: false,
+        transferredFromName: null, transferredFromEmail: null,
+      },
+      workshops: { held: [heldSeat()], purchasedForOthers: [] },
+    });
+
+  it('is ready to admit on workshop day, on the strength of the seat', () => {
+    expect(resolveDoorPanelState(refundedTicket(), 'workshop_day')).toBe('admit');
+    expect(canOfferCheckIn(refundedTicket(), 'workshop_day', true)).toBe(true);
+  });
+
+  it('is still refused on conference day, where only the ticket counts', () => {
+    expect(resolveDoorPanelState(refundedTicket(), 'conference_day')).toBe('refused');
+    expect(canOfferCheckIn(refundedTicket(), 'conference_day', true)).toBe(false);
+  });
+
+  it('is refused on workshop day too when there is no seat to stand on', () => {
+    const noSeat = hit({ ...refundedTicket(), workshops: { held: [], purchasedForOthers: [] } });
+    expect(resolveDoorPanelState(noSeat, 'workshop_day')).toBe('refused');
+  });
+});
+
+describe('manualAdmitSeatOptions', () => {
+  it('offers only the seats still to check in, on workshop day', () => {
+    const attendee = hit({
+      workshops: {
+        held: [
+          heldSeat({ registrationId: 'r1', checkedInAt: '2026-09-10T07:00:00.000Z' }),
+          heldSeat({ registrationId: 'r2', title: 'Afternoon', startTime: '13:00' }),
+        ],
+        purchasedForOthers: [],
+      },
+    });
+
+    expect(manualAdmitSeatOptions(attendee, 'workshop_day')).toEqual([
+      { registrationId: 'r2', title: 'Afternoon', startTime: '13:00' },
+    ]);
+  });
+
+  it('is undefined when the admission is for the person, not a seat', () => {
+    const seated = hit({ workshops: { held: [heldSeat()], purchasedForOthers: [] } });
+    expect(manualAdmitSeatOptions(seated, 'conference_day')).toBeUndefined();
+    expect(manualAdmitSeatOptions(hit(), 'workshop_day')).toBeUndefined();
   });
 });

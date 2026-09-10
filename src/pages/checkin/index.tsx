@@ -22,19 +22,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/atoms';
 import {
-  AttendeePanel,
   DeskLookup,
   DoorHelpNotice,
   DoorNotFound,
-  ManualAdmit,
   MyCheckIns,
   ScanFlash,
   ScannerViewport,
   StationAccessState,
+  StationAttendee,
   StationBar,
   StationNotices,
   StationQuickActions,
   StationStartGate,
+  WorkshopOverview,
 } from '@/components/checkin';
 import { useDoorSession } from '@/hooks/checkin/useDoorSession';
 import { useDoorRosterIndex } from '@/hooks/checkin/useDoorRoster';
@@ -51,11 +51,11 @@ import { readQueue } from '@/lib/checkin/mutation-queue';
 import { checkinKeys } from '@/lib/checkin/query-keys';
 import type { DoorSearchableRecord } from '@/lib/checkin/roster-index';
 import {
-  canOfferCheckIn,
   checkedInAtFor,
   resolveScanAutoAction,
   toneForOutcome,
 } from '@/lib/checkin/panel-state';
+import { ROLL_CALL_REASON } from '@/lib/checkin/roll-call';
 import { supabase } from '@/lib/supabase/client';
 import {
   isDoorResolveHit,
@@ -97,6 +97,8 @@ export default function DoorStationPage() {
   const [lastResult, setLastResult] = useState<DoorCheckInResult | null>(null);
   const [lookupOpen, setLookupOpen] = useState(false);
   const [myListOpen, setMyListOpen] = useState(false);
+  /** The per-room attendee lists — the alternative to scanning on workshop day. */
+  const [workshopsOpen, setWorkshopsOpen] = useState(false);
   /**
    * Whether the attendee on screen was found by name rather than scanned.
    *
@@ -176,6 +178,7 @@ export default function DoorStationPage() {
       // A scan takes precedence over a half-typed search: the person in front of
       // the volunteer just presented a badge.
       setLookupOpen(false);
+      setWorkshopsOpen(false);
     },
     [resetHelp]
   );
@@ -252,6 +255,10 @@ export default function DoorStationPage() {
     () => roster.index?.searchable() ?? [],
     [roster.index]
   );
+
+  // Likewise once per roster: the optimistic patch replaces the roster object,
+  // so a check-in from the list moves the counts without a rebuild per tap.
+  const workshopOverview = useMemo(() => roster.index?.workshops() ?? [], [roster.index]);
 
   const attendee = useMemo(() => {
     if (!roster.index || !scan?.subjectId) return null;
@@ -344,6 +351,24 @@ export default function DoorStationPage() {
     clearGate: scanner.clearGate,
   });
 
+  /**
+   * Admit someone found by name — or, with the roll-call reason, someone ticked
+   * off a workshop's attendee list. On workshop day the admission targets ONE
+   * seat — admitting the ticket would stamp the person-level column and leave
+   * every seat unchecked, so the next door would turn them away as not in.
+   */
+  const handleManualAdmit = useCallback(
+    (reason: string, registrationId?: string) => {
+      const subjectId = registrationId ?? scan?.subjectId;
+      if (!subjectId) return;
+      queue.submit({ kind: 'manual_admit', scannedId: subjectId, reason });
+      // A seat admission leaves the banner to the seats, as a scanned one does.
+      if (!registrationId) setLastResult({ outcome: 'applied' });
+      signal('success');
+    },
+    [queue, scan?.subjectId, signal]
+  );
+
   const handleLookupSelect = useCallback(
     (record: DoorSearchableRecord) => {
       setScan((previous) => ({
@@ -404,6 +429,7 @@ export default function DoorStationPage() {
     setFromLookup(false);
     setLookupOpen(false);
     setMyListOpen(false);
+    setWorkshopsOpen(false);
   }, [clearFeedback, resetHelp, scanner]);
 
   const signOut = useCallback(async () => {
@@ -521,8 +547,30 @@ export default function DoorStationPage() {
           <StationQuickActions
             showLookup={!lookupOpen && roleCan(staff.role, 'lookup') && roster.index !== null}
             showMyList={!myListOpen}
+            // The room lists only mean something on the day the rooms run.
+            showWorkshops={
+              !workshopsOpen && occasion === 'workshop_day' && roster.index !== null
+            }
             onOpenLookup={() => setLookupOpen(true)}
             onOpenMyList={() => setMyListOpen(true)}
+            onOpenWorkshops={() => setWorkshopsOpen(true)}
+          />
+        ) : null}
+
+        {workshopsOpen && !showingAttendee && occasion === 'workshop_day' ? (
+          <WorkshopOverview
+            workshops={workshopOverview}
+            // A list check-in is a manual admission — nobody verified a code —
+            // so it is lead-only, as the database enforces. Undo is any
+            // check-in role's, like the seat rows.
+            onCheckInSeat={
+              roleCan(staff.role, 'manual_admit')
+                ? (registrationId) => handleManualAdmit(ROLL_CALL_REASON, registrationId)
+                : undefined
+            }
+            onUndoSeat={roleCan(staff.role, 'check_in') ? actions.undoSeat : undefined}
+            onClose={() => setWorkshopsOpen(false)}
+            showContact={roleCan(staff.role, 'view_contact')}
           />
         ) : null}
 
@@ -548,37 +596,23 @@ export default function DoorStationPage() {
         ) : null}
 
         {scan && attendee ? (
-          <>
-            <AttendeePanel
-              attendee={attendee}
-              occasion={occasion}
-              role={staff.role}
-              lastResult={lastResult}
-              // Omitted on the lookup path: nobody verified a QR there, so the
-              // admission is a manual one and must be recorded as such.
-              onCheckIn={fromLookup ? undefined : actions.checkIn}
-              onCheckInSeat={fromLookup ? undefined : actions.checkInSeat}
-              onUndo={actions.undo}
-              onUndoSeat={actions.undoSeat}
-              onHandOverGoodie={actions.handOverGoodie}
-              onUndoGoodie={actions.undoGoodie}
-              onHandOverBadge={actions.handOverBadge}
-              onUndoBadge={actions.undoBadge}
-              onEscalate={help.status === 'idle' ? requestHelp : undefined}
-            />
-
-            {fromLookup &&
-            roleCan(staff.role, 'manual_admit') &&
-            canOfferCheckIn(attendee, occasion, true) ? (
-              <ManualAdmit onAdmit={actions.manualAdmit} />
-            ) : null}
-
-            {fromLookup && !roleCan(staff.role, 'manual_admit') ? (
-              <p className="rounded-xl bg-surface-card px-4 py-3 text-sm text-text-tertiary">
-                Admitting someone without a code needs a door lead.
-              </p>
-            ) : null}
-          </>
+          <StationAttendee
+            attendee={attendee}
+            occasion={occasion}
+            role={staff.role}
+            lastResult={lastResult}
+            fromLookup={fromLookup}
+            onCheckIn={actions.checkIn}
+            onCheckInSeat={actions.checkInSeat}
+            onManualAdmit={handleManualAdmit}
+            onUndo={actions.undo}
+            onUndoSeat={actions.undoSeat}
+            onHandOverGoodie={actions.handOverGoodie}
+            onUndoGoodie={actions.undoGoodie}
+            onHandOverBadge={actions.handOverBadge}
+            onUndoBadge={actions.undoBadge}
+            onEscalate={help.status === 'idle' ? requestHelp : undefined}
+          />
         ) : null}
 
         {scan && !attendee && roster.index ? (

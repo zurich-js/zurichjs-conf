@@ -34,7 +34,8 @@ Workshop financial reporting lives in **`/admin` → Financials**:
 - Multi-seat registrations: `workshop_registrations.seat_index` with `UNIQUE (session_id, workshop_id, seat_index)`.
 - Atomic seat insert via `insert_workshop_registration_atomic` Postgres function (`SELECT … FOR UPDATE`) — concurrent purchases can't oversell.
 - Stripe refunds automatically issued for any seat that loses the capacity race.
-- Server-side validation at checkout: every workshop cart item is re-checked against DB + Stripe (published, priceId belongs to the workshop, seats available).
+- Server-side validation at checkout: every workshop cart item is re-checked against DB + Stripe (published, priceId belongs to the workshop, seats available, workshop not yet started).
+- **Sales cutoff**: once a workshop's scheduled `date` + `start_time` (Europe/Zurich) has passed, `isWorkshopPurchaseClosed()` (`src/lib/workshops/purchaseWindow.ts`) marks the offering `purchaseClosed`. The `/workshops` card chip and `/workshops/[slug]` purchase panel show "Sales closed" (no buy CTA, no waitlist) and `validateWorkshopCartItems` rejects checkout with a 400.
 - `checkout_cart_snapshots` table stores workshop attendees per session — avoids the Stripe metadata 500-char limit.
 - Webhook creates one registration row per seat, sends a per-seat confirmation email (title, date, time, room, instructor).
 

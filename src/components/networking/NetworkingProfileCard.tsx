@@ -57,7 +57,11 @@ export function NetworkingProfileCard({
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
   const titleId = `networking-profile-${profile.publicId}`;
-  const initials = profile.name
+  const avatarName = profile.kind === 'sponsor' && profile.publicId.startsWith('sponsor-')
+    ? profile.headline ?? profile.name
+    : profile.name;
+  const initials = avatarName
+    .trim()
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0])
@@ -97,18 +101,14 @@ export function NetworkingProfileCard({
     >
       <div className="bg-brand-gray-lightest p-6 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          {profile.imageUrl ? (
+          {profile.imageUrl && profile.kind !== 'sponsor' ? (
             <Image
               src={profile.imageUrl}
               alt={profile.name}
               width={96}
               height={96}
               unoptimized
-              className={
-                profile.kind === 'sponsor'
-                  ? 'size-24 rounded-xl bg-white object-contain p-2'
-                  : 'size-24 rounded-full bg-brand-gray-light object-cover'
-              }
+              className="size-24 rounded-full bg-brand-gray-light object-cover"
             />
           ) : (
             <div
@@ -129,6 +129,16 @@ export function NetworkingProfileCard({
             </Heading>
             {profile.headline ? (
               <p className="mt-2 text-base text-brand-gray-darkest">{profile.headline}</p>
+            ) : null}
+            {profile.kind === 'sponsor' && profile.imageUrl ? (
+              <Image
+                src={profile.imageUrl}
+                alt="Sponsor logo"
+                width={160}
+                height={64}
+                unoptimized
+                className="mt-4 h-16 w-40 rounded-lg bg-brand-white object-contain p-2"
+              />
             ) : null}
           </div>
         </div>
