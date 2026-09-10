@@ -30,6 +30,13 @@ export type {
   GetOfferingsOptions,
 } from './getOfferings';
 
+export {
+  getWorkshopPurchaseCloseDate,
+  isWorkshopPurchaseClosed,
+  WORKSHOP_SALES_CLOSED_MESSAGE,
+} from './purchaseWindow';
+export type { WorkshopPurchaseWindowInput } from './purchaseWindow';
+
 export { getWorkshopRevenue, getAllWorkshopRevenue } from './getRevenue';
 export type {
   WorkshopRevenueSummary,

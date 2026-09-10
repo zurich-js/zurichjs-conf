@@ -53,6 +53,8 @@ export interface WorkshopAvailability {
   label: string;
   /** True when the offering is sold out. */
   soldOut: boolean;
+  /** True once the workshop has started and seats can no longer be bought. */
+  purchaseClosed: boolean;
   /** True when seats are running low (but not sold out) — use for scarcity emphasis. */
   isLow: boolean;
   /** Brand color selected from the percentage of capacity remaining. */
@@ -61,14 +63,19 @@ export interface WorkshopAvailability {
 
 /**
  * Build a seats-remaining label and capacity color for a published workshop.
+ * A closed sales window wins over every seat count — nobody can buy anymore.
  */
 export function formatWorkshopAvailability(offering: {
   soldOut: boolean;
+  purchaseClosed?: boolean;
   capacity: number;
   capacityRemaining: number;
 }): WorkshopAvailability {
+  if (offering.purchaseClosed) {
+    return { label: 'Sales closed', soldOut: false, purchaseClosed: true, isLow: false, tone: 'red' };
+  }
   if (offering.soldOut) {
-    return { label: 'Sold out', soldOut: true, isLow: false, tone: 'red' };
+    return { label: 'Sold out', soldOut: true, purchaseClosed: false, isLow: false, tone: 'red' };
   }
 
   const { capacityRemaining, capacity } = offering;
@@ -83,6 +90,7 @@ export function formatWorkshopAvailability(offering: {
   return {
     label: `${capacityRemaining} ${suffix}`,
     soldOut: false,
+    purchaseClosed: false,
     isLow: tone === 'red',
     tone,
   };
