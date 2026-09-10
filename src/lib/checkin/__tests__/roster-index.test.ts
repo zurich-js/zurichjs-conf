@@ -51,6 +51,7 @@ function seat(overrides: Partial<RosterRegistration> = {}): RosterRegistration {
     email: null,
     company: null,
     seatIndex: 0,
+    status: 'confirmed',
     checkedInAt: null,
     badgePickedUpAt: null,
     ...overrides,
@@ -442,5 +443,149 @@ describe('hoodie eligibility rides along with the ticket', () => {
     if (!isDoorResolveHit(result)) return;
     expect(result.goodie.hoodieEligible).toBe(false);
     expect(result.goodie.hoodieExclusion).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('seat status', () => {
+  it('drops a refunded seat from the holder, as door_workshops_for does', () => {
+    const index = buildRosterIndex(
+      roster({
+        occasion: 'workshop_day',
+        tickets: [ticket()],
+        registrations: [
+          seat({ id: SEAT_A, email: 'ada@example.com', status: 'refunded' }),
+          seat({ id: SEAT_B, email: 'ada@example.com', status: 'confirmed', seatIndex: 1 }),
+        ],
+      })
+    );
+
+    const hit = index.resolve(TICKET_A);
+    if (!isDoorResolveHit(hit)) throw new Error('expected a hit');
+    expect(hit.workshops.held.map((h) => h.registrationId)).toEqual([SEAT_B]);
+  });
+
+  it('refuses a cancelled seat scanned directly, with the reason', () => {
+    const index = buildRosterIndex(
+      roster({
+        occasion: 'workshop_day',
+        registrations: [seat({ id: SEAT_A, email: 'solo@example.com', status: 'cancelled' })],
+      })
+    );
+
+    const hit = index.resolve(SEAT_A);
+    if (!isDoorResolveHit(hit)) throw new Error('expected a hit');
+    expect(hit.admissible).toBe(false);
+    expect(hit.refusalReason).toBe('registration_cancelled');
+  });
+
+  it('keeps a pending workshop-only seat off the desk search', () => {
+    const index = buildRosterIndex(
+      roster({
+        occasion: 'workshop_day',
+        registrations: [
+          seat({ id: SEAT_A, firstName: 'Solo', lastName: 'Seat', status: 'pending' }),
+        ],
+      })
+    );
+
+    expect(index.searchable()).toEqual([]);
+  });
+});
+
+describe('buildRosterIndex().workshops', () => {
+  const OTHER_WORKSHOP = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+
+  it('lists confirmed seats per workshop with arrival counts, in start order', () => {
+    const index = buildRosterIndex(
+      roster({
+        occasion: 'workshop_day',
+        workshops: [
+          { ...workshop, id: OTHER_WORKSHOP, title: 'Afternoon', startTime: '13:00' },
+          workshop,
+        ],
+        tickets: [ticket()],
+        registrations: [
+          seat({ id: SEAT_A, email: 'zed@example.com', firstName: 'Zed', lastName: 'Zulu' }),
+          seat({
+            id: SEAT_B,
+            email: 'bea@example.com',
+            firstName: 'Bea',
+            lastName: 'Alpha',
+            checkedInAt: '2026-09-10T07:05:00.000Z',
+            seatIndex: 1,
+          }),
+          seat({ id: SEAT_C, status: 'refunded', seatIndex: 2 }),
+          seat({
+            id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+            workshopId: OTHER_WORKSHOP,
+            email: 'someone@example.com',
+          }),
+        ],
+      })
+    );
+
+    const overview = index.workshops();
+    expect(overview.map((w) => w.title)).toEqual(['Testing Effectively', 'Afternoon']);
+
+    const morning = overview[0];
+    expect(morning.total).toBe(2);
+    expect(morning.checkedIn).toBe(1);
+    expect(morning.seats.map((s) => s.lastName)).toEqual(['Alpha', 'Zulu']);
+  });
+
+  it('names an unnamed seat after the ticket it was bought on, flagged as inferred', () => {
+    const index = buildRosterIndex(
+      roster({
+        occasion: 'workshop_day',
+        tickets: [ticket()],
+        registrations: [seat({ id: SEAT_A, ticketId: TICKET_A })],
+      })
+    );
+
+    const [row] = index.workshops()[0].seats;
+    expect(row.firstName).toBe('Ada');
+    expect(row.lastName).toBe('Lovelace');
+    expect(row.email).toBe('ada@example.com');
+    expect(row.nameSource).toBe('ticket');
+  });
+
+  it('does not borrow the buyer name for a seat that names a different email', () => {
+    const index = buildRosterIndex(
+      roster({
+        occasion: 'workshop_day',
+        tickets: [ticket()],
+        registrations: [
+          seat({ id: SEAT_A, ticketId: TICKET_A, email: 'colleague@example.com', company: 'Acme' }),
+        ],
+      })
+    );
+
+    const [row] = index.workshops()[0].seats;
+    expect(row.firstName).toBeNull();
+    expect(row.email).toBe('colleague@example.com');
+    expect(row.company).toBe('Acme');
+    expect(row.nameSource).toBe('none');
+  });
+
+  it('sinks unnamed seats below named ones', () => {
+    const index = buildRosterIndex(
+      roster({
+        occasion: 'workshop_day',
+        registrations: [
+          seat({ id: SEAT_A, email: 'a@example.com' }),
+          seat({ id: SEAT_B, firstName: 'Bea', lastName: 'Alpha', seatIndex: 1 }),
+        ],
+      })
+    );
+
+    expect(index.workshops()[0].seats.map((s) => s.registrationId)).toEqual([SEAT_B, SEAT_A]);
+  });
+
+  it('includes a workshop with no seats sold, so the room still shows up', () => {
+    const index = buildRosterIndex(roster({ occasion: 'workshop_day' }));
+    expect(index.workshops()).toHaveLength(1);
+    expect(index.workshops()[0].total).toBe(0);
   });
 });

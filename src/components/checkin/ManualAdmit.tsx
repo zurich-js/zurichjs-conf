@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
 import { ChevronDown, ShieldAlert } from 'lucide-react';
 import { Button, Textarea } from '@/components/atoms';
+import type { ManualAdmitSeatOption } from '@/lib/checkin/panel-state';
+
+export type { ManualAdmitSeatOption };
 
 export interface ManualAdmitProps {
-  /** Submitted with the admission and stored on the audit row. */
-  onAdmit: (reason: string) => void;
+  /**
+   * Submitted with the admission and stored on the audit row. `registrationId`
+   * is set when the admission targets one workshop seat rather than the person.
+   */
+  onAdmit: (reason: string, registrationId?: string) => void;
+  /**
+   * On workshop day the seat is the unit of check-in, so an admission must name
+   * WHICH workshop — admitting the ticket would leave every seat unchecked and
+   * the person would be turned away at the next door. One seat is preselected;
+   * two or more make the lead pick.
+   */
+  seats?: ManualAdmitSeatOption[];
   pending?: boolean;
   className?: string;
 }
@@ -49,13 +62,26 @@ const COMMON_REASONS = [
  */
 export const ManualAdmit: React.FC<ManualAdmitProps> = ({
   onAdmit,
+  seats,
   pending = false,
   className = '',
 }) => {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
+  const [pickedSeat, setPickedSeat] = useState<string | null>(null);
   const trimmed = reason.trim();
-  const ready = trimmed.length >= MIN_REASON;
+
+  const seatDriven = seats !== undefined && seats.length > 0;
+  // A single seat needs no choice; a lead with two doors' worth must say which.
+  const targetSeat = seatDriven
+    ? seats.length === 1
+      ? seats[0].registrationId
+      : seats.some((seat) => seat.registrationId === pickedSeat)
+        ? pickedSeat
+        : null
+    : null;
+  const needsSeat = seatDriven && targetSeat === null;
+  const ready = trimmed.length >= MIN_REASON && !needsSeat;
 
   return (
     <section
@@ -94,6 +120,42 @@ export const ManualAdmit: React.FC<ManualAdmitProps> = ({
             why, so the entry makes sense when the log is read later:
           </p>
 
+          {seatDriven && seats.length > 1 ? (
+            <fieldset className="mb-3">
+              <legend className="mb-2 text-sm font-medium text-text-primary">
+                Which workshop are they arriving for?
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {seats.map((seat) => {
+                  const selected = targetSeat === seat.registrationId;
+                  return (
+                    <button
+                      key={seat.registrationId}
+                      type="button"
+                      onClick={() => setPickedSeat(seat.registrationId)}
+                      aria-pressed={selected}
+                      className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary ${
+                        selected
+                          ? 'border-brand-primary bg-brand-primary/15 text-text-primary'
+                          : 'border-divider bg-surface-card text-text-secondary hover:border-text-muted'
+                      }`}
+                    >
+                      {seat.startTime ? `${seat.startTime.slice(0, 5)} · ` : ''}
+                      {seat.title}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          ) : null}
+
+          {seatDriven && seats.length === 1 ? (
+            <p className="mb-3 text-sm text-text-secondary">
+              Admits them to{' '}
+              <span className="font-medium text-text-primary">{seats[0].title}</span>.
+            </p>
+          ) : null}
+
           <div className="mb-3 flex flex-wrap gap-2">
             {COMMON_REASONS.map((preset) => (
               <button
@@ -131,9 +193,9 @@ export const ManualAdmit: React.FC<ManualAdmitProps> = ({
             className="mt-3 w-full"
             loading={pending}
             disabled={!ready || pending}
-            onClick={() => onAdmit(trimmed)}
+            onClick={() => onAdmit(trimmed, targetSeat ?? undefined)}
           >
-            {ready ? 'Admit them' : 'Add a reason first'}
+            {needsSeat ? 'Pick the workshop first' : ready ? 'Admit them' : 'Add a reason first'}
           </Button>
         </div>
       ) : null}
