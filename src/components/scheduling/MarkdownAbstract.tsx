@@ -55,7 +55,23 @@ const components = {
   h6: ({ children }: { children?: ReactNode }) => (
     <p className="font-medium mb-2 last:mb-0">{children}</p>
   ),
-  a: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+  a: ({ href, children }: { href?: string; children?: ReactNode }) => {
+    // react-markdown applies defaultUrlTransform, which blanks out dangerous
+    // protocols (javascript:, vbscript:, data:). Render those as inert text.
+    if (!href) return <span>{children}</span>;
+
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer nofollow ugc"
+        className="break-words text-blue-primary underline underline-offset-2 hover:text-blue-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow-main"
+      >
+        {children}
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>
+    );
+  },
 };
 
 export function MarkdownAbstract({ content, className }: MarkdownAbstractProps) {
