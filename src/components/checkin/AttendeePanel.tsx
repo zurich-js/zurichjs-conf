@@ -12,9 +12,9 @@ import {
 import {
   canOfferCheckIn,
   checkedInAtFor,
+  isSeatDriven,
   resolveDoorPanelDetail,
   resolveDoorPanelState,
-  workshopSeatProgress,
 } from '@/lib/checkin/panel-state';
 import { AttendeeIdentity } from './AttendeeIdentity';
 import { BadgeStatus } from './BadgeStatus';
@@ -95,8 +95,12 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
 
   // On workshop day, held seats replace the person-level button: the seat is
   // the unit of check-in and the buttons live on the seat rows below.
-  const seats = workshopSeatProgress(attendee, occasion);
-  const seatDriven = seats.total > 0;
+  const seatDriven = isSeatDriven(attendee, occasion);
+
+  // A seat is paid for separately from the conference ticket, so on workshop
+  // day a refunded or unpaid ticket does not refuse the seats — but it does
+  // still mean no badge and no goodies, and the volunteer should hear why.
+  const ticketRefusedButSeated = seatDriven && !attendee.admissible && attendee.ticket !== null;
 
   const canHandleBadge =
     roleCan(role, 'badge_pickup') && attendee.admissible && isTicketHolder;
@@ -192,7 +196,11 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
     <section className={`space-y-4 ${className}`} aria-label="Attendee">
       <DoorStateBanner state={state} detail={bannerDetail} />
 
-      {!attendee.admissible && attendee.refusalReason ? (
+      {ticketRefusedButSeated ? (
+        <DoorRefusalHint
+          message={`Conference ticket ${attendee.ticket?.status ?? 'not confirmed'} — no badge or goodies today. Their workshop seats below are paid for separately and still valid.`}
+        />
+      ) : !attendee.admissible && attendee.refusalReason ? (
         <DoorRefusalHint message={doorFailureMessage(attendee.refusalReason)} />
       ) : null}
 

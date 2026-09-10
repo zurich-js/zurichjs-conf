@@ -88,6 +88,12 @@ export interface RosterRegistration {
   email: string | null;
   company: string | null;
   seatIndex: number;
+  /**
+   * Payment status of the seat itself. Carried so the station can apply the
+   * same rule as door_workshops_for — only a confirmed seat is held — instead of
+   * offering a check-in for a refunded seat the server would list nowhere.
+   */
+  status: DoorTicketStatus;
   checkedInAt: string | null;
   /** Set for workshop-only attendees who picked their badge up on their seat id. */
   badgePickedUpAt: string | null;
@@ -169,6 +175,7 @@ interface RegistrationRow {
   email: string | null;
   company: string | null;
   seat_index: number;
+  status: Database['public']['Enums']['payment_status'];
   checked_in_at: string | null;
 }
 
@@ -218,7 +225,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         supabase
           .from('workshop_registrations')
           .select(
-            'id, workshop_id, ticket_id, first_name, last_name, email, company, seat_index, checked_in_at'
+            'id, workshop_id, ticket_id, first_name, last_name, email, company, seat_index, status, checked_in_at'
           )
           .order('created_at', { ascending: true })
           .range(from, to),
@@ -289,6 +296,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
       email: r.email,
       company: r.company,
       seatIndex: r.seat_index,
+      status: r.status,
       checkedInAt: r.checked_in_at,
       badgePickedUpAt: badgeBySubject.get(r.id) ?? null,
     })),

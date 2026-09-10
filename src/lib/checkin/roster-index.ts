@@ -24,6 +24,8 @@ export interface DoorRosterIndex {
   resolve(scannedId: string): DoorResolveResult;
   /** Everyone, for the desk's search. */
   searchable(): DoorSearchableRecord[];
+  /** Every workshop with its confirmed seats, for the roll-call view. */
+  workshops(): DoorWorkshopOverview[];
   readonly occasion: DoorOccasion;
   readonly generatedAt: string;
   readonly size: number;
@@ -47,6 +49,40 @@ export interface DoorSearchableRecord {
    * assume a glitch and admit them again.
    */
   checkedInAt: string | null;
+}
+
+/** One confirmed seat in a workshop's attendee list. */
+export interface DoorWorkshopSeatRow {
+  registrationId: string;
+  seatIndex: number;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  company: string | null;
+  /**
+   * Where the name came from. A seat bought on someone's own ticket often
+   * carries no name of its own, so the ticket's name is used and marked as
+   * such — a volunteer reading the list should know it is inferred.
+   */
+  nameSource: 'seat' | 'ticket' | 'none';
+  checkedInAt: string | null;
+}
+
+/**
+ * One workshop as the roll-call view shows it: the seats that count, and how
+ * many of them have arrived. Mirrors door_dashboard's workshop-day figures,
+ * which count confirmed seats only.
+ */
+export interface DoorWorkshopOverview {
+  workshopId: string;
+  title: string;
+  room: string | null;
+  date: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  seats: DoorWorkshopSeatRow[];
+  total: number;
+  checkedIn: number;
 }
 
 /**
@@ -137,6 +173,10 @@ interface DoorWorkshopsFor {
  *   for on someone else's behalf.
  *
  * Getting this backwards paints the buyer's name on a colleague's scan.
+ *
+ * Only CONFIRMED seats take part, as in door_workshops_for. The roster ships
+ * every seat so a refunded one still resolves when scanned directly (and is
+ * refused with a reason), but it is nobody's held seat and appears on no list.
  */
 export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
   const workshopById = new Map(roster.workshops.map((w) => [w.id, w]));
@@ -159,6 +199,7 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
     const lowerEmail = email?.toLowerCase() ?? null;
 
     for (const seat of roster.registrations) {
+      if (seat.status !== 'confirmed') continue;
       const seatEmail = seat.email?.toLowerCase() ?? null;
       const byEmail = lowerEmail !== null && seatEmail === lowerEmail;
       const byTicket = ticketId !== null && seat.ticketId === ticketId;
@@ -224,8 +265,10 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
         },
         // No conference ticket at all. A legitimate state, not an error.
         ticket: null,
-        admissible: true,
-        refusalReason: null,
+        // The seat's own payment status decides, exactly as door_resolve does.
+        admissible: registration.status === 'confirmed',
+        refusalReason:
+          registration.status === 'confirmed' ? null : `registration_${registration.status}`,
         checkIn: { workshopDayAt: registration.checkedInAt, conferenceDayAt: null },
         goodie: {
           entitled: false,
@@ -265,6 +308,7 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
     // invisible to the desk on workshop day — the population most likely to need
     // it, since many hold a blank badge.
     for (const seat of roster.registrations) {
+      if (seat.status !== 'confirmed') continue;
       if (seat.ticketId && ticketsById.has(seat.ticketId)) continue;
       if (seat.email && ticketsByEmail.has(seat.email.toLowerCase())) continue;
 
@@ -283,9 +327,112 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
     return records;
   }
 
+  /**
+   * Who is sitting in a seat, for the roll-call list.
+   *
+   * A seat names its attendee when the buyer filled the form in. When it does
+   * not, the seat belongs to whoever it was bought on — the same rule seatsFor
+   * applies — so that ticket's name is shown and flagged as inferred.
+   */
+  function seatRow(seat: RosterRegistration): DoorWorkshopSeatRow {
+    if (seat.firstName || seat.lastName) {
+      return {
+        registrationId: seat.id,
+        seatIndex: seat.seatIndex,
+        firstName: seat.firstName,
+        lastName: seat.lastName,
+        email: seat.email,
+        company: seat.company,
+        nameSource: 'seat',
+        checkedInAt: seat.checkedInAt,
+      };
+    }
+
+    const seatEmail = seat.email?.toLowerCase() ?? null;
+    const byEmail = seatEmail ? ticketsByEmail.get(seatEmail) : undefined;
+    const byTicket =
+      seat.ticketId && seatEmail === null ? ticketsById.get(seat.ticketId) : undefined;
+    const owner = byEmail ?? byTicket;
+
+    return {
+      registrationId: seat.id,
+      seatIndex: seat.seatIndex,
+      firstName: owner?.firstName ?? null,
+      lastName: owner?.lastName ?? null,
+      email: seat.email ?? owner?.email ?? null,
+      company: seat.company ?? owner?.company ?? null,
+      nameSource: owner ? 'ticket' : 'none',
+      checkedInAt: seat.checkedInAt,
+    };
+  }
+
+  function workshops(): DoorWorkshopOverview[] {
+    const byWorkshop = new Map<string, DoorWorkshopOverview>();
+    for (const w of roster.workshops) {
+      byWorkshop.set(w.id, {
+        workshopId: w.id,
+        title: w.title,
+        room: w.room,
+        date: w.date,
+        startTime: w.startTime,
+        endTime: w.endTime,
+        seats: [],
+        total: 0,
+        checkedIn: 0,
+      });
+    }
+
+    for (const seat of roster.registrations) {
+      if (seat.status !== 'confirmed') continue;
+      let entry = byWorkshop.get(seat.workshopId);
+      if (!entry) {
+        // A seat whose workshop row is missing still has a person in it.
+        entry = {
+          workshopId: seat.workshopId,
+          title: 'Workshop',
+          room: null,
+          date: null,
+          startTime: null,
+          endTime: null,
+          seats: [],
+          total: 0,
+          checkedIn: 0,
+        };
+        byWorkshop.set(seat.workshopId, entry);
+      }
+      entry.seats.push(seatRow(seat));
+    }
+
+    const collator = new Intl.Collator('en', { sensitivity: 'base' });
+    const sortKey = (row: DoorWorkshopSeatRow) =>
+      [row.lastName, row.firstName, row.company, row.email].filter(Boolean).join(' ');
+
+    const result = [...byWorkshop.values()];
+    for (const entry of result) {
+      // Named seats first, alphabetically by surname — the order a roll call is
+      // read in. Unnamed seats sink to the bottom rather than scattering.
+      entry.seats.sort((a, b) => {
+        const aNamed = a.firstName || a.lastName ? 0 : 1;
+        const bNamed = b.firstName || b.lastName ? 0 : 1;
+        if (aNamed !== bNamed) return aNamed - bNamed;
+        return collator.compare(sortKey(a), sortKey(b)) || a.seatIndex - b.seatIndex;
+      });
+      entry.total = entry.seats.length;
+      entry.checkedIn = entry.seats.filter((row) => row.checkedInAt !== null).length;
+    }
+
+    result.sort(
+      (a, b) =>
+        (a.startTime ?? '99:99').localeCompare(b.startTime ?? '99:99') ||
+        collator.compare(a.title, b.title)
+    );
+    return result;
+  }
+
   return {
     resolve,
     searchable,
+    workshops,
     occasion: roster.occasion,
     generatedAt: roster.generatedAt,
     size: ticketsById.size + registrationsById.size,
