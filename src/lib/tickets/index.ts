@@ -21,3 +21,11 @@ export {
   buildWorkshopLineItems,
 } from './invoices';
 export type { WorkshopRegistrationForInvoice } from './invoices';
+
+export {
+  buildTicketPdfProps,
+  generateTicketPdfForTicket,
+  ticketPdfFilename,
+  TICKET_PDF_EVENT,
+} from './pdf';
+export type { TicketPdfSource } from './pdf';
