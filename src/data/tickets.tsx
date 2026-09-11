@@ -162,6 +162,24 @@ export const STAGE_COPY: Record<
 };
 
 /**
+ * Copy for the tickets section once sales have closed (conference day onwards).
+ * Rendered in place of the price cards — there is nothing left to buy.
+ */
+export const TICKETS_CLOSED_COPY = {
+  title: 'Ticket sales have closed',
+  subtitle: (
+    <>
+      Online ticket sales for <strong>ZurichJS Conference 2026</strong> are now closed.
+      Already have a ticket? Your QR code is in your confirmation email — see you at
+      Technopark Zürich!
+    </>
+  ),
+  scheduleCta: 'View the schedule',
+  contactCta: 'Contact us',
+  contactNote: 'Questions about an existing order? We are happy to help.',
+} as const;
+
+/**
  * FAQ items addressing common objections and concerns
  */
 export const TICKET_FAQ: FAQItem[] = [

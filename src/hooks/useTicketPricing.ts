@@ -45,6 +45,11 @@ interface UseTicketPricingResult {
   plans: TicketPlan[];
   currentStage: PriceStage | null;
   stageDisplayName: string | null;
+  /**
+   * True once ticket sales have closed. `plans` is then empty on purpose and
+   * `error` stays null — consumers render a sales-closed state instead.
+   */
+  salesClosed: boolean;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -55,11 +60,11 @@ interface UseTicketPricingResult {
  * Provides automatic caching, refetching, and background updates
  *
  * Automatically uses the currency from CurrencyContext (detected server-side via geo-location).
- * Returns empty plans/stage ONLY during loading.
+ * Returns empty plans/stage ONLY during loading, or when sales have closed.
  * After loading completes, if there's an error or no data, error will be set.
  *
  * @example
- * const { plans, currentStage, isLoading, error } = useTicketPricing();
+ * const { plans, currentStage, salesClosed, isLoading, error } = useTicketPricing();
  */
 export const useTicketPricing = (): UseTicketPricingResult => {
   // Get currency from context (detected server-side and passed via props)
@@ -72,11 +77,14 @@ export const useTicketPricing = (): UseTicketPricingResult => {
     refetch,
   } = useQuery(createTicketPricingQueryOptions(currency));
 
-  // Determine error state
+  const salesClosed = data?.salesClosed === true;
+
+  // Determine error state. An empty plan list is expected once sales have
+  // closed, so it must not surface as "Unable to load ticket prices".
   let errorMessage: string | null = null;
   if (queryError) {
     errorMessage = queryError.message;
-  } else if (!isLoading && (!data?.plans || data.plans.length === 0)) {
+  } else if (!isLoading && !salesClosed && (!data?.plans || data.plans.length === 0)) {
     errorMessage = 'No ticket plans available';
   } else if (!isLoading && !data?.currentStage) {
     errorMessage = 'Current price stage not available';
@@ -86,6 +94,7 @@ export const useTicketPricing = (): UseTicketPricingResult => {
     plans: data?.plans ?? [],
     currentStage: data?.currentStage as PriceStage | null ?? null,
     stageDisplayName: data?.stageDisplayName ?? null,
+    salesClosed,
     isLoading,
     error: errorMessage,
     refetch: () => {

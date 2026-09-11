@@ -17,8 +17,10 @@ import {
   getStageConfig,
   getStagesAfter,
   getStockInfo,
+  getTicketSalesCloseDate,
   getTotalTicketsSold,
   isStageStockExhausted,
+  isTicketSalesClosed,
   type GlobalStockLimits,
   type StageStockCounts,
 } from '../pricing-stages';
@@ -97,6 +99,45 @@ describe('getCurrentStage', () => {
     counts.byStage.blind_bird = 30;
 
     expect(getCurrentStage(counts).stage).toBe('early_bird');
+  });
+
+  it('stays on the final stage once sales have closed instead of reopening standard', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-11T10:00:00.000Z'));
+
+    expect(getCurrentStage().stage).toBe('last_minute');
+  });
+});
+
+describe('ticket sales window', () => {
+  it('closes exactly when the final stage ends', () => {
+    expect(getTicketSalesCloseDate().getTime()).toBe(getFinalStage().endDate.getTime());
+    expect(getTicketSalesCloseDate().toISOString()).toBe('2026-09-11T00:00:00.000Z');
+  });
+
+  it('is open right up to the close instant', () => {
+    expect(isTicketSalesClosed(new Date('2026-09-10T23:59:59.999Z'))).toBe(false);
+  });
+
+  it('is closed from the close instant onwards', () => {
+    expect(isTicketSalesClosed(new Date('2026-09-11T00:00:00.000Z'))).toBe(true);
+    expect(isTicketSalesClosed(new Date('2026-09-11T12:00:00.000Z'))).toBe(true);
+    expect(isTicketSalesClosed(new Date('2027-01-01T00:00:00.000Z'))).toBe(true);
+  });
+
+  it('defaults to the current time', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-11T08:00:00.000Z'));
+    expect(isTicketSalesClosed()).toBe(true);
+
+    vi.setSystemTime(new Date('2026-09-01T08:00:00.000Z'));
+    expect(isTicketSalesClosed()).toBe(false);
+  });
+
+  it('returns a fresh Date each call so callers cannot mutate the config', () => {
+    const first = getTicketSalesCloseDate();
+    first.setFullYear(2099);
+    expect(getTicketSalesCloseDate().getUTCFullYear()).toBe(2026);
   });
 });
 

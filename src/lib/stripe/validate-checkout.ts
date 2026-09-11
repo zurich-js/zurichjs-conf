@@ -8,6 +8,8 @@ import type Stripe from 'stripe';
 import {
   getCurrentStage,
   getEffectiveStageForCategory,
+  isTicketSalesClosed,
+  TICKET_SALES_CLOSED_MESSAGE,
   type PriceStage,
   type TicketCategory,
 } from '@/config/pricing-stages';
@@ -56,7 +58,8 @@ interface ValidationResult {
 
 /**
  * Validate that all price IDs correspond to the current pricing stage.
- * Rejects prices from expired stages (e.g., blind bird prices during early bird phase).
+ * Rejects prices from expired stages (e.g., blind bird prices during early bird phase),
+ * and rejects every conference-ticket price once sales have closed.
  */
 export async function validateCheckoutPrices(
   stripe: Stripe,
@@ -65,6 +68,7 @@ export async function validateCheckoutPrices(
   const { counts } = await getTicketCounts();
   const currentStageConfig = getCurrentStage(counts);
   const currentStage = currentStageConfig.stage;
+  const salesClosed = isTicketSalesClosed();
 
   // Deduplicate and fetch all prices in parallel
   const uniquePriceIds = [...new Set(priceIds)];
@@ -75,6 +79,12 @@ export async function validateCheckoutPrices(
   for (const price of prices) {
     // Skip non-ticket products (workshop vouchers, etc.)
     if (!isTicketProduct(price)) continue;
+
+    // Once sales have closed no conference ticket can be bought at any price —
+    // this also covers student/unemployed tickets, which have no stage.
+    if (salesClosed) {
+      return { valid: false, error: TICKET_SALES_CLOSED_MESSAGE, currentStage };
+    }
 
     const lookupKey = price.lookup_key;
     if (!lookupKey) continue;

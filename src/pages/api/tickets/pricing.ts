@@ -14,6 +14,7 @@ import {
   getEffectiveStageForCategory,
   getStagesAfter,
   getStockInfo,
+  isTicketSalesClosed,
   type PriceStage,
   type TicketCategory,
   type StockInfo,
@@ -54,6 +55,11 @@ interface PricingResponse {
   plans: TicketPlanResponse[];
   currentStage: PriceStage;
   stageDisplayName: string;
+  /**
+   * True once ticket sales have closed. `plans` is then empty by design —
+   * not an error — and the UI renders its sales-closed state instead.
+   */
+  salesClosed?: boolean;
   error?: string;
 }
 
@@ -127,6 +133,20 @@ export default async function handler(
   }
 
   try {
+    // Sales over: don't offer anything. Skips Stripe and the DB entirely so
+    // the closed state can never flicker back to "buyable" on a Stripe hiccup.
+    if (isTicketSalesClosed()) {
+      const finalStage = getCurrentStage();
+      res.setHeader('Cache-Control', CACHE_CONTROL);
+      res.status(200).json({
+        plans: [],
+        currentStage: finalStage.stage,
+        stageDisplayName: finalStage.displayName,
+        salesClosed: true,
+      });
+      return;
+    }
+
     const stripe = getStripe();
 
     // Parse currency from query parameter (defaults to CHF)

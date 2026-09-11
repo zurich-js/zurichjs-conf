@@ -243,6 +243,8 @@ export const eventSchema = {
       priceCurrency: "CHF",
       availability: "https://schema.org/InStock",
       validFrom: "2025-01-01T00:00:00+01:00",
+      // Sales close at the start of conference day (end of the final pricing stage)
+      validThrough: "2026-09-11T02:00:00+02:00",
       url: `${BASE_URL}/#tickets`,
     },
     {
@@ -252,6 +254,8 @@ export const eventSchema = {
       priceCurrency: "CHF",
       availability: "https://schema.org/InStock",
       validFrom: "2025-01-01T00:00:00+01:00",
+      // Sales close at the start of conference day (end of the final pricing stage)
+      validThrough: "2026-09-11T02:00:00+02:00",
       url: `${BASE_URL}/#tickets`,
     },
     {
@@ -261,6 +265,8 @@ export const eventSchema = {
       priceCurrency: "CHF",
       availability: "https://schema.org/LimitedAvailability",
       validFrom: "2025-01-01T00:00:00+01:00",
+      // Sales close at the start of conference day (end of the final pricing stage)
+      validThrough: "2026-09-11T02:00:00+02:00",
       url: `${BASE_URL}/#tickets`,
     },
   ],

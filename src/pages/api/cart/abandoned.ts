@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { render } from '@react-email/render';
 import { CartAbandonmentEmail } from '@/emails/templates/CartAbandonmentEmail';
 import type { CartAbandonmentEmailProps, CartAbandonmentDiscount } from '@/emails/templates/CartAbandonmentEmail';
+import { isTicketSalesClosed } from '@/config/pricing-stages';
 import { getBaseUrl } from '@/lib/url';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { createSingleUseDiscountCode } from '@/lib/discount/stripe-codes';
@@ -108,6 +109,15 @@ export default async function handler(
     return res.status(429).json({
       success: false,
       error: 'Too many requests',
+    });
+  }
+
+  // Nothing in the cart can be bought any more, so a "your tickets are
+  // waiting" nudge would only send people to a closed checkout.
+  if (isTicketSalesClosed()) {
+    return res.status(200).json({
+      success: true,
+      message: 'Ticket sales have closed — no recovery email scheduled',
     });
   }
 

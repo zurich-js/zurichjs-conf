@@ -123,6 +123,11 @@ const validRequest = {
 describe('/api/cart/abandoned', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Recovery mail only makes sense while tickets can still be bought, so
+    // pin the clock inside the sales window. Only Date is faked — the
+    // handler's async work must keep running on real timers.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-08-15T12:00:00.000Z'));
     process.env.RESEND_API_KEY = 're_test';
     mocks.renderEmail.mockResolvedValue('<html>email</html>');
     mocks.sendEmail.mockResolvedValue({ data: { id: 'email_new' }, error: null });
@@ -148,7 +153,22 @@ describe('/api/cart/abandoned', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     delete process.env.RESEND_API_KEY;
+  });
+
+  it('schedules nothing once ticket sales have closed', async () => {
+    vi.setSystemTime(new Date('2026-09-11T09:00:00.000Z'));
+
+    const res = await callHandler(validRequest);
+
+    expect(res._status).toBe(200);
+    expect(res._json).toEqual(
+      expect.objectContaining({ success: true, message: expect.stringContaining('closed') })
+    );
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+    expect(mocks.supabaseInsert).not.toHaveBeenCalled();
+    expect(mocks.createSingleUseDiscountCode).not.toHaveBeenCalled();
   });
 
   it('normalizes the email so a completed purchase can cancel the sequence', async () => {

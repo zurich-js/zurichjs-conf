@@ -16,6 +16,8 @@ export interface TicketPricingResponse {
   plans: TicketPlan[];
   currentStage: string;
   stageDisplayName?: string;
+  /** True once ticket sales have closed — `plans` is then empty by design. */
+  salesClosed?: boolean;
   error?: string;
 }
 

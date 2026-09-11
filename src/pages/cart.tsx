@@ -31,6 +31,7 @@ import { calculateOrderSummary } from '@/lib/cart';
 import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry, isSupportedCurrency } from '@/config/currency';
+import { TICKET_SALES_CLOSED_MESSAGE } from '@/config/pricing-stages';
 
 import { ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm } from '@/components/molecules';
 import { SectionContainer } from '@/components/organisms';
@@ -55,7 +56,7 @@ export default function CartPage() {
     addToCart,
   } = useCart();
 
-  const { plans: ticketPlans, isLoading: isPricingLoading } = useTicketPricing();
+  const { plans: ticketPlans, isLoading: isPricingLoading, salesClosed: ticketSalesClosed } = useTicketPricing();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
   const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
   const [workshopAttendees, setWorkshopAttendees] = useState<Record<string, AttendeeInfo[]>>({});
@@ -323,7 +324,16 @@ export default function CartPage() {
     );
   };
 
+  // Conference tickets can no longer be bought once sales close; the server
+  // rejects them at checkout too, so stop the funnel here with a clear reason.
+  const hasUnsellableTickets = ticketSalesClosed && ticketItems.length > 0;
+
   const handleContinueFromReview = () => {
+    if (hasUnsellableTickets) {
+      showToast(TICKET_SALES_CLOSED_MESSAGE, 'error');
+      return;
+    }
+
     analytics.track('cart_reviewed', {
       cart_item_count: cart.items.length,
       cart_total_amount: orderSummary.total,
@@ -538,6 +548,10 @@ export default function CartPage() {
               onStepClick={(step) => {
                 // Prevent clicking directly to payment — must complete billing first
                 if (step === 'payment') return;
+                if (step !== 'review' && hasUnsellableTickets) {
+                  showToast(TICKET_SALES_CLOSED_MESSAGE, 'error');
+                  return;
+                }
                 if (step === 'checkout' && !requireAttendeeInfoBeforeCheckout()) return;
                 setCurrentStep(step);
               }}
@@ -547,6 +561,22 @@ export default function CartPage() {
 
         {/* Main Content */}
         <SectionContainer className="py-6 md:py-12">
+          {hasUnsellableTickets && (
+            <div
+              role="alert"
+              className="mb-6 rounded-2xl border border-brand-red/60 bg-brand-red/10 px-5 py-4 text-brand-white"
+            >
+              <p className="font-semibold">{TICKET_SALES_CLOSED_MESSAGE}</p>
+              <p className="mt-1 text-sm text-brand-gray-light">
+                Remove the conference tickets from your cart to continue. Questions about an
+                existing order? Email{' '}
+                <a href="mailto:hello@zurichjs.com" className="underline">
+                  hello@zurichjs.com
+                </a>
+                .
+              </p>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {currentStep === 'review' && (
               <ReviewStep

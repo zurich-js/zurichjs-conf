@@ -238,9 +238,42 @@ export const getCurrentStage = (stockCounts?: StageStockCounts): StageConfig => 
     }
   }
 
+  // Past the final stage the ladder never climbs back down: report the final
+  // stage rather than silently reopening standard pricing. Sales are closed by
+  // then anyway (see isTicketSalesClosed), so this only affects display.
+  if (isTicketSalesClosed(now)) {
+    return getFinalStage();
+  }
+
   // Default to standard if no active stage found
   return PRICING_STAGES.find(s => s.stage === 'standard')!;
 };
+
+/**
+ * Message returned to buyers once ticket sales have closed. Shared by the
+ * checkout validation (API error) and the public UI so the wording matches.
+ */
+export const TICKET_SALES_CLOSED_MESSAGE =
+  'Ticket sales have closed. Tickets are no longer available for purchase.';
+
+/**
+ * The instant conference ticket sales close for good.
+ *
+ * Sales run until the end of the final pricing stage — the last_minute
+ * window closes at the start of conference day. After this there is no
+ * fallback stage: the pricing API stops offering plans and checkout rejects
+ * every conference-ticket price.
+ */
+export const getTicketSalesCloseDate = (): Date => new Date(getFinalStage().endDate);
+
+/**
+ * True once ticket sales have closed (the final stage's end has passed).
+ *
+ * Pure and dependency-free so it is safe to call from the pricing API, the
+ * Stripe checkout validation path and client components alike.
+ */
+export const isTicketSalesClosed = (now: Date = new Date()): boolean =>
+  now.getTime() >= getFinalStage().endDate.getTime();
 
 /**
  * Get stage configuration by stage name

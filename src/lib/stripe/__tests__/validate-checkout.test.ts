@@ -8,6 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Stripe from 'stripe';
+import { TICKET_SALES_CLOSED_MESSAGE } from '@/config/pricing-stages';
 import { validateCheckoutPrices } from '../validate-checkout';
 
 vi.mock('@/lib/tickets/getTicketCounts', () => ({
@@ -114,5 +115,58 @@ describe('validateCheckoutPrices', () => {
     const result = await validateCheckoutPrices(stripe, ['price_1']);
 
     expect(result.valid).toBe(true);
+  });
+
+  describe('once ticket sales have closed', () => {
+    beforeEach(() => {
+      // Conference day — the last_minute window ended at midnight UTC
+      vi.setSystemTime(new Date('2026-09-11T08:00:00.000Z'));
+    });
+
+    it('rejects the final-stage price that was valid a moment before', async () => {
+      const stripe = createMockStripe({ price_1: 'standard_last_minute' });
+
+      const result = await validateCheckoutPrices(stripe, ['price_1']);
+
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(TICKET_SALES_CLOSED_MESSAGE);
+    });
+
+    it('rejects VIP at its capped late_bird price', async () => {
+      const stripe = createMockStripe({ price_1: 'vip_late_bird_eur' });
+
+      const result = await validateCheckoutPrices(stripe, ['price_1']);
+
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(TICKET_SALES_CLOSED_MESSAGE);
+    });
+
+    it('rejects student/unemployed tickets even though they have no stage', async () => {
+      const stripe = createMockStripe({ price_1: 'standard_student_unemployed' });
+
+      const result = await validateCheckoutPrices(stripe, ['price_1']);
+
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(TICKET_SALES_CLOSED_MESSAGE);
+    });
+
+    it('rejects the "standard" price the post-window fallback used to allow', async () => {
+      // Before the closure gate, a post-window checkout fell back to the
+      // standard stage and would have gone through at standard pricing.
+      const stripe = createMockStripe({ price_1: 'standard_standard' });
+
+      const result = await validateCheckoutPrices(stripe, ['price_1']);
+
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(TICKET_SALES_CLOSED_MESSAGE);
+    });
+
+    it('still lets non-ticket prices through (workshops gate themselves)', async () => {
+      const stripe = createMockStripe({ price_1: 'workshop_agentic_js' });
+
+      const result = await validateCheckoutPrices(stripe, ['price_1']);
+
+      expect(result.valid).toBe(true);
+    });
   });
 });

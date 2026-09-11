@@ -10,11 +10,12 @@ import { StudentVerificationModal, VerificationSuccessModal, TicketWaitlistModal
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useStudentVerification } from '@/hooks/useStudentVerification';
 import { useCart } from '@/contexts/CartContext';
-import { createTicketDataFromStripe } from '@/data/tickets';
+import { createTicketDataFromStripe, TICKETS_CLOSED_COPY } from '@/data/tickets';
 import { STUDENT_WAITLIST_CONFIG, VIP_WAITLIST_CONFIG } from '@/data/ticket-waitlist';
 import { motion } from 'framer-motion';
+import { TicketX } from 'lucide-react';
 import {SectionContainer} from "@/components/organisms/SectionContainer";
-import { Heading, Kicker } from '@/components/atoms';
+import { Button, Heading, Kicker } from '@/components/atoms';
 
 export interface TicketsSectionWithStripeProps {
   /**
@@ -89,13 +90,60 @@ function TicketCardsSkeleton({ className = '' }: { className?: string }) {
 }
 
 /**
+ * Rendered in place of the price cards once ticket sales have closed.
+ * Points existing ticket holders at the schedule and everyone else at support.
+ */
+function TicketSalesClosed() {
+  return (
+    <div className="relative flex flex-col gap-10" aria-labelledby="tickets-heading">
+      <motion.div
+        className="flex flex-col gap-2.5 items-center text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Kicker variant="light">TICKETS</Kicker>
+        <Heading
+          id="tickets-heading"
+          level="h2"
+          variant="light"
+          className="text-xl text-balance leading-none"
+        >
+          {TICKETS_CLOSED_COPY.title}
+        </Heading>
+      </motion.div>
+
+      <motion.div
+        role="status"
+        className="mx-auto w-full max-w-2xl rounded-4xl bg-brand-black p-8 md:p-12 text-center text-brand-white"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <TicketX className="mx-auto mb-6 h-14 w-14 text-brand-yellow-main" aria-hidden="true" />
+        <p className="text-lg leading-relaxed text-balance">{TICKETS_CLOSED_COPY.subtitle}</p>
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          <Button variant="primary" asChild href="/schedule">
+            {TICKETS_CLOSED_COPY.scheduleCta}
+          </Button>
+          <Button variant="outline" asChild href="mailto:hello@zurichjs.com">
+            {TICKETS_CLOSED_COPY.contactCta}
+          </Button>
+        </div>
+        <p className="mt-6 text-sm text-brand-gray-light">{TICKETS_CLOSED_COPY.contactNote}</p>
+      </motion.div>
+    </div>
+  );
+}
+
+/**
  * Tickets section with live Stripe pricing integration
  * Shows error UI if Stripe prices fail to load
  */
 export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> = ({
   className = '',
 }) => {
-  const { plans, currentStage, isLoading, error, refetch } = useTicketPricing();
+  const { plans, currentStage, salesClosed, isLoading, error, refetch } = useTicketPricing();
   const { addToCart, navigateToCart } = useCart();
   useCartRoutePrefetch();
   const {
@@ -145,6 +193,15 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     return (
       <SectionContainer className={`relative ${className}`} aria-labelledby="tickets-heading">
         <TicketCardsSkeleton />
+      </SectionContainer>
+    );
+  }
+
+  // Sales over: no cards, no countdown, no error — just the closed notice.
+  if (salesClosed) {
+    return (
+      <SectionContainer className={`relative ${className}`} aria-labelledby="tickets-heading">
+        <TicketSalesClosed />
       </SectionContainer>
     );
   }

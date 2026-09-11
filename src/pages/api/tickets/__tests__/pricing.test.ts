@@ -39,6 +39,7 @@ const mocks = vi.hoisted(() => ({
     startDate: new Date(),
     endDate: new Date(),
   }),
+  mockIsTicketSalesClosed: vi.fn().mockReturnValue(false),
   mockGetStockInfo: vi.fn().mockReturnValue({
     remaining: 50,
     total: 100,
@@ -74,6 +75,7 @@ vi.mock('@/lib/tickets/stock-config', () => ({
 
 vi.mock('@/config/pricing-stages', () => ({
   getCurrentStage: mocks.mockGetCurrentStage,
+  isTicketSalesClosed: mocks.mockIsTicketSalesClosed,
   getFinalStage: () => ({ stage: 'last_minute', displayName: 'Last Minute' }),
   getStagesAfter: (stage: string) => {
     const ladder = ['blind_bird', 'early_bird', 'standard', 'late_bird', 'last_minute'];
@@ -360,6 +362,70 @@ describe('Ticket Pricing API Handler', () => {
       expect(res._headers['Cache-Control']).toBe('public, s-maxage=300, stale-while-revalidate=600');
       expect(mocks.mockGetTicketCounts).not.toHaveBeenCalled();
       expect(mocks.mockPricesList).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==========================================================================
+  // Sales closed
+  // ==========================================================================
+
+  describe('once ticket sales have closed', () => {
+    beforeEach(() => {
+      mocks.mockIsTicketSalesClosed.mockReturnValue(true);
+      mocks.mockGetCurrentStage.mockReturnValue({
+        stage: 'last_minute',
+        displayName: 'Last Minute',
+        startDate: new Date(),
+        endDate: new Date(),
+      });
+    });
+
+    afterEach(() => {
+      mocks.mockIsTicketSalesClosed.mockReturnValue(false);
+      mocks.mockGetCurrentStage.mockReturnValue({
+        stage: 'early_bird',
+        displayName: 'Early Bird',
+        startDate: new Date(),
+        endDate: new Date(),
+      });
+    });
+
+    it('returns no plans and flags salesClosed instead of an error', async () => {
+      const req = createMockRequest({ query: { currency: 'EUR' } });
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._status).toBe(200);
+      expect(res._json).toEqual({
+        plans: [],
+        currentStage: 'last_minute',
+        stageDisplayName: 'Last Minute',
+        salesClosed: true,
+      });
+      expect(res._headers['Cache-Control']).toContain('s-maxage');
+    });
+
+    it('never touches Stripe or the stock tables', async () => {
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(mocks.mockPricesList).not.toHaveBeenCalled();
+      expect(mocks.mockGetTicketCounts).not.toHaveBeenCalled();
+      expect(mocks.mockGetTicketStockLimits).not.toHaveBeenCalled();
+    });
+
+    it('does not need a Stripe key to answer', async () => {
+      delete process.env.STRIPE_SECRET_KEY;
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._status).toBe(200);
+      expect((res._json as { salesClosed?: boolean }).salesClosed).toBe(true);
     });
   });
 
