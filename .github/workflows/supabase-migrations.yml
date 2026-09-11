@@ -38,6 +38,20 @@ jobs:
         with:
           version: latest
 
+      # Supabase records applied migrations by the 14-digit version prefix
+      # alone. Two files sharing a prefix replay fine on a fresh database but
+      # the second to merge is silently skipped in production, because that
+      # version is already in the history table. Fail before that can happen.
+      - name: Check for duplicate migration versions
+        run: |
+          dupes=$(ls supabase/migrations/*.sql | xargs -n1 basename | cut -d_ -f1 | sort | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "::error::Duplicate migration version(s): $dupes"
+            echo "Each migration needs a unique 14-digit timestamp prefix that sorts after every existing file."
+            ls supabase/migrations/ | grep -E "^($(echo "$dupes" | paste -sd'|'))_"
+            exit 1
+          fi
+
       # Starts a fresh local Postgres and applies every migration from
       # scratch — fails on broken SQL, bad ordering, or missing objects.
       - name: Apply all migrations to a fresh database

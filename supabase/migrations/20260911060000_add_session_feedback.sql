@@ -1,5 +1,5 @@
 -- Migration: Add session_feedback table
--- Created: 2026-09-06
+-- Created: 2026-09-06 (renamed 2026-09-11: the original 20260906120000 version collided with door_hoodie_eligibility, so production skipped it)
 --
 -- Attendee feedback for talks, panels and workshops, collected from the public
 -- /schedule page while the conference is running. Each row is one anonymous

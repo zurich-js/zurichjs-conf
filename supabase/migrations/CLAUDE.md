@@ -13,6 +13,10 @@ YYYYMMDDHHMMSS_short_snake_case_description.sql
 - Underscore separator.
 - Lowercase snake_case description.
 - New filenames must sort **strictly after** every existing file.
+- The prefix must be **unique across the whole directory**. Supabase tracks applied
+  migrations by prefix only, so a duplicate replays fine locally but is silently
+  skipped in production if the other file merged first. Before merging, rebase and
+  check `main` for a collision (CI also fails on duplicates).
 
 Use the scaffold:
 
