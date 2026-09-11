@@ -98,7 +98,7 @@ function handleUrl(baseUrl: string, handle: string | null): string | null {
   return value ? `${baseUrl}${encodeURIComponent(value)}` : null;
 }
 
-function attendeeLinks(profile: AttendeeNetworkingProfile): PublicNetworkingLink[] {
+export function attendeeLinks(profile: AttendeeNetworkingProfile): PublicNetworkingLink[] {
   const mastodon = canonicalMastodonUrl(profile.mastodonHandle);
   const links: Array<PublicNetworkingLink | null> = [
     profile.email ? { kind: 'email', label: 'Email', href: `mailto:${profile.email}` } : null,
@@ -124,7 +124,7 @@ function phoneHref(phone: string | null): string | null {
   return `tel:${phone.trim().startsWith('+') ? '+' : ''}${digits}`;
 }
 
-function sponsorLinks(profile: SponsorNetworkingProfile): PublicNetworkingLink[] {
+export function sponsorLinks(profile: SponsorNetworkingProfile): PublicNetworkingLink[] {
   const phone = phoneHref(profile.phone);
   const links: Array<{ method: NonNullable<SponsorNetworkingProfile['preferredMethod']>; link: PublicNetworkingLink }> = [];
 

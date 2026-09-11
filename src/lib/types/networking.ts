@@ -55,3 +55,34 @@ export interface SavedNetworkingProfile extends PublicNetworkingProfile {
   savedAt: string;
   version: 1;
 }
+
+/** Where an admin directory entry's networking settings live. */
+export type NetworkingDirectorySource = 'attendee' | 'sponsor' | 'manual';
+
+/** One row of the admin networking directory (/admin/networking). */
+export interface NetworkingDirectoryEntry {
+  id: string;
+  source: NetworkingDirectorySource;
+  kind: NetworkingProfileKind;
+  name: string;
+  headline: string | null;
+  /** Internal contact email (ticket / sponsor contact) — admin-only, never the public profile. */
+  contactEmail: string | null;
+  enabled: boolean;
+  links: PublicNetworkingLink[];
+  publicId: string;
+  shareUrl: string;
+  updatedAt: string;
+}
+
+export interface NetworkingDirectoryStats {
+  total: number;
+  enabled: number;
+  bySource: Record<NetworkingDirectorySource, { total: number; enabled: number }>;
+}
+
+export interface NetworkingDirectoryResponse {
+  entries: NetworkingDirectoryEntry[];
+  stats: NetworkingDirectoryStats;
+  generated_at: string;
+}
