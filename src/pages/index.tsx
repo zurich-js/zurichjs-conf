@@ -9,7 +9,8 @@ import {
     LearnSection,
     NavBar,
     SiteFooter,
-    BlueskyFeedSection
+    BlueskyFeedSection,
+    ThankYouBanner
 } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, sponsorsData, learningData } from '@/data';
@@ -153,6 +154,7 @@ export default function Home({ blueskyFeed }: HomePageProps) {
               <SiteFooter showContactLinks />
           </ShapedSection>
       </main>
+      <ThankYouBanner />
     </>
   );
 }

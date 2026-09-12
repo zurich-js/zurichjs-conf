@@ -36,13 +36,22 @@ export const Countdown: React.FC<CountdownProps> = ({
   }, []);
 
   if (timeRemaining.isComplete) {
+    const formattedDate = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Zurich',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(typeof targetDate === 'string' ? Date.parse(targetDate) : targetDate);
+
     return (
       <div
         className={`${isLight ? 'text-brand-black' : 'text-brand-white'} text-center ${className}`}
         role="status"
         aria-live="polite"
       >
-        <p className="text-xl font-semibold">Time is over</p>
+        <p className="text-xl font-semibold">
+          Happened on {formattedDate}
+        </p>
       </div>
     );
   }
