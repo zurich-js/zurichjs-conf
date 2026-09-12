@@ -50,3 +50,4 @@ export type {
   SponsorshipTiersSectionProps,
   SponsorshipContactSectionProps,
 } from './sponsorship';
+export { ThankYouBanner } from './ThankYouBanner';
