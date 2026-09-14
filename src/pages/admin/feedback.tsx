@@ -30,7 +30,11 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { adminFetch } from '@/lib/admin/api-fetch';
 import { adminKeys } from '@/lib/admin/query-keys';
 import { selectFeedbackDetail } from '@/lib/feedback/detail';
-import type { AdminSessionFeedbackResponse, FeedbackDetailTarget } from '@/lib/types/session-feedback';
+import type {
+  AdminSessionFeedbackResponse,
+  FeedbackDetailTarget,
+  FeedbackDetailTargetKind,
+} from '@/lib/types/session-feedback';
 
 const REFRESH_MS = 15_000;
 
@@ -65,17 +69,18 @@ export default function AdminFeedbackPage(): React.JSX.Element {
   );
 
   /** Schedule items the feed is narrowed to, or null when it shows everything. */
-  const feedFilter = useMemo((): { title: string; itemIds: Set<string> } | null => {
+  const feedFilter = useMemo((): { kind: FeedbackDetailTargetKind; title: string; itemIds: Set<string> } | null => {
     if (view === 'speakers') {
       if (!selectedSpeaker) return null;
       return {
+        kind: 'speaker',
         title: selectedSpeaker.name,
         itemIds: new Set(selectedSpeaker.sessions.map((session) => session.scheduleItemId)),
       };
     }
     if (!selectedItemId) return null;
     const session = data?.sessions.find((summary) => summary.scheduleItemId === selectedItemId);
-    return { title: session?.title ?? 'Selected session', itemIds: new Set([selectedItemId]) };
+    return { kind: 'session', title: session?.title ?? 'Selected session', itemIds: new Set([selectedItemId]) };
   }, [data, selectedItemId, selectedSpeaker, view]);
 
   const filteredEntries = useMemo(() => {
@@ -149,6 +154,7 @@ export default function AdminFeedbackPage(): React.JSX.Element {
                     )}
                     <FeedbackFeed
                       entries={filteredEntries}
+                      filterKind={feedFilter?.kind ?? null}
                       filterTitle={feedFilter?.title ?? null}
                       onClearFilter={clearFeedFilter}
                       commentsOnly={commentsOnly}

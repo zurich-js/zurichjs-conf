@@ -2,6 +2,7 @@ import { Mic, Star } from 'lucide-react';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import type { SpeakerFeedbackSummary } from '@/lib/types/session-feedback';
 import { DistributionBar } from './DistributionBar';
+import { FeedFilterToggle } from './FeedFilterToggle';
 import { ratingTone } from './format';
 
 export interface SpeakerFeedbackTableProps {
@@ -15,7 +16,8 @@ export interface SpeakerFeedbackTableProps {
 
 /**
  * One row per speaker, ratings pooled across every session they appeared in.
- * Clicking the row filters the feed; clicking the name opens their detail view.
+ * The name opens their detail view; the filter toggle (or a click anywhere on
+ * the row) narrows the comment feed to every session they appeared in.
  */
 export function SpeakerFeedbackTable({
   speakers,
@@ -44,6 +46,9 @@ export function SpeakerFeedbackTable({
               <th scope="col" className="px-4 py-3 text-right">Responses</th>
               <th scope="col" className="px-4 py-3 text-right">Average</th>
               <th scope="col" className="px-4 py-3 w-48">Distribution</th>
+              <th scope="col" className="px-4 py-3 text-right">
+                <span className="sr-only">Filter feed</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -86,6 +91,13 @@ export function SpeakerFeedbackTable({
                   </td>
                   <td className="px-4 py-3">
                     <DistributionBar distribution={speaker.distribution} total={speaker.responseCount} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <FeedFilterToggle
+                      isActive={isSelected}
+                      label={speaker.name}
+                      onToggle={() => onSelect(isSelected ? null : speaker.speakerId)}
+                    />
                   </td>
                 </tr>
               );

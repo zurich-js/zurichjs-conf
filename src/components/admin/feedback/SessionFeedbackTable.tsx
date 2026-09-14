@@ -1,6 +1,7 @@
 import { Star } from 'lucide-react';
 import type { SessionFeedbackSummary } from '@/lib/types/session-feedback';
 import { DistributionBar } from './DistributionBar';
+import { FeedFilterToggle } from './FeedFilterToggle';
 import { KIND_LABELS, formatScheduleStart, ratingTone } from './format';
 
 export interface SessionFeedbackTableProps {
@@ -13,9 +14,9 @@ export interface SessionFeedbackTableProps {
 }
 
 /**
- * One row per rateable session in schedule order. Clicking a row filters the
- * comment feed to that session (clicking it again clears the filter); clicking
- * the title opens that talk's own feedback view.
+ * One row per rateable session in schedule order. The title opens that talk's
+ * own feedback view; the filter toggle (or a click anywhere on the row) narrows
+ * the comment feed to it.
  */
 export function SessionFeedbackTable({ sessions, selectedItemId, onSelect, onOpenDetail }: SessionFeedbackTableProps): React.JSX.Element {
   let lastDate: string | null = null;
@@ -31,6 +32,9 @@ export function SessionFeedbackTable({ sessions, selectedItemId, onSelect, onOpe
               <th scope="col" className="px-4 py-3 text-right">Responses</th>
               <th scope="col" className="px-4 py-3 text-right">Average</th>
               <th scope="col" className="px-4 py-3 w-48">Distribution</th>
+              <th scope="col" className="px-4 py-3 text-right">
+                <span className="sr-only">Filter feed</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -80,6 +84,13 @@ export function SessionFeedbackTable({ sessions, selectedItemId, onSelect, onOpe
                   </td>
                   <td className="px-4 py-3">
                     <DistributionBar distribution={session.distribution} total={session.responseCount} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <FeedFilterToggle
+                      isActive={isSelected}
+                      label={session.title}
+                      onToggle={() => onSelect(isSelected ? null : session.scheduleItemId)}
+                    />
                   </td>
                 </tr>
               );
