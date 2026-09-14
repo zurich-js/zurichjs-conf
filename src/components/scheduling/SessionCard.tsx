@@ -9,7 +9,7 @@ import type { PublicSession } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
 import { MarkdownAbstract } from './MarkdownAbstract';
-import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
+import type { WorkshopOfferingSummary } from '@/lib/types/workshops';
 import {
   addConferenceReminder,
   addSessionOrEngineeringDayToCalendar,

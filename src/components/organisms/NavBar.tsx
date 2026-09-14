@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Menu, ShoppingCart, X } from "lucide-react";
+import { NEXT_EDITION_URL } from "@/lib/archive/config";
+import { Menu, X } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Logo, Button, SocialIcon } from "@/components/atoms";
-import { useCart } from "@/contexts/CartContext";
 
 export interface NavBarProps {
   scrollThreshold?: number;
@@ -43,12 +43,6 @@ export const NavBar: React.FC<NavBarProps> = ({
   const isHomePage = router.pathname === "/";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { cart } = useCart();
-  const cartCount = cart.totalItems;
-  const hasCart = cartCount > 0;
-
-  // Hide NavBar on admin and CFP sub-routes (but not /cfp itself)
-  const shouldHideNavBar = router.pathname.startsWith('/admin') || router.pathname.startsWith('/cfp/');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,13 +55,10 @@ export const NavBar: React.FC<NavBarProps> = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [scrollThreshold]);
 
-  const handleGetTickets = () => {
-    router.push('/#tickets');
+  // The 2026 edition is over; the primary CTA now points at the next one.
+  const handleNextEdition = () => {
+    window.location.href = NEXT_EDITION_URL;
   };
-
-  if (shouldHideNavBar) {
-    return null;
-  }
 
   // if root: no background, always visible, but logo scrollable
   // else: black background, always visible
@@ -115,43 +106,17 @@ export const NavBar: React.FC<NavBarProps> = ({
                 ))}
             </div>
             <div className="w-px h-6 bg-gray-600" />
-            {hasCart && (
-              <Link
-                href="/cart"
-                prefetch
-                aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-                className="relative inline-flex items-center justify-center size-10 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer"
-              >
-                <ShoppingCart size={24} />
-                <span className="absolute top-0 right-0 w-4 h-4 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
-                  {cartCount}
-                </span>
-              </Link>
-            )}
             <Button
               variant="primary"
               size="sm"
-              onClick={handleGetTickets}
+              onClick={handleNextEdition}
               className="h-8 px-4 text-sm font-semibold hover:bg-brand-dark"
             >
-              Tickets
+              ZurichJS Conf 2027
             </Button>
           </div>
 
           <div className="lg:hidden flex items-center gap-1">
-            {hasCart && (
-              <Link
-                href="/cart"
-                prefetch
-                aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-                className="relative inline-flex items-center justify-center h-11 w-11 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer select-none"
-              >
-                <ShoppingCart size={22} />
-                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
-                  {cartCount}
-                </span>
-              </Link>
-            )}
             <button
               className="inline-flex items-center justify-center h-11 w-11 text-white hover:text-brand-yellow-main transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -200,24 +165,13 @@ export const NavBar: React.FC<NavBarProps> = ({
               variant="primary"
               size="lg"
               onClick={() => {
-                handleGetTickets();
+                handleNextEdition();
                 setMobileMenuOpen(false);
               }}
               className="mt-4"
             >
-              Tickets
+              ZurichJS Conf 2027
             </Button>
-            {hasCart && (
-              <Link
-                href="/cart"
-                prefetch
-                onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-lg leading-none bg-transparent text-white font-medium hover:bg-white hover:text-brand-black transition-all"
-              >
-                <ShoppingCart size={18} />
-                View cart ({cartCount})
-              </Link>
-            )}
           </div>
           <div
             className="flex items-center justify-start gap-4 p-4 pl-6"

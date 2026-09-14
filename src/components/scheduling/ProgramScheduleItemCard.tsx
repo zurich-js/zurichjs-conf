@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ScheduleItemLiveStatus } from '@/lib/types/session-feedback';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
-import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
+import type { WorkshopOfferingSummary } from '@/lib/types/workshops';
 import { BreakCard } from './BreakCard';
 import { EventCard, type EventCardLink } from './EventCard';
 import { PlaceholderCard } from './PlaceholderCard';

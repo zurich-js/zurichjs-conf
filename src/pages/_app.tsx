@@ -4,9 +4,6 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import localFont from "next/font/local";
 import { MotionProvider } from "@/contexts/MotionContext";
-import { CartProvider } from "@/contexts/CartContext";
-import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import type { SupportedCurrency } from "@/config/currency";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { QueryClientProvider, HydrationBoundary, type DehydratedState } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -17,10 +14,7 @@ import { useRouter } from "next/router";
 import Script from "next/script";
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
-import type { Cart } from '@/types/cart';
 import { NavBar } from '@/components/organisms';
-import dynamic from 'next/dynamic';
-import { initEasterEgg } from '@/lib/easter-egg/client';
 import { initTechStackDetection } from '@/lib/analytics/techStackDetector';
 import {
   ANALYTICS_QUERY_PARAMETERS,
@@ -30,11 +24,6 @@ import {
   setSessionRecordingForRoute,
 } from '@/lib/analytics/privacy';
 import { isSensitiveRoute } from '@/lib/analytics/sensitive-routes';
-
-const DiscountContainer = dynamic(
-  () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
-  { ssr: false }
-);
 
 const figtree = localFont({
   src: [
@@ -56,17 +45,12 @@ const figtree = localFont({
  */
 interface ExtendedPageProps {
   dehydratedState?: DehydratedState;
-  initialCart?: Cart;
-  detectedCurrency?: SupportedCurrency;
 }
 
 export default function App({ Component, pageProps }: AppProps<ExtendedPageProps>) {
   // Create a stable query client instance per request
   const [queryClient] = useState(() => getQueryClient());
   const router = useRouter();
-
-  // Pass detected currency to provider (undefined for static pages triggers client-side geo detection)
-  const detectedCurrency = pageProps.detectedCurrency;
 
   // Initialize PostHog
   useEffect(() => {
@@ -81,7 +65,10 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
       }
 
       posthog.init(key, {
-        api_host: '/ingest',
+        // The live site proxied through /ingest to dodge ad blockers, but that
+        // was a next.config rewrite and a static export has no server to run
+        // it. Point at PostHog directly.
+        api_host: 'https://eu.i.posthog.com',
         ui_host: 'https://eu.posthog.com',
         person_profiles: 'always',
         capture_pageview: false,
@@ -180,11 +167,6 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     };
   }, [router.events]);
 
-  // Initialize console easter egg
-  useEffect(() => {
-    initEasterEgg();
-  }, []);
-
   // Hide NavBar on admin, share (networking), and door pages. Door station is a
   // single-purpose screen held in one hand; a marketing nav and a shopping cart
   // are mis-taps waiting to happen.
@@ -195,19 +177,6 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
   const isPrivateRoute = isPrivateAnalyticsRoute(router.pathname);
   const showGoogleAds = !isPrivateRoute;
 
-  // Discount popup mounts on the high-traffic content pages, not just the
-  // homepage — /speakers alone starts 16% of sessions. The individual speaker
-  // and workshop pages are included too: they're strong pre-purchase intent
-  // signals and were previously the biggest slice of traffic that could never
-  // see the offer, since only the index routes matched.
-  const showDiscount = [
-    '/',
-    '/speakers',
-    '/speakers/[slug]',
-    '/workshops',
-    '/workshops/[slug]',
-    '/schedule',
-  ].includes(router.pathname);
 
   return (
     <>
@@ -258,19 +227,14 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
         <QueryClientProvider client={queryClient}>
           <HydrationBoundary state={pageProps.dehydratedState}>
             <NuqsAdapter>
-              <CurrencyProvider currency={detectedCurrency}>
-                <CartProvider initialCart={pageProps.initialCart}>
-                  <MotionProvider>
+                <MotionProvider>
                     <ToastProvider>
                       <div className={figtree.variable}>
                         {showNavBar && <NavBar />}
                         <Component {...pageProps} />
-                        {showDiscount && <DiscountContainer />}
                       </div>
                     </ToastProvider>
-                  </MotionProvider>
-                </CartProvider>
-              </CurrencyProvider>
+                </MotionProvider>
             </NuqsAdapter>
           </HydrationBoundary>
           {process.env.NODE_ENV === 'development' && (

@@ -1,4 +1,4 @@
-import {TICKET_FAQ} from "@/data/tickets";
+import {TICKET_FAQ} from "@/data/faq";
 import {motion} from "framer-motion";
 import {FAQAccordion} from "@/components/molecules";
 import React from "react";

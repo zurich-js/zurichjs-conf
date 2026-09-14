@@ -5,9 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { GetStaticProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { SpeakerCard, StickyTicketCta } from '@/components/molecules';
+import { SpeakerCard } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
-import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { analytics } from '@/lib/analytics';
 import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
@@ -100,7 +99,6 @@ export default function SpeakersPage() {
   const [sortMode, setSortMode] = useState<SortMode>('none');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data, isLoading } = useQuery(publicSpeakersQueryOptions());
-  const { plans, currentStage } = useTicketPricing();
 
   const speakers = data?.speakers ?? [];
   const placeholderSpeakerCount = selectedTags.length === 0
@@ -391,7 +389,6 @@ export default function SpeakersPage() {
           <SiteFooter showContactLinks />
         </ShapedSection>
 
-        <StickyTicketCta plans={plans} currentStage={currentStage} location="speakers" />
       </main>
     </>
   );
@@ -407,6 +404,5 @@ export const getStaticProps: GetStaticProps<SpeakersPageProps> = async () => {
     props: {
       dehydratedState: dehydrate(),
     },
-    revalidate: 86400,
   };
 };

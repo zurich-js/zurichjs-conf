@@ -2,7 +2,6 @@ import {
     Hero,
     ScheduleSection,
     ShapedSection,
-    TicketsSectionWithStripe,
     FAQSection,
     SponsorsSection,
     SpeakersSection,
@@ -19,10 +18,9 @@ import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
 import { publicSponsorsQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
-import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
-import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from '@/lib/bluesky';
 import type { BlueskyFeedResult } from '@/lib/bluesky';
+import { getFrozenBlueskyFeed } from '@/lib/archive/frozen';
 import type { GetStaticProps } from 'next';
 import React from "react";
 
@@ -137,10 +135,6 @@ export default function Home({ blueskyFeed }: HomePageProps) {
           <BlueskyFeedSection initialFeed={blueskyFeed} />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="yellow" id="tickets">
-          <TicketsSectionWithStripe />
-        </ShapedSection>
-
         <ShapedSection shape="widen" variant="medium" id="faq">
           <FAQSection />
         </ShapedSection>
@@ -175,8 +169,6 @@ export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
   const results = await Promise.allSettled([
     optionalQuery(publicSponsorsQueryOptions),
     optionalQuery(publicSpeakersQueryOptions()),
-    optionalQuery(ticketPricingQueryOptions),
-    getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }),
   ]);
 
   // Report any rejected promises to PostHog (shouldn't happen since
@@ -192,17 +184,10 @@ export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
     }
   }
 
-  const blueskyResult = results[3];
-  const blueskyFeed =
-    blueskyResult?.status === 'fulfilled' && blueskyResult.value
-      ? blueskyResult.value
-      : { posts: [] };
-
   return {
     props: {
       dehydratedState: dehydrate(),
-      blueskyFeed,
+      blueskyFeed: getFrozenBlueskyFeed(),
     },
-    revalidate: 86400,
   };
 };

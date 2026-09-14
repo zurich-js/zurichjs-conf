@@ -13,18 +13,7 @@ export {
   workshopProgramSections,
   workshopSlotCount,
 } from './public-program';
-export {
-  ticketsData,
-  createTicketDataFromStripe,
-  mapStripePlanToTicketPlan,
-  getStageEndDate,
-  TICKET_FEATURES,
-  TICKET_METADATA,
-  STAGE_COPY,
-} from './tickets';
-export { STUDENT_WAITLIST_CONFIG, VIP_WAITLIST_CONFIG } from './ticket-waitlist';
-export { buildWorkshopWaitlistConfig } from './workshop-waitlist';
-export type { WorkshopWaitlistConfigInput } from './workshop-waitlist';
+export { TICKET_FAQ } from './faq';
 export { VIP_BENEFITS } from './vip-benefits';
 export type { VipBenefit, VipBenefitId } from './vip-benefits';
 export { timelineData } from './timeline';

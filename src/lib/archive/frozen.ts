@@ -12,6 +12,7 @@
  * (see `@/lib/archive/urls`).
  */
 
+import blueskySnapshot from '@/data/archive-2026/bluesky.json';
 import communityPartnersSnapshot from '@/data/archive-2026/community-partners.json';
 import manifestSnapshot from '@/data/archive-2026/manifest.json';
 import networkingSnapshot from '@/data/archive-2026/networking.json';
@@ -20,6 +21,7 @@ import speakersSnapshot from '@/data/archive-2026/speakers.json';
 import sponsorsSnapshot from '@/data/archive-2026/sponsors.json';
 import workshopsSnapshot from '@/data/archive-2026/workshops.json';
 
+import type { BlueskyFeedResult } from '@/lib/bluesky/types';
 import type { PublicCommunityPartner } from '@/lib/partnerships/public';
 import type { PublicSpeaker } from '@/lib/types/cfp';
 import type { PublicNetworkingProfile } from '@/lib/types/networking';
@@ -71,6 +73,15 @@ export function getFrozenCommunityPartners(): PublicCommunityPartner[] {
 
 export function getFrozenWorkshops(): FrozenWorkshops {
   return workshopsSnapshot as unknown as FrozenWorkshops;
+}
+
+/**
+ * Community chatter as it stood when the archive was cut. The live pages hit
+ * the Bluesky API at build time; an archive must not depend on a third-party
+ * service still being up (or still returning the same posts) years later.
+ */
+export function getFrozenBlueskyFeed(): BlueskyFeedResult {
+  return blueskySnapshot as unknown as BlueskyFeedResult;
 }
 
 export function getFrozenNetworkingProfiles(): PublicNetworkingProfile[] {

@@ -165,6 +165,7 @@ async function main() {
     { resolvePublicNetworkingProfile },
     { getPublicSponsors },
     { createServiceRoleClient },
+    { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed },
   ] = await Promise.all([
     import('@/lib/cfp/speakers'),
     import('@/lib/partnerships/public'),
@@ -172,6 +173,7 @@ async function main() {
     import('@/lib/networking/profiles'),
     import('@/lib/sponsorship/sponsors'),
     import('@/lib/supabase/client'),
+    import('@/lib/bluesky'),
   ]);
 
   await mkdir(DATA_DIR, { recursive: true });
@@ -201,6 +203,16 @@ async function main() {
   await writeSlice('speakers', { speakers, programSpeakerCount });
   await writeSlice('schedule', scheduleItems);
   await writeSlice('sponsors', sponsors);
+
+  // Community chatter, captured once. A failure here must not abort the run:
+  // an empty feed is a fine archive, a half-written snapshot is not.
+  const blueskyFeed = await getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }).catch(
+    (error: unknown) => {
+      console.warn(`  ! bluesky feed unavailable, freezing empty: ${String(error)}`);
+      return { posts: [] };
+    }
+  );
+  await writeSlice('bluesky', blueskyFeed);
   await writeSlice('community-partners', communityPartners);
 
   // Workshops were bookable through Stripe; in the archive they are program

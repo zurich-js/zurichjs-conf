@@ -1,1 +1,0 @@
-export { WorkshopsRegistrantsTab } from './WorkshopsRegistrantsTab';

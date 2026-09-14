@@ -1,12 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { LinkGroup, NewsletterForm } from '@/components/molecules';
+import { LinkGroup } from '@/components/molecules';
 import { Logo, Button, SocialIcon } from '@/components/atoms';
 import { SectionSplitView } from '@/components/organisms';
-import { subscribeToNewsletter } from '@/lib/api/newsletter';
-import { queryKeys } from '@/lib/query-keys';
-import type { PublicSpeakersResponse } from '@/lib/queries/speakers';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
+import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 
 export interface SiteFooterProps {
     showContactLinks?: boolean;
@@ -47,14 +46,14 @@ const legalLinks = {
     ],
 } as const;
 
-const newsletterConfig = {
-    title: 'Stay in the know',
-    copy: 'Get updates about speakers, schedule, and early bird tickets.',
-    ctaLabel: 'Sign up',
-    onSubscribe: async (email: string) => {
-        await subscribeToNewsletter({ email, source: 'footer' });
-    },
-    privacyHref: '/info/privacy-policy',
+// The signup endpoint went with the API routes, and the mailing list now
+// belongs to the next edition — so the footer points there instead of
+// collecting addresses a frozen site could never send to.
+const nextEditionConfig = {
+    title: 'ZurichJS Conf will be back',
+    copy: 'This is the archived 2026 edition. Join the waitlist for the next one.',
+    ctaLabel: 'Join the waitlist',
+    href: NEXT_EDITION_URL,
 };
 
 const socials = [
@@ -72,19 +71,9 @@ const socials = [
 export const SiteFooter: React.FC<SiteFooterProps> = ({
                                                           showContactLinks = false,
                                                       }) => {
-    const { data } = useQuery({
-        queryKey: queryKeys.speakers.public(),
-        queryFn: async () => {
-            const response = await fetch('/api/speakers');
-
-            if (!response.ok) {
-                throw new Error('Failed to load public speaker availability');
-            }
-
-            return response.json() as Promise<PublicSpeakersResponse>;
-        },
-        staleTime: 5 * 60 * 1000,
-    });
+    // Reads the frozen snapshot like every other speaker query; the footer used
+    // to hit /api/speakers directly, which no longer exists.
+    const { data } = useQuery(publicSpeakersQueryOptions());
     const publicSessions = data?.speakers.flatMap((speaker) => speaker.sessions) ?? [];
     const hasTalks = publicSessions.some((session) => session.type === 'standard' || session.type === 'lightning');
     const hasWorkshops = publicSessions.some((session) => session.type === 'workshop');
@@ -152,17 +141,17 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                             <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start lg:h-full">
                                 <h3 className="text-brand-white font-semibold text-lg w-max">Ask us anything</h3>
                                 <p className="text-sm text-brand-gray-medium">If you have any uncertainties or burning questions, don’t hesitate to reach out.</p>
-                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="/contact?type=inquiry" asChild>Send inquiry</Button>
+                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="mailto:hello@zurichjs.com" asChild>Send inquiry</Button>
                             </motion.div>
                             <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start lg:h-full">
                                 <h3 className="text-brand-white font-semibold text-lg w-max">Give us your feedback</h3>
                                 <p className="text-sm text-brand-gray-medium">We want to make this a great experience for everyone. If you have feedback, let us know!</p>
-                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="/contact?type=feedback" asChild>Send feedback</Button>
+                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="mailto:hello@zurichjs.com" asChild>Send feedback</Button>
                             </motion.div>
                             <motion.div variants={item} className="flex flex-col justify-between gap-2.5 xl:max-w-xs 2xl:max-w-[unset] self-start lg:h-full">
-                                <h3 className="text-brand-white font-semibold text-lg">Found a bug?</h3>
-                                <p className="text-sm text-brand-gray-medium">FIll out the form, and we’ll get right to it as soon as we can.</p>
-                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="/report-issue" asChild>Report an issue</Button>
+                                <h3 className="text-brand-white font-semibold text-lg">Coming back in 2027</h3>
+                                <p className="text-sm text-brand-gray-medium">This site is the archived 2026 edition. The next one is already in the works.</p>
+                                <Button variant="outline" size="sm" className="w-fit mt-auto" href={NEXT_EDITION_URL} asChild>See what&apos;s next</Button>
                             </motion.div>
                         </motion.div>
                     </SectionSplitView>
@@ -193,14 +182,12 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                         </motion.div>
 
                         <motion.div variants={item} className="flex flex-col justify-between gap-2.5 xl:max-w-xs 2xl:max-w-[unset] self-start">
-                            <h3 className="text-brand-white font-semibold text-lg">{newsletterConfig.title}</h3>
-                            <p className="text-brand-gray-light text-sm">{newsletterConfig.copy}</p>
+                            <h3 className="text-brand-white font-semibold text-lg">{nextEditionConfig.title}</h3>
+                            <p className="text-brand-gray-light text-sm">{nextEditionConfig.copy}</p>
 
-                            <NewsletterForm
-                                ctaLabel={newsletterConfig.ctaLabel}
-                                onSubscribe={newsletterConfig.onSubscribe}
-                                privacyHref={newsletterConfig.privacyHref}
-                            />
+                            <Button variant="primary" asChild href={nextEditionConfig.href} className="self-start">
+                                {nextEditionConfig.ctaLabel}
+                            </Button>
                         </motion.div>
                     </motion.div>
                 </SectionSplitView>

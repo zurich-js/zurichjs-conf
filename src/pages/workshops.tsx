@@ -10,7 +10,7 @@ import { ProgramScheduleItemCard } from '@/components/scheduling';
 import { workshopProgramSections } from '@/data';
 import { archivedWorkshopsQueryOptions } from '@/lib/archive/queries';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
-import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
+import type { WorkshopOfferingSummary } from '@/lib/types/workshops';
 
 const TAB_VALUES = ['morning', 'lunch', 'afternoon'] as const;
 type TabValue = (typeof TAB_VALUES)[number];

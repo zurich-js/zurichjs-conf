@@ -4,19 +4,19 @@ export { SectionSplitView } from './SectionSplitView';
 export { ScheduleSection } from './ScheduleSection';
 export { LearnSection } from './LearnSection';
 export { TicketsSection } from './TicketsSection';
-export { TicketsSectionWithStripe } from './TicketsSectionWithStripe';
+
 export { TimelineSection } from './TimelineSection';
 export { SiteFooter } from './SiteFooter';
 export { PageHeader } from './PageHeader';
 export { NavBar } from './NavBar';
-export { CheckoutForm } from './CheckoutForm';
+
 export { ShapedSection } from './ShapedSection';
 export { SectionContainer } from './SectionContainer';
 export { FAQSection } from './FAQSection';
 export { SponsorsSection } from './SponsorsSection';
 export { SpeakersSection } from './SpeakersSection';
 export { BlueskyFeedSection } from './BlueskyFeedSection';
-export { DiscountContainer } from './discount';
+
 export {
   SponsorshipHeroSection,
   SponsorshipMissionSection,
@@ -32,12 +32,12 @@ export type { DiagonalSectionProps } from './DiagonalSection';
 export type { SectionSplitViewProps } from './SectionSplitView';
 export type { ScheduleSectionProps, Day } from './ScheduleSection';
 export type { TicketsSectionProps, Plan, StockInfo } from './TicketsSection';
-export type { TicketsSectionWithStripeProps } from './TicketsSectionWithStripe';
+
 export type { TimelineSectionProps, TimelineEntry } from './TimelineSection';
 export type { SiteFooterProps } from './SiteFooter';
 export type { PageHeaderProps } from './PageHeader';
 export type { NavBarProps } from './NavBar';
-export type { CheckoutFormProps, CheckoutFormApparelConfig } from './CheckoutForm';
+
 export type { ShapedSectionProps } from './ShapedSection';
 export type { SponsorsSectionProps } from './SponsorsSection';
 export type { BlueskyFeedSectionProps } from './BlueskyFeedSection';

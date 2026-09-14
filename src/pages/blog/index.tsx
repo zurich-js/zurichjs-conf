@@ -10,8 +10,8 @@ import { BlogBlueskyFeedGrid, BlogPostCard, BlogTagFilter } from "@/components/b
 import { getAllPosts, getAllTags } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog";
 import {SiteFooter, ShapedSection} from "@/components/organisms";
-import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from "@/lib/bluesky";
 import type { BlueskyFeedResult } from "@/lib/bluesky";
+import { getFrozenBlueskyFeed } from "@/lib/archive/frozen";
 import React from "react";
 
 interface BlogPageProps {
@@ -23,11 +23,10 @@ interface BlogPageProps {
 export const getStaticProps: GetStaticProps<BlogPageProps> = async () => {
   const posts = getAllPosts();
   const tags = getAllTags();
-  const blueskyFeed = await getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }).catch(() => ({ posts: [] }));
+  const blueskyFeed = getFrozenBlueskyFeed();
 
   return {
     props: { posts, tags, blueskyFeed },
-    revalidate: 900,
   };
 };
 

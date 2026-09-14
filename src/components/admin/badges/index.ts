@@ -1,1 +1,0 @@
-export { BadgeManagementPanel } from './BadgeManagementPanel';
