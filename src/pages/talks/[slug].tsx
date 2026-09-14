@@ -1,10 +1,10 @@
-import type { GetServerSideProps } from 'next';
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
-import { fetchPublicSpeakers } from '@/lib/queries/speakers';
+import { getFrozenSpeakers } from '@/lib/archive/frozen';
 import type { PublicSession } from '@/lib/types/cfp';
 import { ChevronLeft } from 'lucide-react';
 
@@ -20,7 +20,6 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
         title={session.title}
         description={`Talk details for ${session.title}.`}
         canonical={`/talks/${session.slug}`}
-        ogImage={`/api/og/talks/${session.slug}`}
         keywords={`zurichjs talk, ${session.title}`}
       />
 
@@ -101,11 +100,28 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
   );
 }
 
-export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async (ctx) => {
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+/** Every archived talk is known at build time, so the set of pages is closed. */
+export const getStaticPaths: GetStaticPaths = () => {
+  const { speakers } = getFrozenSpeakers();
+  const slugs = new Set<string>();
 
+  for (const speaker of speakers) {
+    for (const session of speaker.sessions) {
+      if (session.type === 'standard' || session.type === 'lightning') {
+        slugs.add(session.slug);
+      }
+    }
+  }
+
+  return {
+    paths: [...slugs].map((slug) => ({ params: { slug } })),
+    fallback: false,
+  };
+};
+
+export const getStaticProps: GetStaticProps<TalkDetailPageProps> = async (ctx) => {
   const slug = typeof ctx.params?.slug === 'string' ? ctx.params.slug : '';
-  const { speakers } = await fetchPublicSpeakers();
+  const { speakers } = getFrozenSpeakers();
   const speaker = speakers.find((entry) =>
     entry.sessions.some((session) => (session.type === 'standard' || session.type === 'lightning') && session.slug === slug)
   );

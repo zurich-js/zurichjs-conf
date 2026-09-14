@@ -159,7 +159,6 @@ export default function SpeakersPage() {
         title="Speakers"
         description="Explore the public speakers lineup for ZurichJS Conference."
         canonical="/speakers"
-        ogImage="/api/og/speakers"
         keywords="zurichjs speakers, conference speakers, public speaker lineup"
       />
       <main className="min-h-screen bg-brand-white">

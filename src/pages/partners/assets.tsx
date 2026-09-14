@@ -14,7 +14,6 @@ import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
-import { useCurrency } from '@/contexts/CurrencyContext';
 import { aboutPageData } from '@/data/about-us';
 import { conferenceBlurbs, keyFacts, topics } from '@/data/partner-assets';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
@@ -201,8 +200,7 @@ export default function PartnerAssetsPage() {
   const programSpeakerCount = speakerData?.programSpeakerCount ?? 0;
   const placeholderCount = Math.max(0, programSpeakerCount - speakers.length);
 
-  const { currency } = useCurrency();
-  const workshopQueryOptions = useMemo(() => createWorkshopsScheduleQueryOptions(currency), [currency]);
+  const workshopQueryOptions = useMemo(() => createWorkshopsScheduleQueryOptions(), []);
   const { data: workshopData, isLoading: workshopsLoading } = useQuery(workshopQueryOptions);
   const workshopItems = useMemo(() => workshopData ? getWorkshopItems(workshopData.items) : [], [workshopData]);
 

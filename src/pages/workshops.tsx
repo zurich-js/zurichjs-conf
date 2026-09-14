@@ -8,7 +8,6 @@ import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { ProgramScheduleItemCard } from '@/components/scheduling';
 import { workshopProgramSections } from '@/data';
-import { useCurrency } from '@/contexts/CurrencyContext';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
@@ -99,12 +98,8 @@ export default function WorkshopsPage() {
     parseAsStringLiteral(TAB_VALUES).withDefault('morning').withOptions({ shallow: true, clearOnDefault: true })
   );
   const tabsRef = useRef<HTMLDivElement>(null);
-  const { currency } = useCurrency();
 
-  const queryOptions = useMemo(
-    () => createWorkshopsScheduleQueryOptions(currency),
-    [currency]
-  );
+  const queryOptions = useMemo(() => createWorkshopsScheduleQueryOptions(), []);
   const { data, isLoading, isError, refetch, isFetching } = useQuery(queryOptions);
 
   const partitioned = useMemo(
@@ -143,7 +138,6 @@ export default function WorkshopsPage() {
         title="Workshops"
         description="Explore ZurichJS Conf 2026 workshops."
         canonical="/workshops"
-        ogImage="/api/og/workshops"
         keywords="zurichjs workshops, engineering day workshops, zurichjs conf workshops"
       />
 

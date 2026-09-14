@@ -1,4 +1,4 @@
-import type { GetServerSideProps } from 'next';
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 import { Save } from 'lucide-react';
 import { Button } from '@/components/atoms';
@@ -10,7 +10,7 @@ import {
   ShapedSection,
   SiteFooter,
 } from '@/components/organisms';
-import { resolvePublicNetworkingProfile } from '@/lib/networking/profiles';
+import { findFrozenNetworkingProfile, getFrozenNetworkingProfiles } from '@/lib/archive/frozen';
 import { saveNetworkingProfile } from '@/lib/networking/storage';
 import type { PublicNetworkingProfile } from '@/lib/types/networking';
 
@@ -62,12 +62,23 @@ export default function SharePage({ profile }: SharePageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<SharePageProps> = async (context) => {
-  context.res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+/**
+ * Share cards were resolved live from a ticket id; the archive renders the
+ * frozen set instead. Contact links (`mailto:`, `tel:`) are stripped at freeze
+ * time — see FREEZE_CONTACT_LINKS in `scripts/freeze-2026.ts`.
+ */
+export const getStaticPaths: GetStaticPaths = () => ({
+  paths: getFrozenNetworkingProfiles().map((profile) => ({
+    params: { id: profile.publicId },
+  })),
+  fallback: false,
+});
+
+export const getStaticProps: GetStaticProps<SharePageProps> = async (context) => {
   const publicId = typeof context.params?.id === 'string' ? context.params.id : null;
   if (!publicId) return { notFound: true };
 
-  const profile = await resolvePublicNetworkingProfile(publicId);
+  const profile = findFrozenNetworkingProfile(publicId);
   if (!profile) return { notFound: true };
 
   return { props: { profile } };

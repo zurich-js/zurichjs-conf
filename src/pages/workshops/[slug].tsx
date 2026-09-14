@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
-import { WorkshopPurchasePanel } from '@/components/workshops/WorkshopPurchasePanel';
-import { fetchPublicSpeakers } from '@/lib/queries/speakers';
+import { getFrozenSpeakers } from '@/lib/archive/frozen';
 import { trackWorkshopViewed } from '@/lib/analytics';
 import type { PublicSession } from '@/lib/types/cfp';
 import { ChevronLeft } from 'lucide-react';
@@ -34,12 +33,11 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
         title={session.title}
         description={`Workshop details for ${session.title}.`}
         canonical={`/workshops/${session.slug}`}
-        ogImage={`/api/og/workshops/${session.slug}`}
         keywords={`zurichjs workshop, ${session.title}`}
       />
 
       <main className="min-h-screen bg-brand-white">
-        <SessionDetailHero session={session} kind="workshop" ctaHref="#purchase" ctaLabel="Buy workshop seat" />
+        <SessionDetailHero session={session} kind="workshop" ctaHref="/workshops" ctaLabel="All 2026 workshops" />
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom compact>
           <div className="mx-auto max-w-screen-lg space-y-6">
@@ -62,12 +60,6 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
               showDuration
               actionMode="detail"
               className="rounded-none border-0 bg-transparent p-0"
-            />
-            <WorkshopPurchasePanel
-              sessionId={session.id}
-              cfpSubmissionId={session.cfp_submission_id}
-              sessionSlug={session.slug}
-              title={session.title}
             />
           </div>
         </ShapedSection>
@@ -107,11 +99,26 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
   );
 }
 
-export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = async (ctx) => {
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+/** Every archived workshop is known at build time, so the set of pages is closed. */
+export const getStaticPaths: GetStaticPaths = () => {
+  const { speakers } = getFrozenSpeakers();
+  const slugs = new Set<string>();
 
+  for (const speaker of speakers) {
+    for (const session of speaker.sessions) {
+      if (session.type === 'workshop') slugs.add(session.slug);
+    }
+  }
+
+  return {
+    paths: [...slugs].map((slug) => ({ params: { slug } })),
+    fallback: false,
+  };
+};
+
+export const getStaticProps: GetStaticProps<WorkshopDetailPageProps> = async (ctx) => {
   const slug = typeof ctx.params?.slug === 'string' ? ctx.params.slug : '';
-  const { speakers } = await fetchPublicSpeakers();
+  const { speakers } = getFrozenSpeakers();
   const speaker = speakers.find((entry) =>
     entry.sessions.some((session) => session.type === 'workshop' && session.slug === slug)
   );

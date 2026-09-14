@@ -1,65 +1,50 @@
 /**
- * Speaker queries for TanStack Query
- * Used for SSR prefetching and client-side data fetching
+ * Speaker queries for TanStack Query.
+ *
+ * Archive build: reads the frozen 2026 snapshot instead of Supabase. On the
+ * server the JSON is inlined at build time; in the browser it comes from the
+ * mirrored static file, since the archive has no API routes.
  */
 
 import { queryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
+import { ARCHIVE_JSON } from '@/lib/archive/urls';
 import type { PublicSpeaker } from '@/lib/types/cfp';
 
 export interface SpeakerQueryParams {
   featured?: boolean;
 }
 
-/**
- * API response structure for public speakers
- */
 export interface PublicSpeakersResponse {
   speakers: PublicSpeaker[];
   programSpeakerCount: number;
 }
 
-/**
- * Fetch public speakers from the appropriate source:
- * - Server: queries the database directly via service client (used by SSR prefetch)
- * - Client: calls the /api/speakers route (works without server-only secrets)
- *
- * Pass { featured: true } to return only featured speakers.
- */
-export async function fetchPublicSpeakers(params?: SpeakerQueryParams): Promise<PublicSpeakersResponse> {
-  if (typeof window === 'undefined') {
-    const { getProgramSpeakerCount, getVisibleSpeakersWithSessions } = await import(
-      '@/lib/cfp/speakers'
-    );
-    const [visibleSpeakers, programSpeakerCount] = await Promise.all([
-      getVisibleSpeakersWithSessions(),
-      getProgramSpeakerCount(),
-    ]);
-    let speakers = visibleSpeakers;
-    if (params?.featured) {
-      speakers = speakers.filter((s) => s.is_featured);
-    }
-    return { speakers, programSpeakerCount };
-  }
+export async function fetchPublicSpeakers(
+  params?: SpeakerQueryParams
+): Promise<PublicSpeakersResponse> {
+  const { speakers, programSpeakerCount } =
+    typeof window === 'undefined'
+      ? (await import('@/lib/archive/frozen')).getFrozenSpeakers()
+      : ((await (await fetch(ARCHIVE_JSON.speakers)).json()) as PublicSpeakersResponse);
 
-  const url = params?.featured ? '/api/speakers?featured=true' : '/api/speakers';
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch speakers: ${res.status}`);
-  }
-  return res.json() as Promise<PublicSpeakersResponse>;
+  return {
+    speakers: params?.featured ? speakers.filter((s) => s.is_featured) : speakers,
+    programSpeakerCount,
+  };
 }
 
 /**
- * Query options for public speakers.
- * Pass { featured: true } to fetch only featured speakers (used on the homepage).
- * With no params, returns all visible speakers (used on /speakers).
+ * Query options for archived speakers.
+ *
+ * The snapshot cannot change for the life of the deployment, so the data is
+ * never stale and is never refetched.
  */
 export function publicSpeakersQueryOptions(params?: SpeakerQueryParams) {
   return queryOptions({
     queryKey: queryKeys.speakers.public(params),
     queryFn: () => fetchPublicSpeakers(params),
-    staleTime: 24 * 60 * 60 * 1000, // 24h
-    gcTime: 7 * 24 * 60 * 60 * 1000, // 1 week
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 }

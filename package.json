@@ -17,6 +17,8 @@
 		"scanner:wasm": "node scripts/copy-scanner-wasm.mjs",
 		"prebuild": "pnpm og:generate && pnpm scanner:wasm",
 		"build": "next build",
+		"archive:freeze": "tsx scripts/freeze-2026.ts",
+		"archive:static": "tsx scripts/generate-archive-static.ts",
 		"build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
 		"start": "next start",
 		"lint": "oxlint --fix",

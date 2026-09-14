@@ -3,8 +3,7 @@ import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ProgramScheduleItemCard } from '@/components/scheduling';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
-import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
-import { fetchPublicSpeakers } from '@/lib/queries/speakers';
+import { getFrozenScheduleItems } from '@/lib/archive/frozen';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
 interface TalksPageProps {
@@ -28,7 +27,6 @@ export default function TalksPage({ items }: TalksPageProps) {
         title="Talks"
         description="Explore ZurichJS Conf 2026 talks."
         canonical="/talks"
-        ogImage="/api/og/talks"
         keywords="zurichjs talks, conference talks, zurichjs conf talks"
       />
 
@@ -102,14 +100,10 @@ export default function TalksPage({ items }: TalksPageProps) {
 }
 
 export const getStaticProps: GetStaticProps<TalksPageProps> = async () => {
-  const { speakers } = await fetchPublicSpeakers();
-  const rows = await getPublicScheduleRows();
-  const items = buildPublicProgramScheduleItems(rows, speakers);
-
+  // Frozen snapshot — no revalidate, the 2026 program cannot change.
   return {
     props: {
-      items,
+      items: getFrozenScheduleItems(),
     },
-    revalidate: 86400,
   };
 };
