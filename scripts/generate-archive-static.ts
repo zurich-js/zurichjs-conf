@@ -8,7 +8,7 @@
  * Wired into `prebuild`. Run standalone with: pnpm archive:static
  */
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { getAllPosts } from '@/lib/blog';
@@ -119,13 +119,64 @@ ${items}
 `;
 }
 
+const exists = (target: string) =>
+  access(target).then(
+    () => true,
+    () => false
+  );
+
+/**
+ * Each generated file shadows a route that is still served by a page today.
+ * Next.js refuses to build when a file in `public/` collides with a page
+ * ("Conflicting public and page files"), so generating ahead of the page's
+ * removal breaks the build outright.
+ *
+ * Rather than half-apply, wait for the page to go: skip that file, and clear
+ * any copy an earlier run left behind so a stale artifact cannot cause the very
+ * collision this guard exists to prevent.
+ */
+const OUTPUTS = [
+  {
+    generate: buildSitemap,
+    publicFile: path.join(PUBLIC_DIR, 'sitemap.xml'),
+    supersedes: path.join(process.cwd(), 'src', 'pages', 'sitemap.xml.tsx'),
+    label: 'sitemap.xml',
+  },
+  {
+    generate: buildFeed,
+    publicFile: path.join(PUBLIC_DIR, 'blog', 'feed.xml'),
+    supersedes: path.join(process.cwd(), 'src', 'pages', 'blog', 'feed.xml.tsx'),
+    label: 'blog/feed.xml',
+  },
+] as const;
+
 async function main(): Promise<void> {
   await mkdir(path.join(PUBLIC_DIR, 'blog'), { recursive: true });
 
-  await writeFile(path.join(PUBLIC_DIR, 'sitemap.xml'), buildSitemap());
-  await writeFile(path.join(PUBLIC_DIR, 'blog', 'feed.xml'), buildFeed());
+  const written: string[] = [];
+  const skipped: string[] = [];
 
-  console.log('[archive:static] wrote public/sitemap.xml and public/blog/feed.xml');
+  for (const output of OUTPUTS) {
+    if (await exists(output.supersedes)) {
+      await rm(output.publicFile, { force: true });
+      skipped.push(output.label);
+      continue;
+    }
+
+    await writeFile(output.publicFile, output.generate());
+    written.push(output.label);
+  }
+
+  if (written.length > 0) {
+    console.log(`[archive:static] wrote ${written.map((f) => `public/${f}`).join(', ')}`);
+  }
+
+  if (skipped.length > 0) {
+    console.warn(
+      `[archive:static] skipped ${skipped.join(', ')} — still served by a page. ` +
+        'Delete the corresponding src/pages/*.xml.tsx to switch these routes to static files.'
+    );
+  }
 }
 
 main().catch((error) => {
