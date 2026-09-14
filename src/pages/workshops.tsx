@@ -8,7 +8,7 @@ import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { ProgramScheduleItemCard } from '@/components/scheduling';
 import { workshopProgramSections } from '@/data';
-import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
+import { archivedWorkshopsQueryOptions } from '@/lib/archive/queries';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 
@@ -99,8 +99,7 @@ export default function WorkshopsPage() {
   );
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const queryOptions = useMemo(() => createWorkshopsScheduleQueryOptions(), []);
-  const { data, isLoading, isError, refetch, isFetching } = useQuery(queryOptions);
+  const { data, isLoading, isError, refetch, isFetching } = useQuery(archivedWorkshopsQueryOptions);
 
   const partitioned = useMemo(
     () => (data ? partitionByTab(data.items) : null),

@@ -1,30 +1,82 @@
 /**
- * Workshop queries for TanStack Query.
- *
- * Archive build: the 2026 workshop timeline is frozen program history. Stripe
- * pricing and booking state are gone with the API routes, so `offerings` is
- * always empty and nothing is purchasable.
+ * Workshop queries for TanStack Query
  */
 
 import { queryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-import { ARCHIVE_JSON } from '@/lib/archive/urls';
-import type { FrozenWorkshops } from '@/lib/archive/frozen';
+import { apiClient, endpoints } from '@/lib/api';
+import type { SupportedCurrency } from '@/config/currency';
+import type {
+  WorkshopPricingItem,
+  WorkshopPricingResponse,
+} from '@/pages/api/workshops/pricing';
+import type { WorkshopsScheduleResponse } from '@/pages/api/workshops/schedule';
 
-export type WorkshopsScheduleResponse = FrozenWorkshops;
+export type { WorkshopPricingItem, WorkshopPricingResponse, WorkshopsScheduleResponse };
 
-export async function fetchWorkshopsSchedule(): Promise<WorkshopsScheduleResponse> {
-  if (typeof window === 'undefined') {
-    const { getFrozenWorkshops } = await import('@/lib/archive/frozen');
-    return getFrozenWorkshops();
-  }
-  return (await (await fetch(ARCHIVE_JSON.workshops)).json()) as WorkshopsScheduleResponse;
+/**
+ * Fetch workshop offering pricing (per-workshop Stripe prices scoped to a currency).
+ */
+export interface WorkshopPricingQueryParams {
+  currency?: SupportedCurrency;
+  /** Legacy: filters by Stripe lookup-key slug. New callers should prefer sessionSlug or cfpSubmissionId. */
+  slug?: string;
+  /** Title-derived slug used by /workshops/[slug] URLs. */
+  sessionSlug?: string;
+  /** CFP submission id — exact match, fastest path. */
+  cfpSubmissionId?: string;
+  /** Program session id — preferred match for post-CFP workshop offerings. */
+  sessionId?: string;
 }
 
-export const createWorkshopsScheduleQueryOptions = () =>
+export async function fetchWorkshopPricing(
+  params: WorkshopPricingQueryParams = {}
+): Promise<WorkshopPricingResponse> {
+  const data = await apiClient.get<WorkshopPricingResponse>(
+    endpoints.workshops.pricing(params),
+    { skipErrorCapture: true }
+  );
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+export const createWorkshopPricingQueryOptions = (params: WorkshopPricingQueryParams = {}) =>
   queryOptions({
-    queryKey: queryKeys.workshops.schedule(),
-    queryFn: fetchWorkshopsSchedule,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    queryKey: queryKeys.workshops.pricing(params),
+    queryFn: () => fetchWorkshopPricing(params),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: (failureCount, error) => {
+      if (error instanceof DOMException && error.name === 'TimeoutError') return false;
+      return failureCount < 2;
+    },
+  });
+
+/**
+ * Combined workshops schedule + offerings fetch — single query used by /workshops
+ * to hydrate the entire page in one round trip.
+ */
+export async function fetchWorkshopsSchedule(
+  currency?: SupportedCurrency
+): Promise<WorkshopsScheduleResponse> {
+  const data = await apiClient.get<WorkshopsScheduleResponse>(
+    endpoints.workshops.schedule(currency),
+    { skipErrorCapture: true }
+  );
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+export const createWorkshopsScheduleQueryOptions = (currency?: SupportedCurrency) =>
+  queryOptions({
+    queryKey: queryKeys.workshops.schedule(currency),
+    queryFn: () => fetchWorkshopsSchedule(currency),
+    // Short staleTime so admin publish/edit flows show up on /workshops within
+    // ~30s without relying on manual invalidation from admin mutations.
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: (failureCount, error) => {
+      if (error instanceof DOMException && error.name === 'TimeoutError') return false;
+      return failureCount < 2;
+    },
   });

@@ -15,7 +15,7 @@
 		"badges:sample": "tsx scripts/render-badge-samples.ts",
 		"badges:verify-local": "tsx scripts/verify-badges-local.ts",
 		"scanner:wasm": "node scripts/copy-scanner-wasm.mjs",
-		"prebuild": "pnpm og:generate && pnpm scanner:wasm",
+		"prebuild": "pnpm og:generate && pnpm scanner:wasm && pnpm archive:static",
 		"build": "next build",
 		"archive:freeze": "tsx scripts/freeze-2026.ts",
 		"archive:static": "tsx scripts/generate-archive-static.ts",
