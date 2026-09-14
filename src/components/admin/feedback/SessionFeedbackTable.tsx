@@ -1,36 +1,23 @@
 import { Star } from 'lucide-react';
 import type { SessionFeedbackSummary } from '@/lib/types/session-feedback';
+import { DistributionBar } from './DistributionBar';
 import { KIND_LABELS, formatScheduleStart, ratingTone } from './format';
 
 export interface SessionFeedbackTableProps {
   sessions: SessionFeedbackSummary[];
   selectedItemId: string | null;
+  /** Filters the feed to this session */
   onSelect: (scheduleItemId: string | null) => void;
-}
-
-/** Stacked bar of one-to-five-star counts; a flat grey track when there are none. */
-function DistributionBar({ distribution, total }: { distribution: SessionFeedbackSummary['distribution']; total: number }): React.JSX.Element {
-  if (total === 0) {
-    return <div className="h-2 w-full rounded-full bg-gray-100" aria-hidden="true" />;
-  }
-  const shades = ['bg-red-400', 'bg-orange-300', 'bg-amber-300', 'bg-lime-400', 'bg-green-500'];
-  const label = distribution.map((count, index) => `${count}× ${index + 1} star`).join(', ');
-  return (
-    <div className="flex h-2 w-full overflow-hidden rounded-full bg-gray-100" role="img" aria-label={label} title={label}>
-      {distribution.map((count, index) =>
-        count > 0 ? (
-          <div key={index} className={shades[index]} style={{ width: `${(count / total) * 100}%` }} />
-        ) : null
-      )}
-    </div>
-  );
+  /** Opens the per-talk drill-down */
+  onOpenDetail: (scheduleItemId: string) => void;
 }
 
 /**
  * One row per rateable session in schedule order. Clicking a row filters the
- * comment feed to that session; clicking it again clears the filter.
+ * comment feed to that session (clicking it again clears the filter); clicking
+ * the title opens that talk's own feedback view.
  */
-export function SessionFeedbackTable({ sessions, selectedItemId, onSelect }: SessionFeedbackTableProps): React.JSX.Element {
+export function SessionFeedbackTable({ sessions, selectedItemId, onSelect, onOpenDetail }: SessionFeedbackTableProps): React.JSX.Element {
   let lastDate: string | null = null;
 
   return (
@@ -68,11 +55,11 @@ export function SessionFeedbackTable({ sessions, selectedItemId, onSelect }: Ses
                       className="text-left font-medium text-black hover:underline cursor-pointer"
                       onClick={(event) => {
                         event.stopPropagation();
-                        onSelect(isSelected ? null : session.scheduleItemId);
+                        onOpenDetail(session.scheduleItemId);
                       }}
-                      aria-pressed={isSelected}
                     >
                       {session.title}
+                      <span className="sr-only"> — open feedback detail</span>
                     </button>
                     <div className="text-xs text-gray-500">
                       {session.kind ? KIND_LABELS[session.kind] : 'Session'}

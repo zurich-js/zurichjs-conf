@@ -1,7 +1,8 @@
-import { MessageSquareText, Star, X } from 'lucide-react';
+import { MessageSquareText, X } from 'lucide-react';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import type { SessionFeedbackFeedEntry } from '@/lib/types/session-feedback';
-import { formatFeedbackStamp, ratingTone } from './format';
+import { formatFeedbackStamp } from './format';
+import { StarRating } from './StarRating';
 
 export interface FeedbackFeedProps {
   entries: SessionFeedbackFeedEntry[];
@@ -10,17 +11,6 @@ export interface FeedbackFeedProps {
   onClearFilter: () => void;
   commentsOnly: boolean;
   onToggleCommentsOnly: (next: boolean) => void;
-}
-
-/** Five small stars with `rating` of them filled. */
-function StarRow({ rating }: { rating: number }): React.JSX.Element {
-  return (
-    <span className={`inline-flex items-center gap-0.5 ${ratingTone(rating)}`} role="img" aria-label={`${rating} out of 5`}>
-      {[1, 2, 3, 4, 5].map((step) => (
-        <Star key={step} className={`w-3.5 h-3.5 ${step <= rating ? 'fill-current' : 'text-gray-300'}`} aria-hidden="true" />
-      ))}
-    </span>
-  );
 }
 
 /** Newest-first stream of individual ratings, as they arrive. */
@@ -70,7 +60,7 @@ export function FeedbackFeed({ entries, filterTitle, onClearFilter, commentsOnly
           {visible.map((entry) => (
             <li key={entry.id} className="px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <StarRow rating={entry.rating} />
+                <StarRating rating={entry.rating} />
                 <time dateTime={entry.created_at} className="text-xs text-gray-400 tabular-nums">
                   {formatFeedbackStamp(entry.created_at)}
                 </time>

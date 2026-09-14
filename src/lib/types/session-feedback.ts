@@ -78,8 +78,35 @@ export interface SessionFeedbackSummary {
   room: string | null;
   kind: 'talk' | 'workshop' | 'panel' | null;
   speakers: string[];
+  /** Speaker ids in the same order as `speakers`, for cross-referencing the speaker rollup */
+  speakerIds: string[];
   responseCount: number;
   /** Mean rating rounded to one decimal, null when there are no responses */
+  averageRating: number | null;
+  /** Index 0 = one star … index 4 = five stars */
+  distribution: [number, number, number, number, number];
+}
+
+/** One of a speaker's rateable sessions, with just enough rollup for a list row. */
+export interface SpeakerSessionFeedbackRef {
+  scheduleItemId: string;
+  title: string;
+  date: string;
+  startTime: string;
+  responseCount: number;
+  averageRating: number | null;
+}
+
+/** Every rating a speaker collected across all the sessions they appeared in. */
+export interface SpeakerFeedbackSummary {
+  speakerId: string;
+  name: string;
+  /** `Job title at Company`, whichever parts exist, or null */
+  role: string | null;
+  imageUrl: string | null;
+  sessions: SpeakerSessionFeedbackRef[];
+  responseCount: number;
+  /** Mean rating across every session, rounded to one decimal, null when there are no responses */
   averageRating: number | null;
   /** Index 0 = one star … index 4 = five stars */
   distribution: [number, number, number, number, number];
@@ -92,10 +119,37 @@ export interface SessionFeedbackFeedEntry extends SessionFeedbackRow {
 
 export interface AdminSessionFeedbackResponse {
   sessions: SessionFeedbackSummary[];
+  speakers: SpeakerFeedbackSummary[];
   entries: SessionFeedbackFeedEntry[];
   totals: {
     responses: number;
     averageRating: number | null;
     sessionsWithFeedback: number;
   };
+}
+
+/** Which rollup a drill-down view is showing. */
+export type FeedbackDetailTargetKind = 'session' | 'speaker';
+
+/** What the admin page asks `selectFeedbackDetail` for. */
+export interface FeedbackDetailTarget {
+  kind: FeedbackDetailTargetKind;
+  id: string;
+}
+
+/** Everything the per-talk / per-speaker drill-down renders. */
+export interface FeedbackDetailView {
+  kind: FeedbackDetailTargetKind;
+  id: string;
+  title: string;
+  /** Speakers and room for a talk, job title and company for a speaker */
+  subtitle: string | null;
+  responseCount: number;
+  commentCount: number;
+  averageRating: number | null;
+  distribution: [number, number, number, number, number];
+  /** Per-session breakdown — only populated for a speaker with more than one session */
+  sessions: SpeakerSessionFeedbackRef[];
+  /** Newest-first entries belonging to this talk, or to every session of this speaker */
+  entries: SessionFeedbackFeedEntry[];
 }
