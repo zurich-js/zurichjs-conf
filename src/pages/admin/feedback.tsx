@@ -3,29 +3,55 @@
  * Live view of attendee ratings and comments as they come in from /schedule.
  * Polls every 15 seconds while the tab is visible so the room can be watched
  * during the conference without refreshing.
+ *
+ * Two rollups: by session (schedule order) and by speaker (ratings pooled
+ * across every session they appeared in). Either one drills down into a
+ * per-talk / per-speaker view with the full star breakdown and comments.
  */
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, MessageSquareText } from 'lucide-react';
+import { AlertCircle, MessageSquareText, Mic, Presentation } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
-import { FeedbackFeed, FeedbackStatsBar, SessionFeedbackTable } from '@/components/admin/feedback';
+import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
+import {
+  FeedbackDetailModal,
+  FeedbackFeed,
+  FeedbackStatsBar,
+  SessionFeedbackTable,
+  SpeakerFeedbackTable,
+} from '@/components/admin/feedback';
 import { SEO } from '@/components/SEO';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { adminFetch } from '@/lib/admin/api-fetch';
 import { adminKeys } from '@/lib/admin/query-keys';
-import type { AdminSessionFeedbackResponse } from '@/lib/types/session-feedback';
+import { selectFeedbackDetail } from '@/lib/feedback/detail';
+import type {
+  AdminSessionFeedbackResponse,
+  FeedbackDetailTarget,
+  FeedbackDetailTargetKind,
+} from '@/lib/types/session-feedback';
 
 const REFRESH_MS = 15_000;
 
-/** Admin-only page polling the feedback overview and rendering stats, per-session table and live feed. */
+type FeedbackView = 'sessions' | 'speakers';
+
+const VIEW_TABS: AdminTab<FeedbackView>[] = [
+  { id: 'sessions', label: 'By session', icon: Presentation },
+  { id: 'speakers', label: 'By speaker', icon: Mic },
+];
+
+/** Admin-only page polling the feedback overview and rendering stats, rollups and the live feed. */
 export default function AdminFeedbackPage(): React.JSX.Element {
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+  const [view, setView] = useState<FeedbackView>('sessions');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedSpeakerId, setSelectedSpeakerId] = useState<string | null>(null);
+  const [detailTarget, setDetailTarget] = useState<FeedbackDetailTarget | null>(null);
   const [commentsOnly, setCommentsOnly] = useState(false);
 
   const { data, isPending, isError, error, dataUpdatedAt } = useQuery({
@@ -37,14 +63,41 @@ export default function AdminFeedbackPage(): React.JSX.Element {
     staleTime: REFRESH_MS / 2,
   });
 
+  const selectedSpeaker = useMemo(
+    () => (selectedSpeakerId ? data?.speakers.find((speaker) => speaker.speakerId === selectedSpeakerId) ?? null : null),
+    [data, selectedSpeakerId]
+  );
+
+  /** Schedule items the feed is narrowed to, or null when it shows everything. */
+  const feedFilter = useMemo((): { kind: FeedbackDetailTargetKind; title: string; itemIds: Set<string> } | null => {
+    if (view === 'speakers') {
+      if (!selectedSpeaker) return null;
+      return {
+        kind: 'speaker',
+        title: selectedSpeaker.name,
+        itemIds: new Set(selectedSpeaker.sessions.map((session) => session.scheduleItemId)),
+      };
+    }
+    if (!selectedItemId) return null;
+    const session = data?.sessions.find((summary) => summary.scheduleItemId === selectedItemId);
+    return { kind: 'session', title: session?.title ?? 'Selected session', itemIds: new Set([selectedItemId]) };
+  }, [data, selectedItemId, selectedSpeaker, view]);
+
   const filteredEntries = useMemo(() => {
     if (!data) return [];
-    return selectedItemId ? data.entries.filter((entry) => entry.schedule_item_id === selectedItemId) : data.entries;
-  }, [data, selectedItemId]);
+    if (!feedFilter) return data.entries;
+    return data.entries.filter((entry) => entry.schedule_item_id !== null && feedFilter.itemIds.has(entry.schedule_item_id));
+  }, [data, feedFilter]);
 
-  const selectedTitle = selectedItemId
-    ? data?.sessions.find((session) => session.scheduleItemId === selectedItemId)?.title ?? null
-    : null;
+  const detail = useMemo(
+    () => (data && detailTarget ? selectFeedbackDetail(data, detailTarget) : null),
+    [data, detailTarget]
+  );
+
+  const clearFeedFilter = (): void => {
+    if (view === 'speakers') setSelectedSpeakerId(null);
+    else setSelectedItemId(null);
+  };
 
   if (isAuthLoading) return <AdminLoadingScreen />;
   if (!isAuthenticated) return <AdminLoginForm />;
@@ -80,24 +133,47 @@ export default function AdminFeedbackPage(): React.JSX.Element {
                   description="Feedback forms appear on talks, panels and workshops once they are scheduled and visible."
                 />
               ) : (
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
-                  <SessionFeedbackTable
-                    sessions={data.sessions}
-                    selectedItemId={selectedItemId}
-                    onSelect={setSelectedItemId}
-                  />
-                  <FeedbackFeed
-                    entries={filteredEntries}
-                    filterTitle={selectedTitle}
-                    onClearFilter={() => setSelectedItemId(null)}
-                    commentsOnly={commentsOnly}
-                    onToggleCommentsOnly={setCommentsOnly}
-                  />
-                </div>
+                <>
+                  <AdminTabBar tabs={VIEW_TABS} activeTab={view} onTabChange={setView} />
+
+                  <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+                    {view === 'sessions' ? (
+                      <SessionFeedbackTable
+                        sessions={data.sessions}
+                        selectedItemId={selectedItemId}
+                        onSelect={setSelectedItemId}
+                        onOpenDetail={(scheduleItemId) => setDetailTarget({ kind: 'session', id: scheduleItemId })}
+                      />
+                    ) : (
+                      <SpeakerFeedbackTable
+                        speakers={data.speakers}
+                        selectedSpeakerId={selectedSpeakerId}
+                        onSelect={setSelectedSpeakerId}
+                        onOpenDetail={(speakerId) => setDetailTarget({ kind: 'speaker', id: speakerId })}
+                      />
+                    )}
+                    <FeedbackFeed
+                      entries={filteredEntries}
+                      filterKind={feedFilter?.kind ?? null}
+                      filterTitle={feedFilter?.title ?? null}
+                      onClearFilter={clearFeedFilter}
+                      commentsOnly={commentsOnly}
+                      onToggleCommentsOnly={setCommentsOnly}
+                    />
+                  </div>
+                </>
               )}
             </>
           )}
         </div>
+
+        {detail ? (
+          <FeedbackDetailModal
+            detail={detail}
+            onClose={() => setDetailTarget(null)}
+            onOpenSession={(scheduleItemId) => setDetailTarget({ kind: 'session', id: scheduleItemId })}
+          />
+        ) : null}
       </div>
     </AdminQueryProvider>
   );

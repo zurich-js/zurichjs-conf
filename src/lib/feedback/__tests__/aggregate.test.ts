@@ -71,6 +71,7 @@ describe('buildAdminFeedbackResponse', () => {
     expect(early.averageRating).toBe(3.5);
     expect(early.distribution).toEqual([0, 1, 0, 0, 1]);
     expect(early.speakers).toEqual(['Ada First', 'Bea Second']);
+    expect(early.speakerIds).toEqual(['a', 'b']);
     expect(early.kind).toBe('talk');
 
     const late = result.sessions.find((s) => s.scheduleItemId === 'late')!;
@@ -82,6 +83,46 @@ describe('buildAdminFeedbackResponse', () => {
     const workshop = result.sessions.find((s) => s.scheduleItemId === 'workshop')!;
     expect(workshop.kind).toBe('workshop');
     expect(workshop.speakers).toEqual([]);
+    expect(workshop.speakerIds).toEqual([]);
+  });
+
+  it('pools every session a speaker appeared in, best-covered speaker first', () => {
+    expect(result.speakers.map((s) => s.speakerId)).toEqual(['a', 'b']);
+
+    const ada = result.speakers.find((s) => s.speakerId === 'a')!;
+    expect(ada.name).toBe('Ada First');
+    expect(ada.sessions.map((s) => s.scheduleItemId)).toEqual(['early', 'late']);
+    // Both of Ada's sessions pooled: only `early` has ratings (5 and 2)
+    expect(ada.responseCount).toBe(2);
+    expect(ada.averageRating).toBe(3.5);
+    expect(ada.distribution).toEqual([0, 1, 0, 0, 1]);
+  });
+
+  it('leaves speakers with no rated sessions in the list with a null average', () => {
+    const items = [item({ id: 'solo' })];
+    const { speakers } = buildAdminFeedbackResponse(items, []);
+    expect(speakers).toHaveLength(2);
+    expect(speakers[0].responseCount).toBe(0);
+    expect(speakers[0].averageRating).toBeNull();
+  });
+
+  it('skips speakers of unrateable items and those with no name', () => {
+    const nameless = item({ id: 'nameless' });
+    nameless.program_session!.speakers = [
+      { speaker_id: 'ghost', role: null, sort_order: 1, speaker: { id: 'ghost', first_name: null, last_name: null, job_title: null, company: null, profile_image_url: null } },
+    ];
+    const { speakers } = buildAdminFeedbackResponse([nameless, item({ id: 'break2', type: 'break', program_session: null })], []);
+    expect(speakers).toEqual([]);
+  });
+
+  it('builds a speaker role from job title and company', () => {
+    const withRole = item({ id: 'roled' });
+    withRole.program_session!.speakers = [
+      { speaker_id: 'c', role: null, sort_order: 1, speaker: { id: 'c', first_name: 'Cyd', last_name: 'Third', job_title: 'Staff Engineer', company: 'Acme', profile_image_url: 'https://example.com/c.jpg' } },
+    ];
+    const { speakers } = buildAdminFeedbackResponse([withRole], []);
+    expect(speakers[0].role).toBe('Staff Engineer at Acme');
+    expect(speakers[0].imageUrl).toBe('https://example.com/c.jpg');
   });
 
   it('feeds entries newest first and labels orphaned rows (unknown or deleted slot)', () => {

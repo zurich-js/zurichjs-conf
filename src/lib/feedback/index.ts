@@ -13,6 +13,8 @@ export {
   secondsUntilZurichMidnight,
 } from './schedule-status';
 export { buildAdminFeedbackResponse, averageRating } from './aggregate';
+export { selectFeedbackDetail } from './detail';
+export { KIND_LABELS } from './labels';
 export { postSessionFeedback, SessionFeedbackError } from './api';
 export type { SubmitSessionFeedbackOutcome, SessionFeedbackErrorCode } from './api';
 export { PREVIEW_CLOCK_PARAM, isClockPreviewAllowed, parsePreviewInstant, resolvePreviewInstant } from './preview-clock';

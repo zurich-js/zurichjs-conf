@@ -1,31 +1,32 @@
-import { MessageSquareText, Star, X } from 'lucide-react';
+import { MessageSquareText, X } from 'lucide-react';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
-import type { SessionFeedbackFeedEntry } from '@/lib/types/session-feedback';
-import { formatFeedbackStamp, ratingTone } from './format';
+import type { FeedbackDetailTargetKind, SessionFeedbackFeedEntry } from '@/lib/types/session-feedback';
+import { formatFeedbackStamp } from './format';
+import { StarRating } from './StarRating';
 
 export interface FeedbackFeedProps {
   entries: SessionFeedbackFeedEntry[];
-  /** Title of the session the feed is filtered to, if any */
+  /** Whether the feed is narrowed to one session or to one speaker, null when unfiltered */
+  filterKind: FeedbackDetailTargetKind | null;
+  /** Title of the session, or name of the speaker, the feed is filtered to */
   filterTitle: string | null;
   onClearFilter: () => void;
   commentsOnly: boolean;
   onToggleCommentsOnly: (next: boolean) => void;
 }
 
-/** Five small stars with `rating` of them filled. */
-function StarRow({ rating }: { rating: number }): React.JSX.Element {
-  return (
-    <span className={`inline-flex items-center gap-0.5 ${ratingTone(rating)}`} role="img" aria-label={`${rating} out of 5`}>
-      {[1, 2, 3, 4, 5].map((step) => (
-        <Star key={step} className={`w-3.5 h-3.5 ${step <= rating ? 'fill-current' : 'text-gray-300'}`} aria-hidden="true" />
-      ))}
-    </span>
-  );
-}
-
 /** Newest-first stream of individual ratings, as they arrive. */
-export function FeedbackFeed({ entries, filterTitle, onClearFilter, commentsOnly, onToggleCommentsOnly }: FeedbackFeedProps): React.JSX.Element {
+export function FeedbackFeed({
+  entries,
+  filterKind,
+  filterTitle,
+  onClearFilter,
+  commentsOnly,
+  onToggleCommentsOnly,
+}: FeedbackFeedProps): React.JSX.Element {
   const visible = commentsOnly ? entries.filter((entry) => entry.comment) : entries;
+  // A speaker filter still pools several sessions, so entries keep their title
+  const showSessionTitles = filterKind !== 'session';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 flex flex-col min-h-[24rem]">
@@ -40,7 +41,7 @@ export function FeedbackFeed({ entries, filterTitle, onClearFilter, commentsOnly
             >
               <span className="truncate">{filterTitle}</span>
               <X className="w-3 h-3 shrink-0" aria-hidden="true" />
-              <span className="sr-only">Clear session filter</span>
+              <span className="sr-only">Clear {filterKind === 'speaker' ? 'speaker' : 'session'} filter</span>
             </button>
           ) : null}
         </div>
@@ -70,12 +71,12 @@ export function FeedbackFeed({ entries, filterTitle, onClearFilter, commentsOnly
           {visible.map((entry) => (
             <li key={entry.id} className="px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <StarRow rating={entry.rating} />
+                <StarRating rating={entry.rating} />
                 <time dateTime={entry.created_at} className="text-xs text-gray-400 tabular-nums">
                   {formatFeedbackStamp(entry.created_at)}
                 </time>
               </div>
-              {!filterTitle ? <p className="mt-1 text-xs font-medium text-gray-600">{entry.sessionTitle}</p> : null}
+              {showSessionTitles ? <p className="mt-1 text-xs font-medium text-gray-600">{entry.sessionTitle}</p> : null}
               {entry.comment ? <p className="mt-1.5 text-sm text-black whitespace-pre-line break-words">{entry.comment}</p> : null}
             </li>
           ))}

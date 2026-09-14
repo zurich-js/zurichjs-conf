@@ -1,4 +1,4 @@
-import type { SessionFeedbackSummary } from '@/lib/types/session-feedback';
+export { KIND_LABELS } from '@/lib/feedback/labels';
 
 const timeFormatter = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/Zurich',
@@ -52,12 +52,6 @@ export function formatScheduleStart(startTime: string): string {
   const [hours = '00', minutes = '00'] = startTime.split(':');
   return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
 }
-
-export const KIND_LABELS: Record<NonNullable<SessionFeedbackSummary['kind']>, string> = {
-  talk: 'Talk',
-  workshop: 'Workshop',
-  panel: 'Panel',
-};
 
 /** Tailwind text colour for an average — quick visual triage in the table. */
 export function ratingTone(average: number | null): string {

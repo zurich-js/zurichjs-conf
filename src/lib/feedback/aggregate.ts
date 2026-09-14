@@ -8,6 +8,7 @@ import type {
   SessionFeedbackFeedEntry,
   SessionFeedbackRow,
   SessionFeedbackSummary,
+  SpeakerFeedbackSummary,
 } from '@/lib/types/session-feedback';
 
 /** Round to one decimal place for display. */
@@ -22,13 +23,35 @@ export function averageRating(rows: Pick<SessionFeedbackRow, 'rating'>[]): numbe
   return roundToTenth(sum / rows.length);
 }
 
-/** Speaker display names in billing order, skipping entries with no name. */
-function speakerNames(item: ProgramScheduleItemRecord): string[] {
+type SpeakerLink = NonNullable<NonNullable<ProgramScheduleItemRecord['program_session']>['speakers']>[number];
+
+/** Full name of a linked speaker, empty when neither name part is set. */
+function speakerName(link: SpeakerLink): string {
+  return [link.speaker?.first_name, link.speaker?.last_name].filter(Boolean).join(' ').trim();
+}
+
+/** `Job title at Company`, whichever parts exist, or null. */
+function speakerRole(link: SpeakerLink): string | null {
+  const { job_title: jobTitle, company } = link.speaker ?? {};
+  if (jobTitle && company) return `${jobTitle} at ${company}`;
+  return jobTitle || company || null;
+}
+
+/** Speaker links in billing order, skipping entries with no name to show. */
+function billedSpeakers(item: ProgramScheduleItemRecord): SpeakerLink[] {
   const speakers = item.program_session?.speakers ?? [];
   return [...speakers]
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((entry) => [entry.speaker?.first_name, entry.speaker?.last_name].filter(Boolean).join(' ').trim())
-    .filter((name) => name.length > 0);
+    .filter((link) => speakerName(link).length > 0);
+}
+
+/** Star counts, index 0 = one star … index 4 = five stars. */
+function ratingDistribution(rows: Pick<SessionFeedbackRow, 'rating'>[]): SessionFeedbackSummary['distribution'] {
+  const distribution: SessionFeedbackSummary['distribution'] = [0, 0, 0, 0, 0];
+  for (const row of rows) {
+    if (row.rating >= 1 && row.rating <= 5) distribution[row.rating - 1] += 1;
+  }
+  return distribution;
 }
 
 /** Collapse program kinds to the three the feedback UI distinguishes (keynotes count as talks). */
@@ -40,9 +63,70 @@ function sessionKind(item: ProgramScheduleItemRecord): SessionFeedbackSummary['k
 }
 
 /**
+ * Roll the per-session summaries up per speaker, so a speaker on two talks has
+ * one row covering both. Ordered by response count, then alphabetically.
+ */
+function buildSpeakerSummaries(
+  items: ProgramScheduleItemRecord[],
+  sessions: SessionFeedbackSummary[],
+  rowsByItem: Map<string, SessionFeedbackRow[]>
+): SpeakerFeedbackSummary[] {
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const speakers = new Map<string, SpeakerFeedbackSummary>();
+  const rowsBySpeaker = new Map<string, SessionFeedbackRow[]>();
+
+  // Walk the already-sorted summaries so each speaker's sessions stay in schedule order
+  for (const summary of sessions) {
+    const item = itemById.get(summary.scheduleItemId);
+    if (!item) continue;
+
+    for (const link of billedSpeakers(item)) {
+      const existing = speakers.get(link.speaker_id);
+      const speaker = existing ?? {
+        speakerId: link.speaker_id,
+        name: speakerName(link),
+        role: speakerRole(link),
+        imageUrl: link.speaker?.profile_image_url ?? null,
+        sessions: [],
+        responseCount: 0,
+        averageRating: null,
+        distribution: [0, 0, 0, 0, 0] as SpeakerFeedbackSummary['distribution'],
+      };
+      if (!existing) speakers.set(link.speaker_id, speaker);
+
+      speaker.sessions.push({
+        scheduleItemId: summary.scheduleItemId,
+        title: summary.title,
+        date: summary.date,
+        startTime: summary.startTime,
+        responseCount: summary.responseCount,
+        averageRating: summary.averageRating,
+      });
+      speaker.responseCount += summary.responseCount;
+
+      const bucket = rowsBySpeaker.get(link.speaker_id) ?? [];
+      bucket.push(...(rowsByItem.get(summary.scheduleItemId) ?? []));
+      rowsBySpeaker.set(link.speaker_id, bucket);
+    }
+  }
+
+  return [...speakers.values()]
+    .map((speaker) => {
+      const speakerRows = rowsBySpeaker.get(speaker.speakerId) ?? [];
+      return {
+        ...speaker,
+        averageRating: averageRating(speakerRows),
+        distribution: ratingDistribution(speakerRows),
+      };
+    })
+    .sort((a, b) => b.responseCount - a.responseCount || a.name.localeCompare(b.name));
+}
+
+/**
  * Build the admin payload: one summary per session-type schedule item
  * (talks, panels, workshops — breaks and social events can't be rated), in
- * schedule order, plus the newest-first feed of individual entries.
+ * schedule order, the same ratings rolled up per speaker, plus the
+ * newest-first feed of individual entries.
  */
 export function buildAdminFeedbackResponse(
   items: ProgramScheduleItemRecord[],
@@ -61,10 +145,7 @@ export function buildAdminFeedbackResponse(
     .sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time))
     .map((item) => {
       const itemRows = rowsByItem.get(item.id) ?? [];
-      const distribution: SessionFeedbackSummary['distribution'] = [0, 0, 0, 0, 0];
-      for (const row of itemRows) {
-        if (row.rating >= 1 && row.rating <= 5) distribution[row.rating - 1] += 1;
-      }
+      const speakers = billedSpeakers(item);
       return {
         scheduleItemId: item.id,
         sessionId: item.program_session?.id ?? null,
@@ -74,10 +155,11 @@ export function buildAdminFeedbackResponse(
         durationMinutes: item.duration_minutes,
         room: item.room,
         kind: sessionKind(item),
-        speakers: speakerNames(item),
+        speakers: speakers.map(speakerName),
+        speakerIds: speakers.map((link) => link.speaker_id),
         responseCount: itemRows.length,
         averageRating: averageRating(itemRows),
-        distribution,
+        distribution: ratingDistribution(itemRows),
       };
     });
 
@@ -91,6 +173,7 @@ export function buildAdminFeedbackResponse(
 
   return {
     sessions,
+    speakers: buildSpeakerSummaries(items, sessions, rowsByItem),
     entries,
     totals: {
       responses: rows.length,
