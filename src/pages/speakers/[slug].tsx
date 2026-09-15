@@ -13,6 +13,7 @@ import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
 import { BellPlus, ChevronLeft, Share2 } from 'lucide-react';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 type SessionTabId = 'talks' | 'workshops' | 'sessions';
 
@@ -467,7 +468,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                     </p>
                                 </div>
                                 <div className="flex flex-col items-center gap-4 mt-6">
-                                    <Button variant="primary" size="md" asChild href="/#tickets">
+                                    <Button variant="primary" size="md" asChild href={NEXT_EDITION_URL}>
                                         Get VIP
                                     </Button>
                                     <p className="text-sm text-brand-gray-darkest">... or</p>
@@ -487,7 +488,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                     Got your ticket yet?
                                 </h2>
                                 <div className="flex flex-col items-center gap-4 mt-6">
-                                    <Button variant="primary" size="md" asChild href="/#tickets">
+                                    <Button variant="primary" size="md" asChild href={NEXT_EDITION_URL}>
                                         Join the conference
                                     </Button>
                                 </div>

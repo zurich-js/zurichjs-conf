@@ -1,5 +1,11 @@
 # ZurichJS Conf 2026 - Complete Conference Information
 
+> ARCHIVED EDITION. ZurichJS Conf 2026 took place on 11 September 2026 and is
+> over. This document describes it in the present tense because it was written
+> before the event; read it as a record, not an announcement. Tickets, the CFP
+> and sponsorship for 2026 are all closed. The next edition is at
+> https://conf.zurichjs.com
+
 > ZurichJS Conf is Switzerland's premier JavaScript conference and one of the top JavaScript conferences in Europe for 2026. Taking place September 11th, 2026 at Technopark Zürich, the event brings together 300+ developers for expert talks, hands-on workshops, and networking opportunities.
 
 ## Quick Facts
@@ -130,7 +136,7 @@ Yes, all talks and materials are in English.
 
 ## Connect With Us
 
-- **Website**: https://conf.zurichjs.com
+- **Website**: https://2026.zurichjs.com
 - **Email**: hello@zurichjs.com
 - **LinkedIn**: https://www.linkedin.com/company/zurichjs
 - **Instagram**: https://www.instagram.com/zurich.js
@@ -138,17 +144,17 @@ Yes, all talks and materials are in English.
 
 ## Key Pages
 
-- [Homepage](https://conf.zurichjs.com/): Tickets and main information
-- [About](https://conf.zurichjs.com/about): Team and mission
-- [Call for Papers](https://conf.zurichjs.com/cfp): Submit a talk proposal
-- [Sponsorship](https://conf.zurichjs.com/sponsorship): Partner with the conference
+- [Homepage](https://2026.zurichjs.com/): Tickets and main information
+- [About](https://2026.zurichjs.com/about): Team and mission
+- [Call for Papers](https://2026.zurichjs.com/cfp): Submit a talk proposal
+- [Sponsorship](https://2026.zurichjs.com/sponsorship): Partner with the conference
 
 ## Legal Information
 
-- [Terms of Service](https://conf.zurichjs.com/info/terms-of-service)
-- [Privacy Policy](https://conf.zurichjs.com/info/privacy-policy)
-- [Refund Policy](https://conf.zurichjs.com/info/refund-policy)
-- [Code of Conduct](https://conf.zurichjs.com/info/code-of-conduct)
+- [Terms of Service](https://2026.zurichjs.com/info/terms-of-service)
+- [Privacy Policy](https://2026.zurichjs.com/info/privacy-policy)
+- [Refund Policy](https://2026.zurichjs.com/info/refund-policy)
+- [Code of Conduct](https://2026.zurichjs.com/info/code-of-conduct)
 
 ## SEO Keywords
 

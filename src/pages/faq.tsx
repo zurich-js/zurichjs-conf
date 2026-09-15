@@ -1,5 +1,4 @@
 import React from "react";
-import Link from "next/link";
 import { InfoContentLayout } from "@/components/InfoContentLayout";
 import type { InfoPage } from "@/data/info-pages";
 
@@ -202,13 +201,7 @@ const faqPage: InfoPage = {
           Switzerland has the perception of being pricey, but there are many
           ways to make a trip here affordable — some accommodation options come
           out at under €100 per night. We&apos;ve found suitable places to stay
-          at a range of price points, all listed on our{" "}
-          <Link href="/trip-cost" className="font-semibold underline">
-            Trip Cost Calculator
-          </Link>
-          , where you can also estimate your total trip cost (ticket + travel +
-          hotel) in your preferred currency and compare options across travel
-          regions and hotel types.
+          at a range of price points across travel regions and hotel types.
         </p>
       ),
     },
@@ -225,7 +218,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        'We don\'t hold formal room blocks, but we\'ve gathered a range of vetted places to stay across different price points on the <strong><a href="/trip-cost">Trip Cost Calculator</a></strong>, so you can compare and book what works for your budget.',
+        'We don\'t hold formal room blocks, but we gathered a range of vetted places to stay across different price points.',
     },
     {
       type: "paragraph",

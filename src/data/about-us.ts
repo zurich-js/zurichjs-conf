@@ -1,4 +1,5 @@
 import {Heart, Lightbulb, Handshake, Target, Sunset, Waves, Wine, Clock, Footprints, Bike, TrainFront, LucideIcon} from 'lucide-react';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 export interface AboutHeroData {
   title: string;
@@ -203,7 +204,7 @@ export const aboutPageData: AboutPageData = {
       "With state-of-the-art facilities and excellent transportation connections, Technopark offers an inspiring environment for learning, networking, and collaboration.",
 
       "<strong> Getting there </strong> <br>Easily accessible by public transport. Tram lines 4 and 13 stop directly at Technopark.",
-      "Planning your budget? <a href='/trip-cost' style='color: #268BCC; text-decoration: underline;'>Estimate your trip cost</a>.",
+      "Planning your budget? Zurich is more affordable than its reputation suggests.",
     ],
     mapUrl:
       "https://maps.google.com/maps?q=47.3897551%2C8.5163116&z=17&output=embed",
@@ -236,7 +237,7 @@ export const aboutPageData: AboutPageData = {
       { src: "/images/seebad-enge/seebad-enge-2.jpg", alt: "Seebad Enge — evening atmosphere at the lakeside venue" },
     ],
     ctaLabel: "Book your VIP ticket",
-    ctaUrl: "/#tickets",
+    ctaUrl: NEXT_EDITION_URL,
     websiteLabel: "Visit Seebad Enge",
     websiteUrl: "https://www.seebadenge.ch/wp/",
     directionsTitle: "Getting there from Technopark",
@@ -302,7 +303,7 @@ export const aboutPageData: AboutPageData = {
       buttons: [
         {
           text: "Get Your Ticket",
-          url: "/#tickets",
+          url: NEXT_EDITION_URL,
           variant: "accent",
         },
       ],
@@ -319,7 +320,7 @@ export const aboutPageData: AboutPageData = {
       buttons: [
         {
           text: "View Sponsorship Packages",
-          url: "/sponsorship",
+          url: NEXT_EDITION_URL,
           variant: "dark",
         },
         {

@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { Check, ChevronDown, ArrowDownAZ, ArrowUpAZ, ArrowUpDown, Filter } from 'lucide-react';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import Link from "next/link";
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 type ViewMode = 'compact' | 'full';
 type SortMode = 'none' | 'asc' | 'desc';
@@ -171,7 +172,7 @@ export default function SpeakersPage() {
               Meet the engineers, makers, and community leaders shaping the ZurichJS Conf 2026 experience.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Button variant="primary" asChild href="/#tickets">
+              <Button variant="primary" asChild href={NEXT_EDITION_URL}>
                 Get your ticket
               </Button>
               <Button variant="ghost" asChild href="/schedule" className="max-sm:px-0">
@@ -375,10 +376,10 @@ export default function SpeakersPage() {
               The VIP ticket includes conference access, plus exclusive access to the after-party where you can hang out with the speakers.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="black" asChild href="/#tickets">
+              <Button variant="black" asChild href={NEXT_EDITION_URL}>
                 Get your ticket
               </Button>
-            <Button variant="primary" asChild href="/#tickets">
+            <Button variant="primary" asChild href={NEXT_EDITION_URL}>
                 Get VIP
             </Button>
             </div>

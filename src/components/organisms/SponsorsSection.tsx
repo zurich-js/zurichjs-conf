@@ -15,6 +15,7 @@ import { usePublicSponsors, useCommunityPartners } from '@/hooks/usePublicSponso
 import type { PublicSponsor } from '@/lib/types/sponsorship';
 import { TIER_DISPLAY_CONFIG } from '@/lib/types/sponsorship';
 import type { GridItemConfig } from '@/hooks/useGridPacker';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 export interface SponsorsSectionProps {
     kicker?: string;
@@ -190,7 +191,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                 >
                     <p className="text-brand-gray-light text-md text-center mb-4">
                         Want to sponsor, partner, or volunteer?{' '}
-                        <a href="/sponsorship" className="text-md text-brand-blue hover:text-brand-gray-lightest duration-300 ease-in-out">
+                        <a href={NEXT_EDITION_URL} className="text-md text-brand-blue hover:text-brand-gray-lightest duration-300 ease-in-out">
                             View&nbsp;sponsorship&nbsp;options
                         </a>
                     </p>

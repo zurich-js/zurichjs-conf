@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CirclePlus } from 'lucide-react';
 import {clsx} from "clsx";
 import { trackSponsorClicked } from '@/lib/analytics/helpers';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 export interface SponsorCardProps {
   /** Sponsor name (used for alt text) */
@@ -30,7 +31,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   logoColorBackground,
   url,
   tier,
-  ctaHref = '/sponsorship',
+  ctaHref = NEXT_EDITION_URL,
   isCta
 }) => {
   const isEmpty = !logo;

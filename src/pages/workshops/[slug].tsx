@@ -9,6 +9,7 @@ import { getFrozenSpeakers } from '@/lib/archive/frozen';
 import { trackWorkshopViewed } from '@/lib/analytics';
 import type { PublicSession } from '@/lib/types/cfp';
 import { ChevronLeft } from 'lucide-react';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 interface WorkshopDetailPageProps {
   session: PublicSession;
@@ -78,7 +79,7 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
               VIP tickets include 20% off all workshops, including this one.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button variant="primary" asChild href="/#tickets">
+              <Button variant="primary" asChild href={NEXT_EDITION_URL}>
                 See conference tickets
               </Button>
               <Button variant="blue" asChild href="/workshops">

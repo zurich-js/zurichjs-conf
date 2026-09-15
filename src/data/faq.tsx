@@ -6,7 +6,6 @@
  * survives — it still answers what people ask about the 2026 edition.
  */
 
-import Link from 'next/link';
 import type { FAQItem } from '@/components/molecules/FAQAccordion';
 import { communityDayMeetup } from '@/data/public-program';
 
@@ -60,12 +59,8 @@ export const TICKET_FAQ: FAQItem[] = [
       <>
         Switzerland has the perception of being pricey, but there are many ways to make a trip
         here affordable – some accommodation options come out at under €100 per night. We&apos;ve
-        found suitable places to stay at a range of price points, all listed on our{' '}
-        <Link href="/trip-cost" className="underline">
-          Trip Cost Calculator
-        </Link>
-        , where you can also estimate your total trip cost (ticket + travel + hotel) and compare
-        options across travel regions and hotel types. Feel free to get in touch at{' '}
+        found suitable places to stay at a range of price points across travel regions and hotel
+        types. Feel free to get in touch at{' '}
         <a href="mailto:hello@zurichjs.com" className="underline">
           hello@zurichjs.com
         </a>{' '}

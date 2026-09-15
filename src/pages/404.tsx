@@ -10,6 +10,7 @@ import { SEO } from '@/components/SEO';
 import { Logo, Heading, Kicker } from '@/components/atoms';
 import { ShapedSection, SectionContainer } from '@/components/organisms';
 import { BackgroundMedia } from '@/components/molecules';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 // Fun JavaScript error messages
 const errorMessages = [
@@ -183,7 +184,7 @@ export default function Custom404() {
                   retry();
                 </button>
                 <Link
-                  href="/#tickets"
+                  href={NEXT_EDITION_URL}
                   className="px-6 py-3 border border-brand-primary/50 text-brand-primary font-semibold rounded-lg hover:bg-brand-primary/10 transition-all hover:scale-105 active:scale-95"
                 >
                   getTickets()
@@ -226,7 +227,7 @@ export default function Custom404() {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/#tickets" className="text-brand-primary hover:text-white transition-colors text-sm flex items-center gap-2">
+                    <Link href={NEXT_EDITION_URL} className="text-brand-primary hover:text-white transition-colors text-sm flex items-center gap-2">
                       <span className="text-white/50">→</span> Get Your Tickets
                     </Link>
                   </li>

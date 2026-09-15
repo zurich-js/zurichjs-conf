@@ -1,20 +1,15 @@
-# robots.txt for ZurichJS Conference 2026
-# https://conf.zurichjs.com
+# robots.txt for the archived ZurichJS Conf 2026 site
+# https://2026.zurichjs.com
+#
+# The live conference now lives at https://conf.zurichjs.com — this host serves
+# the frozen 2026 edition only.
 
 # Default rules for all crawlers
 User-agent: *
 Allow: /
 
-# Disallow admin and transactional pages
-Disallow: /admin
-Disallow: /api/
-Disallow: /cart
-Disallow: /success
-Disallow: /manage-order
-Disallow: /validate/
-
-# Unlisted pages shared by direct link only
-Disallow: /speaker-guide
+# The archive is entirely public content; the admin, checkout and
+# speaker-guide routes those rules covered no longer exist.
 
 # ============================================
 # AI Crawler Rules - Explicitly Allow for Discoverability
@@ -25,70 +20,57 @@ Disallow: /speaker-guide
 # OpenAI ChatGPT crawlers
 User-agent: GPTBot
 Allow: /
-Disallow: /speaker-guide
 
 User-agent: ChatGPT-User
 Allow: /
-Disallow: /speaker-guide
 
 # Anthropic Claude crawlers
 User-agent: anthropic-ai
 Allow: /
-Disallow: /speaker-guide
 
 User-agent: Claude-Web
 Allow: /
-Disallow: /speaker-guide
 
 User-agent: ClaudeBot
 Allow: /
-Disallow: /speaker-guide
 
 # Google AI crawlers
 User-agent: Google-Extended
 Allow: /
-Disallow: /speaker-guide
 
 # Perplexity AI
 User-agent: PerplexityBot
 Allow: /
-Disallow: /speaker-guide
 
 # Microsoft/Bing AI
 User-agent: Bingbot
 Allow: /
-Disallow: /speaker-guide
 
 # Meta AI
 User-agent: FacebookBot
 Allow: /
-Disallow: /speaker-guide
 
 User-agent: meta-externalagent
 Allow: /
-Disallow: /speaker-guide
 
 # Apple Intelligence
 User-agent: Applebot-Extended
 Allow: /
-Disallow: /speaker-guide
 
 # Common AI research crawlers
 User-agent: CCBot
 Allow: /
-Disallow: /speaker-guide
 
 User-agent: cohere-ai
 Allow: /
-Disallow: /speaker-guide
 
 # ============================================
 # Important Files
 # ============================================
 
 # Sitemap location
-Sitemap: https://conf.zurichjs.com/sitemap.xml
+Sitemap: https://2026.zurichjs.com/sitemap.xml
 
 # LLM-specific content file for AI discoverability
 # See: https://llmstxt.org
-# Location: https://conf.zurichjs.com/llms.txt
+# Location: https://2026.zurichjs.com/llms.txt

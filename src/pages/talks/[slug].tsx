@@ -7,6 +7,7 @@ import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/com
 import { getFrozenSpeakers } from '@/lib/archive/frozen';
 import type { PublicSession } from '@/lib/types/cfp';
 import { ChevronLeft } from 'lucide-react';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 interface TalkDetailPageProps {
   session: PublicSession;
@@ -24,7 +25,7 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
       />
 
       <main className="min-h-screen bg-brand-white">
-        <SessionDetailHero session={session} kind="talk" ctaHref="/#tickets" ctaLabel="Get your ticket" />
+        <SessionDetailHero session={session} kind="talk" ctaHref={NEXT_EDITION_URL} ctaLabel="Get your ticket" />
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto max-w-screen-lg">
@@ -85,7 +86,7 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
               The talks are better live. Get your ticket and plan your conference day around the sessions and people you want to spend time with.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="primary" asChild href="/#tickets">
+              <Button variant="primary" asChild href={NEXT_EDITION_URL}>
                 Get your ticket
               </Button>
             </div>

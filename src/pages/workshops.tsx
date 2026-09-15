@@ -11,6 +11,7 @@ import { workshopProgramSections } from '@/data';
 import { archivedWorkshopsQueryOptions } from '@/lib/archive/queries';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 import type { WorkshopOfferingSummary } from '@/lib/types/workshops';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 const TAB_VALUES = ['morning', 'lunch', 'afternoon'] as const;
 type TabValue = (typeof TAB_VALUES)[number];
@@ -219,7 +220,7 @@ export default function WorkshopsPage() {
               Workshops are designed as a focused add-on for attendees who want more hands-on time with the speakers and topics they care about most.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button variant="primary" asChild href="/#tickets">
+              <Button variant="primary" asChild href={NEXT_EDITION_URL}>
                 Add the conference too
               </Button>
             </div>
@@ -235,7 +236,7 @@ export default function WorkshopsPage() {
               Sponsorship helps us make Zurich Engineering Day accessible to more people. Partner packages include workshop seats for your team and can help fund learning opportunities for attendees who would otherwise miss out.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button variant="blue" asChild href="/sponsorship">
+              <Button variant="blue" asChild href={NEXT_EDITION_URL}>
                 Sponsor the conference
               </Button>
             </div>

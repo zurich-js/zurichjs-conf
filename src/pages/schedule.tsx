@@ -12,6 +12,7 @@ import type { EventProperties } from '@/lib/analytics/events';
 import { getFrozenScheduleItems } from '@/lib/archive/frozen';
 import type { ScheduleDayParam } from '@/lib/types/session-feedback';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
+import { NEXT_EDITION_URL } from '@/lib/archive/config';
 
 interface SchedulePageProps {
   items: PublicProgramScheduleItem[];
@@ -174,7 +175,7 @@ export default function SchedulePage({ items }: SchedulePageProps): React.JSX.El
               Use the public schedule to decide how you want to spend your time, then secure your spot for the talks, the workshops, and the people you want to meet in person.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="primary" asChild href="/#tickets">
+              <Button variant="primary" asChild href={NEXT_EDITION_URL}>
                 Get your ticket
               </Button>
             </div>
@@ -193,7 +194,7 @@ export default function SchedulePage({ items }: SchedulePageProps): React.JSX.El
               Sponsorship helps us make the conference possible and gives companies a strong way to support learning, visibility, and shared team experiences across workshops and talks.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="blue" asChild href="/sponsorship">
+              <Button variant="blue" asChild href={NEXT_EDITION_URL}>
                 Bring your team
               </Button>
             </div>
