@@ -125,6 +125,26 @@ describe('buildAdminFeedbackResponse', () => {
     expect(speakers[0].imageUrl).toBe('https://example.com/c.jpg');
   });
 
+  it('leaves share links null unless a builder is supplied', () => {
+    const { speakers } = buildAdminFeedbackResponse(items, []);
+    expect(speakers.every((speaker) => speaker.share === null)).toBe(true);
+  });
+
+  it('attaches the share link a builder mints for each speaker', () => {
+    const { speakers } = buildAdminFeedbackResponse(items, [], (speakerId, name) => ({
+      slug: name.toLowerCase().replace(/\s+/g, '-'),
+      code: `code-${speakerId}`,
+      path: `/speaker-feedback/${name.toLowerCase().replace(/\s+/g, '-')}-code-${speakerId}`,
+    }));
+
+    const ada = speakers.find((speaker) => speaker.speakerId === 'a')!;
+    expect(ada.share).toEqual({
+      slug: 'ada-first',
+      code: 'code-a',
+      path: '/speaker-feedback/ada-first-code-a',
+    });
+  });
+
   it('feeds entries newest first and labels orphaned rows (unknown or deleted slot)', () => {
     expect(result.entries.map((e) => e.id)).toEqual(['r4', 'r3', 'r2', 'r1']);
     expect(result.entries[0].sessionTitle).toBe('Removed session');

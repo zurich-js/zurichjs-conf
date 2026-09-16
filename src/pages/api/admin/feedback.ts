@@ -3,11 +3,15 @@
  * GET /api/admin/feedback — every rating attendees have submitted, rolled up
  * per session (count, average, star distribution) plus a newest-first feed of
  * the individual entries so organisers can watch comments arrive live.
+ *
+ * Every speaker rollup also carries the unlisted /speaker-feedback link that
+ * shares that speaker's own results with them.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { buildAdminFeedbackResponse } from '@/lib/feedback/aggregate';
+import { getSpeakerShareLinkBuilder } from '@/lib/feedback/share-server';
 import type { AdminSessionFeedbackResponse, SessionFeedbackRow } from '@/lib/types/session-feedback';
 import { logger } from '@/lib/logger';
 import { getAdminScheduleRows } from '@/lib/program/schedule';
@@ -57,7 +61,8 @@ export default async function handler(
     }
 
     const rows: SessionFeedbackRow[] = feedbackResult.data ?? [];
-    res.status(200).json(buildAdminFeedbackResponse(items, rows));
+    // Each speaker rollup carries the unlisted link an organiser can send them
+    res.status(200).json(buildAdminFeedbackResponse(items, rows, getSpeakerShareLinkBuilder()));
   } catch (err) {
     log.error('Unexpected error building feedback overview', err, { operation: 'build_feedback_overview' });
     res.status(500).json({ error: 'Internal server error' });

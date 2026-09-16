@@ -15,6 +15,7 @@ Disallow: /validate/
 
 # Unlisted pages shared by direct link only
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # ============================================
 # AI Crawler Rules - Explicitly Allow for Discoverability
@@ -26,61 +27,74 @@ Disallow: /speaker-guide
 User-agent: GPTBot
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # Anthropic Claude crawlers
 User-agent: anthropic-ai
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 User-agent: Claude-Web
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # Google AI crawlers
 User-agent: Google-Extended
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # Perplexity AI
 User-agent: PerplexityBot
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # Microsoft/Bing AI
 User-agent: Bingbot
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # Meta AI
 User-agent: FacebookBot
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 User-agent: meta-externalagent
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # Apple Intelligence
 User-agent: Applebot-Extended
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # Common AI research crawlers
 User-agent: CCBot
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 User-agent: cohere-ai
 Allow: /
 Disallow: /speaker-guide
+Disallow: /speaker-feedback
 
 # ============================================
 # Important Files

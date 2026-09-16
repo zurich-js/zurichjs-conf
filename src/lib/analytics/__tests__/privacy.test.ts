@@ -49,6 +49,9 @@ describe('analytics URL privacy', () => {
       sanitizeAnalyticsUrl(`/api/speaker-logistics/${ticketId}.signed-secret`)
     ).toBe('/api/speaker-logistics/[token]');
     expect(sanitizeAnalyticsUrl(`/validate/${ticketId}`)).toBe('/validate/[ticketId]');
+    expect(
+      sanitizeAnalyticsUrl('/speaker-feedback/ada-lovelace-Ku8Xz1n4Qb7Vd2Hs9Tl3Mp0R')
+    ).toBe('/speaker-feedback/[code]');
     expect(sanitizeAnalyticsUrl(`/api/qr/${ticketId}`)).toBe('/api/qr/[ticketId]');
   });
 
@@ -244,6 +247,7 @@ describe('analytics URL privacy', () => {
       '/quote?q=private-proposal',
       '/sponsor-quote?q=private-proposal',
       '/validate/fdd332be-86c9-4842-912c-e5c1c0968606',
+      '/speaker-feedback/ada-lovelace-Ku8Xz1n4Qb7Vd2Hs9Tl3Mp0R',
     ]) {
       expect(isPrivateAnalyticsRoute(route)).toBe(true);
     }

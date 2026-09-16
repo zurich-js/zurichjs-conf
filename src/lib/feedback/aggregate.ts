@@ -8,8 +8,12 @@ import type {
   SessionFeedbackFeedEntry,
   SessionFeedbackRow,
   SessionFeedbackSummary,
+  SpeakerFeedbackShare,
   SpeakerFeedbackSummary,
 } from '@/lib/types/session-feedback';
+
+/** Mints the unlisted share link for a speaker; omitted where no signing secret is available. */
+export type SpeakerShareLinkBuilder = (speakerId: string, name: string) => SpeakerFeedbackShare | null;
 
 /** Round to one decimal place for display. */
 function roundToTenth(value: number): number {
@@ -69,7 +73,8 @@ function sessionKind(item: ProgramScheduleItemRecord): SessionFeedbackSummary['k
 function buildSpeakerSummaries(
   items: ProgramScheduleItemRecord[],
   sessions: SessionFeedbackSummary[],
-  rowsByItem: Map<string, SessionFeedbackRow[]>
+  rowsByItem: Map<string, SessionFeedbackRow[]>,
+  shareLinkFor?: SpeakerShareLinkBuilder
 ): SpeakerFeedbackSummary[] {
   const itemById = new Map(items.map((item) => [item.id, item]));
   const speakers = new Map<string, SpeakerFeedbackSummary>();
@@ -91,6 +96,7 @@ function buildSpeakerSummaries(
         responseCount: 0,
         averageRating: null,
         distribution: [0, 0, 0, 0, 0] as SpeakerFeedbackSummary['distribution'],
+        share: shareLinkFor?.(link.speaker_id, speakerName(link)) ?? null,
       };
       if (!existing) speakers.set(link.speaker_id, speaker);
 
@@ -130,7 +136,8 @@ function buildSpeakerSummaries(
  */
 export function buildAdminFeedbackResponse(
   items: ProgramScheduleItemRecord[],
-  rows: SessionFeedbackRow[]
+  rows: SessionFeedbackRow[],
+  shareLinkFor?: SpeakerShareLinkBuilder
 ): AdminSessionFeedbackResponse {
   const rowsByItem = new Map<string, SessionFeedbackRow[]>();
   for (const row of rows) {
@@ -173,7 +180,7 @@ export function buildAdminFeedbackResponse(
 
   return {
     sessions,
-    speakers: buildSpeakerSummaries(items, sessions, rowsByItem),
+    speakers: buildSpeakerSummaries(items, sessions, rowsByItem, shareLinkFor),
     entries,
     totals: {
       responses: rows.length,

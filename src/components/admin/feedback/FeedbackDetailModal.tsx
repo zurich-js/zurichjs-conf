@@ -3,6 +3,7 @@ import { AdminModal } from '@/components/admin/AdminModal';
 import type { FeedbackDetailView } from '@/lib/types/session-feedback';
 import { formatFeedbackStamp, formatScheduleStart, ratingTone } from './format';
 import { RatingBreakdown } from './RatingBreakdown';
+import { ShareLinkButton } from './ShareLinkButton';
 import { StarRating } from './StarRating';
 
 export interface FeedbackDetailModalProps {
@@ -25,6 +26,8 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
 /**
  * Drill-down for a single talk or a single speaker: headline rollup, star
  * histogram, the speaker's per-session split, and every comment received.
+ * A speaker view also offers the unlisted link that shares exactly this
+ * rollup with the speaker themselves.
  */
 export function FeedbackDetailModal({ detail, onClose, onOpenSession }: FeedbackDetailModalProps): React.JSX.Element {
   const comments = detail.entries.filter((entry) => entry.comment);
@@ -36,6 +39,11 @@ export function FeedbackDetailModal({ detail, onClose, onOpenSession }: Feedback
       title={detail.title}
       subtitle={detail.subtitle ?? undefined}
       size="3xl"
+      headerActions={
+        detail.share ? (
+          <ShareLinkButton share={detail.share} speakerName={detail.title} variant="button" />
+        ) : undefined
+      }
     >
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

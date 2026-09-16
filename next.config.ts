@@ -138,6 +138,17 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(self), microphone=()' },
         ],
       },
+      // Unlisted speaker feedback links. The page already renders a noindex
+      // meta tag, but that only helps a crawler that executes the HTML — the
+      // header keeps the URL out of indexes, archives and snippets even when
+      // it is discovered through a shared link, a proxy or a referrer log.
+      {
+        source: '/speaker-feedback/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive, nosnippet, noimageindex' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
     ];
   },
 

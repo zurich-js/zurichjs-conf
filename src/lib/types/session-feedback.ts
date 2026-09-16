@@ -97,6 +97,19 @@ export interface SpeakerSessionFeedbackRef {
   averageRating: number | null;
 }
 
+/**
+ * The unlisted link that lets one speaker see their own feedback.
+ * See `src/lib/feedback/share.ts` for how the code is derived.
+ */
+export interface SpeakerFeedbackShare {
+  /** Cosmetic name slug, so the link reads as the speaker's own */
+  slug: string;
+  /** The credential — a keyed hash of the speaker id, unguessable without the signing secret */
+  code: string;
+  /** Site-relative path, e.g. `/speaker-feedback/ada-lovelace-<code>` */
+  path: string;
+}
+
 /** Every rating a speaker collected across all the sessions they appeared in. */
 export interface SpeakerFeedbackSummary {
   speakerId: string;
@@ -110,6 +123,8 @@ export interface SpeakerFeedbackSummary {
   averageRating: number | null;
   /** Index 0 = one star … index 4 = five stars */
   distribution: [number, number, number, number, number];
+  /** Unlisted link an organiser can send this speaker; null when share links are unavailable */
+  share: SpeakerFeedbackShare | null;
 }
 
 /** A single feedback entry as shown in the admin live feed. */
@@ -152,4 +167,16 @@ export interface FeedbackDetailView {
   sessions: SpeakerSessionFeedbackRef[];
   /** Newest-first entries belonging to this talk, or to every session of this speaker */
   entries: SessionFeedbackFeedEntry[];
+  /** The speaker's unlisted share link; always null for a session view */
+  share: SpeakerFeedbackShare | null;
+}
+
+/** Everything the unlisted per-speaker share page renders. */
+export interface SpeakerFeedbackShareData {
+  speakerName: string;
+  /** `Job title at Company`, whichever parts exist, or null */
+  speakerRole: string | null;
+  speakerImageUrl: string | null;
+  /** The speaker rollup, scoped to this speaker only — never anyone else's ratings */
+  detail: FeedbackDetailView;
 }
