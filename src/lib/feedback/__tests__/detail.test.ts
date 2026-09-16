@@ -60,6 +60,7 @@ const data: AdminSessionFeedbackResponse = {
       responseCount: 3,
       averageRating: 3.7,
       distribution: [0, 1, 0, 1, 1],
+      share: { slug: 'ada-first', code: 'AAAAAAAAAAAAAAAAAAAAAAAA', path: '/speaker-feedback/ada-first-AAAAAAAAAAAAAAAAAAAAAAAA' },
     },
   ],
   entries: [
@@ -72,6 +73,13 @@ const data: AdminSessionFeedbackResponse = {
 };
 
 describe('selectFeedbackDetail', () => {
+  it('carries the share link on a speaker view and never on a session view', () => {
+    expect(selectFeedbackDetail(data, { kind: 'speaker', id: 'a' })!.share?.path).toBe(
+      '/speaker-feedback/ada-first-AAAAAAAAAAAAAAAAAAAAAAAA'
+    );
+    expect(selectFeedbackDetail(data, { kind: 'session', id: 'early' })!.share).toBeNull();
+  });
+
   it('builds a per-talk view with only that talk’s entries', () => {
     const detail = selectFeedbackDetail(data, { kind: 'session', id: 'early' })!;
     expect(detail.kind).toBe('session');

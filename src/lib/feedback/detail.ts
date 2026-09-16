@@ -49,6 +49,7 @@ export function selectFeedbackDetail(
       distribution: session.distribution,
       sessions: [],
       entries,
+      share: null,
     };
   }
 
@@ -68,5 +69,6 @@ export function selectFeedbackDetail(
     distribution: speaker.distribution,
     sessions: speaker.sessions,
     entries,
+    share: speaker.share,
   };
 }

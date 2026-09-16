@@ -4,6 +4,7 @@ import type { SpeakerFeedbackSummary } from '@/lib/types/session-feedback';
 import { DistributionBar } from './DistributionBar';
 import { FeedFilterToggle } from './FeedFilterToggle';
 import { ratingTone } from './format';
+import { ShareLinkButton } from './ShareLinkButton';
 
 export interface SpeakerFeedbackTableProps {
   speakers: SpeakerFeedbackSummary[];
@@ -17,7 +18,8 @@ export interface SpeakerFeedbackTableProps {
 /**
  * One row per speaker, ratings pooled across every session they appeared in.
  * The name opens their detail view; the filter toggle (or a click anywhere on
- * the row) narrows the comment feed to every session they appeared in.
+ * the row) narrows the comment feed to every session they appeared in; the link
+ * button copies the unlisted page that shares those ratings with the speaker.
  */
 export function SpeakerFeedbackTable({
   speakers,
@@ -47,7 +49,7 @@ export function SpeakerFeedbackTable({
               <th scope="col" className="px-4 py-3 text-right">Average</th>
               <th scope="col" className="px-4 py-3 w-48">Distribution</th>
               <th scope="col" className="px-4 py-3 text-right">
-                <span className="sr-only">Filter feed</span>
+                <span className="sr-only">Share link and feed filter</span>
               </th>
             </tr>
           </thead>
@@ -92,12 +94,17 @@ export function SpeakerFeedbackTable({
                   <td className="px-4 py-3">
                     <DistributionBar distribution={speaker.distribution} total={speaker.responseCount} />
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <FeedFilterToggle
-                      isActive={isSelected}
-                      label={speaker.name}
-                      onToggle={() => onSelect(isSelected ? null : speaker.speakerId)}
-                    />
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      {speaker.share ? (
+                        <ShareLinkButton share={speaker.share} speakerName={speaker.name} />
+                      ) : null}
+                      <FeedFilterToggle
+                        isActive={isSelected}
+                        label={speaker.name}
+                        onToggle={() => onSelect(isSelected ? null : speaker.speakerId)}
+                      />
+                    </div>
                   </td>
                 </tr>
               );

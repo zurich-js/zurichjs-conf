@@ -6,6 +6,7 @@ export { FeedbackDetailModal } from './FeedbackDetailModal';
 export { DistributionBar } from './DistributionBar';
 export { FeedFilterToggle } from './FeedFilterToggle';
 export { RatingBreakdown } from './RatingBreakdown';
+export { ShareLinkButton } from './ShareLinkButton';
 export { StarRating } from './StarRating';
 
 export type { FeedbackStatsBarProps } from './FeedbackStatsBar';
@@ -16,4 +17,5 @@ export type { FeedbackDetailModalProps } from './FeedbackDetailModal';
 export type { DistributionBarProps } from './DistributionBar';
 export type { FeedFilterToggleProps } from './FeedFilterToggle';
 export type { RatingBreakdownProps } from './RatingBreakdown';
+export type { ShareLinkButtonProps } from './ShareLinkButton';
 export type { StarRatingProps } from './StarRating';

@@ -88,6 +88,12 @@ const SENSITIVE_PATHS: Array<{ pattern: RegExp; replacement: string }> = [
     pattern: new RegExp(`^/validate/${UUID_PATH_SEGMENT}/?$`, 'i'),
     replacement: '/validate/[ticketId]',
   },
+  // The unlisted speaker feedback code is a credential — never let the raw
+  // path reach an analytics processor, even though the route is private below.
+  {
+    pattern: /^\/speaker-feedback\/[A-Za-z0-9_-]+\/?$/,
+    replacement: '/speaker-feedback/[code]',
+  },
   {
     pattern: new RegExp(`^/api/qr/${UUID_PATH_SEGMENT}/?$`, 'i'),
     replacement: '/api/qr/[ticketId]',
@@ -330,6 +336,7 @@ const PRIVATE_ANALYTICS_ROUTES = [
   '/admin',
   '/manage-order',
   '/quote',
+  '/speaker-feedback',
   '/speaker-logistics',
   '/sponsor-quote',
   '/validate',
