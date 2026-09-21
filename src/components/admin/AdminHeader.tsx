@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, ShieldCheck, ScanLine, ChevronDown, QrCode, MessageSquareText, type LucideIcon } from 'lucide-react';
 import {Button} from '@/components/atoms';
+import AdminPrivacyToggle, { useAdminPrivacyMode } from '@/components/admin/AdminPrivacyToggle';
 
 interface AdminHeaderProps {
   title: string;
@@ -133,6 +134,7 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
   const router = useRouter();
   const currentPath = router.pathname;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { privacyEnabled, togglePrivacy } = useAdminPrivacyMode();
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
@@ -183,6 +185,7 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
                 </Link>
               );
             })}
+            <AdminPrivacyToggle privacyEnabled={privacyEnabled} onToggle={togglePrivacy} />
             <Button variant="ghost" forceDark size="xs" onClick={onLogout}>
               <LogOut className="w-4 h-4" />
               <span>Log out</span>
@@ -213,6 +216,7 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
                   </Link>
                 );
               })}
+              <AdminPrivacyToggle privacyEnabled={privacyEnabled} onToggle={togglePrivacy} mobile />
               <button
                 onClick={() => {
                   closeMobileMenu();
