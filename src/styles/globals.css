@@ -572,6 +572,25 @@
     display: none !important;
   }
 }
+
+/**
+ * Admin demo privacy mode.
+ * Elements are tagged at runtime so newly loaded tables and modals are covered
+ * without changing or replacing their underlying data.
+ */
+body.admin-privacy-mode [data-admin-pii] {
+  filter: blur(5px);
+  user-select: none;
+  transition: filter 150ms ease-in-out;
+}
+
+body.admin-privacy-mode input[data-admin-pii],
+body.admin-privacy-mode textarea[data-admin-pii],
+body.admin-privacy-mode [contenteditable="true"][data-admin-pii] {
+  color: transparent !important;
+  text-shadow: 0 0 8px currentColor;
+  caret-color: transparent;
+}
 /*---break---
  */
 @theme inline {
