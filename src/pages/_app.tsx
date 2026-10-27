@@ -18,8 +18,9 @@ import Script from "next/script";
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import type { Cart } from '@/types/cart';
-import { NavBar } from '@/components/organisms';
+import { EditionLaunchOverlay, NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
+import { subscribeToNewsletter } from '@/lib/api/newsletter';
 import { initEasterEgg } from '@/lib/easter-egg/client';
 import { initTechStackDetection } from '@/lib/analytics/techStackDetector';
 import {
@@ -266,6 +267,9 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
                         {showNavBar && <NavBar />}
                         <Component {...pageProps} />
                         {showDiscount && <DiscountContainer />}
+                        <EditionLaunchOverlay
+                          onSubscribe={(email) => subscribeToNewsletter({ email, source: 'popup' }).then(() => undefined)}
+                        />
                       </div>
                     </ToastProvider>
                   </MotionProvider>

@@ -51,3 +51,5 @@ export type {
   SponsorshipContactSectionProps,
 } from './sponsorship';
 export { ThankYouBanner } from './ThankYouBanner';
+export { EditionLaunchOverlay } from './edition-launch';
+export type { EditionLaunchOverlayProps } from './edition-launch';

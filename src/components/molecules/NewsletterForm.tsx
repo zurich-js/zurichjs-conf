@@ -2,8 +2,10 @@ import React, { useState, FormEvent } from 'react';
 
 export interface NewsletterFormProps {
   ctaLabel?: string;
+  inputId?: string;
   onSubscribe?: (email: string) => Promise<void> | void;
   privacyHref?: string;
+  variant?: 'dark' | 'light';
   className?: string;
 }
 
@@ -14,14 +16,17 @@ export interface NewsletterFormProps {
  */
 export const NewsletterForm: React.FC<NewsletterFormProps> = ({
   ctaLabel = 'Sign up',
+  inputId = 'newsletter-email',
   onSubscribe,
   privacyHref,
+  variant = 'dark',
   className = '',
 }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const isLight = variant === 'light';
 
   const validateEmail = (value: string): boolean => {
     if (!value.trim()) {
@@ -76,10 +81,10 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
   return (
     <div className={className}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="relative w-full max-w-md">
+        <div className={`relative w-full ${isLight ? 'max-w-[22rem]' : 'max-w-md'}`}>
           <input
             type="email"
-            id="newsletter-email"
+            id={inputId}
             name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -89,7 +94,11 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
             autoComplete="email"
             aria-label="Email address for newsletter"
             aria-invalid={error ? true : undefined}
-            className="w-full h-10 pl-4 pr-24 text-sm bg-transparent border border-text-primary rounded-full text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-brand-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full h-10 pl-4 pr-24 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-brand-primary/50 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isLight
+                ? 'bg-brand-white border border-brand-black text-brand-black placeholder:text-brand-gray-medium'
+                : 'bg-transparent border border-text-primary text-text-primary placeholder:text-text-disabled'
+            }`}
           />
           <button
             type="submit"
@@ -137,4 +146,3 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
     </div>
   );
 };
-
